@@ -1,8 +1,8 @@
 use crate::{Function, Variable};
 
-pub struct Double;
-
 type Data = f64;
+
+pub struct Double;
 
 impl Function for Double {
     fn forward(&self, xs: &Vec<Variable>) -> Vec<Data> {
