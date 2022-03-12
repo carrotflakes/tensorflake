@@ -1,5 +1,5 @@
 use crate::{
-    functions::{Mul, Pow, Sum},
+    functions::{Mul, Pow, Sub, Sum},
     Function, Variable,
 };
 
@@ -36,4 +36,32 @@ fn test_sphere() {
     ys[0].backward();
     assert_eq!(x.get_grad().map(|v| (*v).clone()), Some(2.0.into()));
     assert_eq!(y.get_grad().map(|v| (*v).clone()), Some(2.0.into()));
+}
+
+#[test]
+fn test_matyas() {
+    let x = Variable::new(1.0.into());
+    let y = Variable::new(1.0.into());
+
+    let ys = Sub.call(vec![
+        Mul.call(vec![
+            Variable::new(0.26.into()),
+            Sum.call(vec![
+                Pow::new(2.0).call(vec![x.clone()]).pop().unwrap(),
+                Pow::new(2.0).call(vec![y.clone()]).pop().unwrap(),
+            ])
+            .pop()
+            .unwrap(),
+        ])
+        .pop()
+        .unwrap(),
+        Mul.call(vec![Variable::new(0.48.into()), x.clone(), y.clone()])
+            .pop()
+            .unwrap(),
+    ]);
+
+    ys[0].set_grad(Variable::new(1.0.into()));
+    ys[0].backward();
+    assert!((x.get_grad().unwrap().get_data()[0] - 0.04).abs() < 1e-6);
+    assert!((y.get_grad().unwrap().get_data()[0] - 0.04).abs() < 1e-6);
 }
