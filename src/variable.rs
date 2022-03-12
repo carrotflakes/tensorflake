@@ -46,7 +46,7 @@ impl Variable<true> {
         vars.iter().map(|v| v.inner.generation).max().unwrap_or(0) + 1
     }
 
-    pub fn get_grad<const CREATE_GRAPH: bool>(&self) -> Option<Variable<CREATE_GRAPH>> {
+    pub fn get_grad<const ENABLE_BACKPROP: bool>(&self) -> Option<Variable<ENABLE_BACKPROP>> {
         self.inner
             .grad
             .borrow()
@@ -54,11 +54,11 @@ impl Variable<true> {
             .map(|i| Variable { inner: i.clone() })
     }
 
-    pub fn set_grad(&self, grad: Variable) {
+    pub fn set_grad<const ENABLE_BACKPROP: bool>(&self, grad: Variable<ENABLE_BACKPROP>) {
         *self.inner.grad.borrow_mut() = Some(grad.inner);
     }
 
-    pub fn add_grad<const CREATE_GRAPH: bool>(&self, v: Variable<CREATE_GRAPH>) {
+    pub fn add_grad<const ENABLE_BACKPROP: bool>(&self, v: Variable<ENABLE_BACKPROP>) {
         let mut grad = self.inner.grad.borrow_mut();
         if let Some(grad) = grad.as_mut() {
             *grad = Sum
@@ -80,11 +80,11 @@ impl Variable<true> {
         *self.inner.grad.borrow_mut() = None;
     }
 
-    pub fn backward<const CREATE_GRAPH: bool>(&self, retain_grad: bool) {
+    pub fn backward(&self, retain_grad: bool, create_graph: bool) {
         let mut funcalls = collect_funcalls(vec![self.clone()]);
         funcalls.sort_by_key(|fc| -(fc.generation as i32));
         for fc in funcalls {
-            fc.backward::<CREATE_GRAPH>(retain_grad);
+            fc.backward(retain_grad, create_graph);
         }
     }
 }

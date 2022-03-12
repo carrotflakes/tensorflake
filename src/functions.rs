@@ -11,11 +11,11 @@ impl Function for Exp {
         vec![xs[0].map(|x| x.exp())]
     }
 
-    fn backward(
+    fn backward<const ENABLE_BACKPROP: bool>(
         &self,
-        xs: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-    ) -> Vec<Variable<true>> {
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        gys: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Variable<ENABLE_BACKPROP>> {
         Mul.call(vec![gys[0].clone(), Exp.call(xs.clone()).pop().unwrap()])
         // vec![Variable::new(gys[0].multiply(&xs[0].map(|x| x.exp())))]
     }
@@ -36,11 +36,11 @@ impl Function for Sum {
         vec![y]
     }
 
-    fn backward(
+    fn backward<const ENABLE_BACKPROP: bool>(
         &self,
-        xs: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-    ) -> Vec<Variable<true>> {
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        gys: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Variable<ENABLE_BACKPROP>> {
         (0..xs.len()).map(|_| gys[0].clone()).collect()
     }
 }
@@ -62,11 +62,11 @@ impl Function for Mul {
         vec![Tensor::new(data, &xs[0].shape)]
     }
 
-    fn backward(
+    fn backward<const ENABLE_BACKPROP: bool>(
         &self,
-        xs: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-    ) -> Vec<Variable<true>> {
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        gys: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Variable<ENABLE_BACKPROP>> {
         (0..xs.len())
             .map(|i| {
                 Mul.call(
@@ -94,11 +94,11 @@ impl Function for Neg {
         vec![xs[0].map(|x| -x)]
     }
 
-    fn backward(
+    fn backward<const ENABLE_BACKPROP: bool>(
         &self,
-        _xs: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-    ) -> Vec<Variable<true>> {
+        _xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        gys: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Variable<ENABLE_BACKPROP>> {
         Neg.call(gys.clone())
     }
 }
@@ -124,12 +124,12 @@ impl Function for Sub {
         )]
     }
 
-    fn backward(
+    fn backward<const ENABLE_BACKPROP: bool>(
         &self,
-        _xs: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-    ) -> Vec<Variable<true>> {
-        vec![gys[0].clone(), Neg.call(gys.clone()).pop().unwrap()]
+        _xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        gys: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        vec![gys[0].clone(), Neg.call(vec![gys[0].clone()]).pop().unwrap()]
     }
 }
 
@@ -154,11 +154,11 @@ impl Function for Div {
         )]
     }
 
-    fn backward(
+    fn backward<const ENABLE_BACKPROP: bool>(
         &self,
-        xs: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-    ) -> Vec<Variable<true>> {
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        gys: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Variable<ENABLE_BACKPROP>> {
         vec![
             Div.call(vec![gys[0].clone(), gys[1].clone()])
                 .pop()
@@ -211,11 +211,11 @@ impl Function for Pow {
         )]
     }
 
-    fn backward(
+    fn backward<const ENABLE_BACKPROP: bool>(
         &self,
-        xs: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-    ) -> Vec<Variable<true>> {
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        gys: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Variable<ENABLE_BACKPROP>> {
         // TODO
         let mut gx = gys[0].data.clone();
         let x0 = &xs[0].data;
@@ -241,11 +241,11 @@ impl Function for Sin {
         )]
     }
 
-    fn backward(
+    fn backward<const ENABLE_BACKPROP: bool>(
         &self,
-        xs: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-    ) -> Vec<Variable<true>> {
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        gys: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Variable<ENABLE_BACKPROP>> {
         Mul.call(vec![gys[0].clone(), Cos.call(xs.clone()).pop().unwrap()])
         // vec![Variable::new(gys[0].multiply(&xs[0].map(|x| x.cos())))]
     }
@@ -265,11 +265,11 @@ impl Function for Cos {
         )]
     }
 
-    fn backward(
+    fn backward<const ENABLE_BACKPROP: bool>(
         &self,
-        xs: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-    ) -> Vec<Variable<true>> {
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        gys: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Variable<ENABLE_BACKPROP>> {
         Mul.call(vec![
             gys[0].clone(),
             Neg.call(Sin.call(xs.clone())).pop().unwrap(),
@@ -287,8 +287,8 @@ fn test_sum() {
         let ys = Sum.call(xs);
         assert_eq!(*ys[0], 6.0.into());
 
-        ys[0].set_grad(Variable::new(1.0.into()));
-        ys[0].backward::<false>(false);
+        ys[0].set_grad(Variable::<true>::new(1.0.into()));
+        ys[0].backward(false, false);
         assert_eq!(*x.get_grad::<false>().unwrap(), 1.0.into());
         assert_eq!(*y.get_grad::<false>().unwrap(), 1.0.into());
         assert_eq!(*z.get_grad::<false>().unwrap(), 1.0.into());
@@ -299,8 +299,8 @@ fn test_sum() {
         let ys = Sum.call(vec![x.clone(), x.clone()]);
         assert_eq!(*ys[0], 6.0.into());
 
-        ys[0].set_grad(Variable::new(1.0.into()));
-        ys[0].backward::<false>(false);
+        ys[0].set_grad(Variable::<true>::new(1.0.into()));
+        ys[0].backward(false, false);
         assert_eq!(*x.get_grad::<false>().unwrap(), 2.0.into());
     }
 }
@@ -312,8 +312,8 @@ fn test_sub() {
     let ys = Sub.call(vec![a.clone(), b.clone()]);
     assert_eq!(*ys[0], 2.0.into());
 
-    ys[0].set_grad(Variable::new(1.0.into()));
-    ys[0].backward::<false>(false);
+    ys[0].set_grad(Variable::<true>::new(1.0.into()));
+    ys[0].backward(false, false);
     assert_eq!(*a.get_grad::<false>().unwrap(), 1.0.into());
     assert_eq!(*b.get_grad::<false>().unwrap(), (-1.0).into());
 }
@@ -324,7 +324,7 @@ fn test_pow() {
     let ys = Pow(2.0).call(vec![a.clone()]);
     assert_eq!(*ys[0], 25.0.into());
 
-    ys[0].set_grad(Variable::new(1.0.into()));
-    ys[0].backward::<false>(false);
+    ys[0].set_grad(Variable::<true>::new(1.0.into()));
+    ys[0].backward(false, false);
     assert_eq!(*a.get_grad::<false>().unwrap(), 10.0.into());
 }

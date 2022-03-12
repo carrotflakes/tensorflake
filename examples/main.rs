@@ -17,15 +17,15 @@ fn main() {
         let b = Exp.call(a);
         let y = Mul.call(vec![b[0].clone(), b[0].clone()]);
         println!("{:?}", *y[0]);
-        y[0].set_grad(Variable::new(1.0.into()));
-        y[0].backward::<false>(false);
+        y[0].set_grad(Variable::<true>::new(1.0.into()));
+        y[0].backward(false, true);
         println!("{:?}", *x.get_grad::<false>().unwrap()); // 3.29
 
         let gx = x.get_grad::<true>().unwrap().clone();
         x.clear_grad();
-        gx.set_grad(Variable::new(1.0.into()));
-        gx.backward::<false>(false);
-        println!("{:?}", *x.get_grad::<false>().unwrap()); // ?
+        gx.set_grad(Variable::<true>::new(1.0.into()));
+        gx.backward(false, false);
+        println!("{:?}", *x.get_grad::<false>().unwrap()); // 13.18
 
         // ruzero::release_variables(&y[0]);
         // y.set_grad(1.0);

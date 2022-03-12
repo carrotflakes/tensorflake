@@ -15,8 +15,8 @@ fn test_add_mul() {
     ]);
     assert_eq!(*ys[0], 7.0.into());
 
-    ys[0].set_grad(Variable::new(1.0.into()));
-    ys[0].backward::<false>(false);
+    ys[0].set_grad(Variable::<true>::new(1.0.into()));
+    ys[0].backward(false, false);
     assert_eq!(
         a.get_grad::<false>().map(|v| (*v).clone()),
         Some(2.0.into())
@@ -38,8 +38,8 @@ fn test_sphere() {
     ]);
     assert_eq!(*ys[0], 2.0.into());
 
-    ys[0].set_grad(Variable::new(1.0.into()));
-    ys[0].backward::<false>(false);
+    ys[0].set_grad(Variable::<true>::new(1.0.into()));
+    ys[0].backward(false, false);
     assert_eq!(
         x.get_grad::<false>().map(|v| (*v).clone()),
         Some(2.0.into())
@@ -72,8 +72,8 @@ fn test_matyas() {
             .unwrap(),
     ]);
 
-    ys[0].set_grad(Variable::new(1.0.into()));
-    ys[0].backward::<false>(false);
+    ys[0].set_grad(Variable::<true>::new(1.0.into()));
+    ys[0].backward(false, false);
     assert!((x.get_grad::<false>().unwrap().get_data()[0] - 0.04).abs() < 1e-6);
     assert!((y.get_grad::<false>().unwrap().get_data()[0] - 0.04).abs() < 1e-6);
 }
@@ -117,8 +117,8 @@ fn test_rosenbrock() {
 
     let y = rosenbrock(a.clone(), b.clone());
 
-    y.set_grad(Variable::new(1.0.into()));
-    y.backward::<false>(false);
+    y.set_grad(Variable::<true>::new(1.0.into()));
+    y.backward(false, false);
     assert!((a.get_grad::<false>().unwrap().get_data()[0] - -2.0).abs() < 1e-6);
     assert!((b.get_grad::<false>().unwrap().get_data()[0] - 400.0).abs() < 1e-6);
 }
@@ -133,8 +133,8 @@ fn test_rosenbrock_sgd() {
         // dbg!((a.get_data()[0], b.get_data()[0]));
         let y = rosenbrock(a.clone(), b.clone());
 
-        y.set_grad(Variable::new(1.0.into()));
-        y.backward::<false>(false);
+        y.set_grad(Variable::<true>::new(1.0.into()));
+        y.backward(false, false);
 
         a = Variable::new((a.data[0] - lr * a.get_grad::<false>().unwrap().data[0]).into());
         b = Variable::new((b.data[0] - lr * b.get_grad::<false>().unwrap().data[0]).into());
@@ -172,13 +172,22 @@ fn second_order_differentia() {
     );
     assert_eq!(y.data[0], 8.0.into());
 
-    y.set_grad(Variable::new(1.0.into()));
-    y.backward::<true>(false);
+    y.set_grad(Variable::<true>::new(1.0.into()));
+    y.backward(false, true);
     assert_eq!(x.get_grad::<true>().unwrap().data[0], 24.0.into());
 
     let gx = x.get_grad::<true>().unwrap();
     x.clear_grad();
-    gx.set_grad(Variable::new(1.0.into()));
-    gx.backward::<false>(false);
+    gx.set_grad(Variable::<true>::new(1.0.into()));
+    gx.backward(false, false);
     assert_eq!(x.get_grad::<false>().unwrap().data[0], 44.0.into());
+}
+
+#[test]
+fn test_() {
+    let x = Variable::<true>::new(2.0.into());
+    let xs = vec![x];
+    let ys: &Vec<Variable<false>> = unsafe { std::mem::transmute(&xs) };
+    dbg!(&xs[0].data[0]);
+    dbg!(&ys[0].data[0]);
 }
