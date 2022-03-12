@@ -33,9 +33,9 @@ pub struct Sum;
 impl Function for Sum {
     fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
         assert!(xs.len() >= 1);
-        let mut y = xs[0].inner.data.clone();
+        let mut y = (*xs[0]).clone();
         for x in xs.iter().skip(1) {
-            y = &y + &x.inner.data;
+            y = &y + &x;
         }
         vec![y]
     }
@@ -50,27 +50,27 @@ pub struct Mul;
 impl Function for Mul {
     fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
         assert!(xs.len() >= 1);
-        let mut data = xs[0].inner.data.data.clone();
+        let mut data = xs[0].data.clone();
         for x in xs.iter().skip(1) {
-            for (a, b) in data.iter_mut().zip(&x.inner.data.data) {
+            for (a, b) in data.iter_mut().zip(&x.data) {
                 *a *= *b;
             }
         }
-        vec![Tensor::new(data, &xs[0].inner.data.shape)]
+        vec![Tensor::new(data, &xs[0].shape)]
     }
 
     fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
         (0..xs.len())
             .map(|i| {
-                let mut data = gys[0].inner.data.data.clone();
+                let mut data = gys[0].data.clone();
                 for j in 0..xs.len() {
                     if j != i {
-                        for (a, b) in data.iter_mut().zip(&xs[j].inner.data.data) {
+                        for (a, b) in data.iter_mut().zip(&xs[j].data) {
                             *a *= *b;
                         }
                     }
                 }
-                Variable::new(Tensor::new(data, &xs[0].inner.data.shape))
+                Variable::new(Tensor::new(data, &xs[0].shape))
             })
             .collect()
     }
@@ -81,18 +81,16 @@ pub struct Sub;
 impl Function for Sub {
     fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
         assert!(xs.len() == 2);
-        assert_eq!(xs[0].inner.data.shape, xs[1].inner.data.shape);
+        assert_eq!(xs[0].shape, xs[1].shape);
 
         vec![Tensor::new(
             xs[0]
-                .inner
-                .data
                 .data
                 .iter()
-                .zip(&xs[1].inner.data.data)
+                .zip(&xs[1].data)
                 .map(|(a, b)| a - b)
                 .collect(),
-            &xs[0].inner.data.shape,
+            &xs[0].shape,
         )]
     }
 
@@ -100,6 +98,40 @@ impl Function for Sub {
         vec![
             gys[0].clone(),
             Variable::new(gys[0].multiply_with_scalar(-1.0)),
+        ]
+    }
+}
+
+pub struct Div;
+
+impl Function for Div {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+        assert!(xs.len() == 2);
+        assert_eq!(xs[0].shape, xs[1].shape);
+
+        vec![Tensor::new(
+            xs[0]
+                .data
+                .iter()
+                .zip(&xs[1].data)
+                .map(|(a, b)| a / b)
+                .collect(),
+            &xs[0].shape,
+        )]
+    }
+
+    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
+        let mut data1 = gys[0].data.clone();
+        let mut data2 = gys[0].data.clone();
+        let x0 = &xs[0].data;
+        let x1 = &xs[1].data;
+        for i in 0..data1.len() {
+            data1[i] = data1[i] / x1[i];
+            data2[i] = data2[i] * (-x0[i] / x1[i].powi(2));
+        }
+        vec![
+            Variable::new(Tensor::new(data1, &gys[0].shape)),
+            Variable::new(Tensor::new(data2, &gys[0].shape)),
         ]
     }
 }
