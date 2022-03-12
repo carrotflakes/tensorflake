@@ -1,49 +1,11 @@
-mod variable;
-mod function;
 mod funcall;
+mod function;
+pub mod functions;
+mod variable;
 
-pub use variable::*;
-pub use function::*;
 pub use funcall::*;
-
-pub struct Double;
-
-impl Function for Double {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
-        assert!(xs.len() == 1);
-        vec![Variable::new(*xs[0] * 2.0)]
-    }
-
-    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
-        vec![Variable::new(*gys[0] * 2.0)]
-    }
-}
-
-pub struct Square;
-
-impl Function for Square {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
-        assert!(xs.len() == 1);
-        vec![Variable::new(*xs[0] * *xs[0])]
-    }
-
-    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
-        vec![Variable::new(*gys[0] * 2.0 * *xs[0])]
-    }
-}
-
-pub struct Exp;
-
-impl Function for Exp {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
-        assert!(xs.len() == 1);
-        vec![Variable::new(xs[0].exp())]
-    }
-
-    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
-        vec![Variable::new(*gys[0] * xs[0].exp())]
-    }
-}
+pub use function::*;
+pub use variable::*;
 
 // pub fn numerical_diff(f: impl Function + Sized + 'static, x: &Variable) -> Variable {
 //     let eps = 1e-4;

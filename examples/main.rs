@@ -1,4 +1,7 @@
-use ruzero::{Double, Exp, Function, Square, Variable};
+use ruzero::{
+    functions::{Double, Exp, Square},
+    Function, Variable,
+};
 
 fn main() {
     let x = Variable::new(2.0);
