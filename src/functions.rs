@@ -164,6 +164,23 @@ impl Function for Pow {
     }
 }
 
+pub struct Sin;
+
+impl Function for Sin {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+        assert!(xs.len() == 1);
+
+        vec![Tensor::new(
+            xs[0].data.iter().map(|a| a.sin()).collect(),
+            &xs[0].shape,
+        )]
+    }
+
+    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
+        vec![Variable::new(gys[0].multiply(&xs[0].map(|x| x.cos())))]
+    }
+}
+
 #[test]
 fn test_sum() {
     {
