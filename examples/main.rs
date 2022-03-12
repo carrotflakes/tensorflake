@@ -1,5 +1,5 @@
 use ruzero::{
-    functions::{Exp, Square},
+    functions::{Exp, Square, Mul},
     Function, Variable,
 };
 
@@ -13,7 +13,7 @@ fn main() {
 
     {
         let x = Variable::new(0.5.into());
-        let a = Square.call(vec![x.clone()]);
+        let a = Mul.call(vec![x.clone(), x.clone()]);
         let b = Exp.call(a);
         let y = Square.call(b);
         println!("{:?}", *y[0]);

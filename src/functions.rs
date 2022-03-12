@@ -1,11 +1,9 @@
 use crate::{Function, Tensor, Variable};
 
-type Data = Tensor;
-
 pub struct Square;
 
 impl Function for Square {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Data> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
         assert!(xs.len() == 1);
         vec![xs[0].multiply(&xs[0])]
     }
@@ -20,7 +18,7 @@ impl Function for Square {
 pub struct Exp;
 
 impl Function for Exp {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Data> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
         assert!(xs.len() == 1);
         vec![xs[0].map(|x| x.exp())]
     }
@@ -33,7 +31,7 @@ impl Function for Exp {
 pub struct Sum;
 
 impl Function for Sum {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Data> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
         assert!(xs.len() >= 1);
         let mut y = xs[0].inner.data.clone();
         for x in xs.iter().skip(1) {
@@ -44,6 +42,37 @@ impl Function for Sum {
 
     fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
         (0..xs.len()).map(|_| gys[0].clone()).collect()
+    }
+}
+
+pub struct Mul;
+
+impl Function for Mul {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+        assert!(xs.len() >= 1);
+        let mut data = xs[0].inner.data.data.clone();
+        for x in xs.iter().skip(1) {
+            for (a, b) in data.iter_mut().zip(&x.inner.data.data) {
+                *a *= *b;
+            }
+        }
+        vec![Tensor::new(data, &xs[0].inner.data.shape)]
+    }
+
+    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
+        (0..xs.len())
+            .map(|i| {
+                let mut data = gys[0].inner.data.data.clone();
+                for j in 0..xs.len() {
+                    if j != i {
+                        for (a, b) in data.iter_mut().zip(&xs[j].inner.data.data) {
+                            *a *= *b;
+                        }
+                    }
+                }
+                Variable::new(Tensor::new(data, &xs[0].inner.data.shape))
+            })
+            .collect()
     }
 }
 
