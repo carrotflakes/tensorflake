@@ -18,7 +18,7 @@ fn main() {
         let y = Square.call(b);
         println!("{:?}", *y[0]);
         y[0].set_grad(Variable::new(1.0.into()));
-        y[0].backward();
+        y[0].backward(false);
         println!("{:?}", *x.get_grad().unwrap()); // 3.29
         ruzero::release_variables(&y[0]);
         // y.set_grad(1.0);

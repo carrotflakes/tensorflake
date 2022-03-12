@@ -61,11 +61,11 @@ impl Variable {
         *self.inner.grad.borrow_mut() = None;
     }
 
-    pub fn backward(&self) {
+    pub fn backward(&self, retain_grad: bool) {
         let mut funcalls = collect_funcalls(vec![self.clone()]);
         funcalls.sort_by_key(|fc| -(fc.generation as i32));
         for fc in funcalls {
-            fc.backward();
+            fc.backward(retain_grad);
         }
     }
 

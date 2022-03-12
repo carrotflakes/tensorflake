@@ -22,7 +22,7 @@ impl Funcall {
         }
     }
 
-    pub fn backward(&self) {
+    pub fn backward(&self, retain_grad: bool) {
         let gys = self
             .output
             .iter()
@@ -31,6 +31,11 @@ impl Funcall {
         let gxs = self.function.backward(&self.input, &gys);
         for (x, gx) in self.input.iter().zip(gxs) {
             x.add_grad(gx);
+        }
+        if !retain_grad {
+            for y in &self.output {
+                y.clear_grad();
+            }
         }
     }
 }

@@ -192,7 +192,7 @@ fn test_sum() {
         assert_eq!(*ys[0], 6.0.into());
 
         ys[0].set_grad(Variable::new(1.0.into()));
-        ys[0].backward();
+        ys[0].backward(false);
         assert_eq!(*x.get_grad().unwrap(), 1.0.into());
         assert_eq!(*y.get_grad().unwrap(), 1.0.into());
         assert_eq!(*z.get_grad().unwrap(), 1.0.into());
@@ -204,7 +204,7 @@ fn test_sum() {
         assert_eq!(*ys[0], 6.0.into());
 
         ys[0].set_grad(Variable::new(1.0.into()));
-        ys[0].backward();
+        ys[0].backward(false);
         assert_eq!(*x.get_grad().unwrap(), 2.0.into());
     }
 }
@@ -217,7 +217,7 @@ fn test_sub() {
     assert_eq!(*ys[0], 2.0.into());
 
     ys[0].set_grad(Variable::new(1.0.into()));
-    ys[0].backward();
+    ys[0].backward(false);
     assert_eq!(*a.get_grad().unwrap(), 1.0.into());
     assert_eq!(*b.get_grad().unwrap(), (-1.0).into());
 }
@@ -229,6 +229,6 @@ fn test_pow() {
     assert_eq!(*ys[0], 25.0.into());
 
     ys[0].set_grad(Variable::new(1.0.into()));
-    ys[0].backward();
+    ys[0].backward(false);
     assert_eq!(*a.get_grad().unwrap(), 10.0.into());
 }
