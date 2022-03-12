@@ -23,7 +23,11 @@ impl Funcall {
     }
 
     pub fn backward(&self) {
-        let gys = self.output.iter().map(|y| y.get_grad().unwrap()).collect();
+        let gys = self
+            .output
+            .iter()
+            .map(|y| y.get_grad().expect("ensure terminal variable's grad"))
+            .collect();
         let gxs = self.function.backward(&self.input, &gys);
         for (x, gx) in self.input.iter().zip(gxs) {
             x.add_grad(gx);

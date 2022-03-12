@@ -4,6 +4,9 @@ pub mod functions;
 mod tensor;
 mod variable;
 
+#[cfg(test)]
+mod test;
+
 use std::rc::Rc;
 
 pub use funcall::*;
