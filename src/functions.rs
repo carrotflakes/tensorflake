@@ -76,6 +76,34 @@ impl Function for Mul {
     }
 }
 
+pub struct Sub;
+
+impl Function for Sub {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+        assert!(xs.len() == 2);
+        assert_eq!(xs[0].inner.data.shape, xs[1].inner.data.shape);
+
+        vec![Tensor::new(
+            xs[0]
+                .inner
+                .data
+                .data
+                .iter()
+                .zip(&xs[1].inner.data.data)
+                .map(|(a, b)| a - b)
+                .collect(),
+            &xs[0].inner.data.shape,
+        )]
+    }
+
+    fn backward(&self, _xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
+        vec![
+            gys[0].clone(),
+            Variable::new(gys[0].multiply_with_scalar(-1.0)),
+        ]
+    }
+}
+
 #[test]
 fn test_sum() {
     {
@@ -102,4 +130,17 @@ fn test_sum() {
         ys[0].backward();
         assert_eq!(*x.get_grad().unwrap(), 2.0.into());
     }
+}
+
+#[test]
+fn test_sub() {
+    let a = Variable::new(5.0.into());
+    let b = Variable::new(3.0.into());
+    let ys = Sub.call(vec![a.clone(), b.clone()]);
+    assert_eq!(*ys[0], 2.0.into());
+
+    ys[0].set_grad(Variable::new(1.0.into()));
+    ys[0].backward();
+    assert_eq!(*a.get_grad().unwrap(), 1.0.into());
+    assert_eq!(*b.get_grad().unwrap(), (-1.0).into());
 }
