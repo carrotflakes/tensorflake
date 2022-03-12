@@ -65,3 +65,42 @@ fn test_matyas() {
     assert!((x.get_grad().unwrap().get_data()[0] - 0.04).abs() < 1e-6);
     assert!((y.get_grad().unwrap().get_data()[0] - 0.04).abs() < 1e-6);
 }
+
+#[test]
+fn test_rosenbrock() {
+    let a = Variable::new(0.0.into());
+    let b = Variable::new(2.0.into());
+
+    let y = Sum
+        .call(vec![
+            Mul.call(vec![
+                Variable::new(100.0.into()),
+                Pow::new(2.0)
+                    .call(vec![Sub
+                        .call(vec![
+                            b.clone(),
+                            Pow::new(2.0).call(vec![a.clone()]).pop().unwrap(),
+                        ])
+                        .pop()
+                        .unwrap()])
+                    .pop()
+                    .unwrap(),
+            ])
+            .pop()
+            .unwrap(),
+            Pow::new(2.0)
+                .call(vec![Sub
+                    .call(vec![a.clone(), Variable::new(1.0.into())])
+                    .pop()
+                    .unwrap()])
+                .pop()
+                .unwrap(),
+        ])
+        .pop()
+        .unwrap();
+
+    y.set_grad(Variable::new(1.0.into()));
+    y.backward();
+    assert!((a.get_grad().unwrap().get_data()[0] - -2.0).abs() < 1e-6);
+    assert!((b.get_grad().unwrap().get_data()[0] - 400.0).abs() < 1e-6);
+}
