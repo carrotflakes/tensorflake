@@ -213,5 +213,5 @@ fn test_pow() {
 
     ys[0].set_grad(Variable::new(1.0.into()));
     ys[0].backward();
-    assert_eq!(*a.get_grad().unwrap(), 4.0.into());
+    assert_eq!(*a.get_grad().unwrap(), 10.0.into());
 }
