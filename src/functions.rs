@@ -138,6 +138,12 @@ impl Function for Div {
 
 pub struct Pow(f32);
 
+impl Pow {
+    pub fn new(x: f32) -> Pow {
+        Pow(x)
+    }
+}
+
 impl Function for Pow {
     fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
         assert!(xs.len() == 1);
