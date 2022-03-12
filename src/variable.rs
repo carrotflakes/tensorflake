@@ -6,11 +6,11 @@ use std::cell::RefCell;
 
 use crate::{collect_funcalls, Funcall};
 
-pub struct VariableInner {
-    pub(crate) data: f64,
-    pub(crate) grad: RefCell<Option<Variable>>,
-    pub(crate) creator: RefCell<Option<Rc<Funcall>>>,
-    pub(crate) generation: u32,
+pub(crate) struct VariableInner {
+    pub data: f64,
+    pub grad: RefCell<Option<Variable>>,
+    pub creator: RefCell<Option<Rc<Funcall>>>,
+    pub generation: u32,
 }
 
 pub struct Variable {
