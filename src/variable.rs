@@ -4,10 +4,10 @@ use std::rc::Rc;
 
 use std::cell::RefCell;
 
-use crate::{collect_funcalls, Funcall};
+use crate::{collect_funcalls, Funcall, Tensor};
 
 pub(crate) struct VariableInner {
-    pub data: f64,
+    pub data: Tensor,
     pub grad: RefCell<Option<Variable>>,
     pub creator: RefCell<Option<Rc<Funcall>>>,
     pub generation: u32,
@@ -18,7 +18,7 @@ pub struct Variable {
 }
 
 impl Variable {
-    pub fn new(data: f64) -> Variable {
+    pub fn new(data: Tensor) -> Variable {
         Variable {
             inner: Rc::new(VariableInner {
                 data,
@@ -29,7 +29,7 @@ impl Variable {
         }
     }
 
-    pub fn new_with_gen(data: f64, generation: u32) -> Variable {
+    pub fn new_with_gen(data: Tensor, generation: u32) -> Variable {
         Variable {
             inner: Rc::new(VariableInner {
                 data,
@@ -51,7 +51,7 @@ impl Variable {
     pub fn add_grad(&self, v: Variable) {
         let mut grad = self.inner.grad.borrow_mut();
         if let Some(g) = grad.as_mut() {
-            *g = Variable::new(g.inner.data + v.inner.data);
+            *g = Variable::new(&g.inner.data + &v.inner.data);
         } else {
             *grad = Some(v);
         }
@@ -71,9 +71,9 @@ impl Variable {
 }
 
 impl std::ops::Deref for Variable {
-    type Target = f64;
+    type Target = Tensor;
 
-    fn deref(&self) -> &f64 {
+    fn deref(&self) -> &Tensor {
         &self.inner.data
     }
 }

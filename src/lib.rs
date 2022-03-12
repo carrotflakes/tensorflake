@@ -1,12 +1,14 @@
 mod funcall;
 mod function;
 pub mod functions;
+mod tensor;
 mod variable;
 
 use std::rc::Rc;
 
 pub use funcall::*;
 pub use function::*;
+pub use tensor::*;
 pub use variable::*;
 
 pub(crate) fn collect_funcalls(mut vars: Vec<Variable>) -> Vec<Rc<Funcall>> {
@@ -37,9 +39,9 @@ pub fn release_variables(var: &Variable) {
 
 #[test]
 fn test_collect_funcalls() {
-    let x = Variable::new(1.0);
-    let y = Variable::new(2.0);
-    let z = Variable::new(3.0);
+    let x = Variable::new(1.0.into());
+    let y = Variable::new(2.0.into());
+    let z = Variable::new(3.0.into());
     let f = functions::Sum.call(vec![x.clone(), y.clone()]);
     let g = functions::Sum.call([f.clone(), vec![z.clone()]].concat());
     let f = functions::Sum.call([g.clone(), vec![x.clone()]].concat());

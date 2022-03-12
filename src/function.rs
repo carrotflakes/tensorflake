@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
-use crate::{Funcall, Variable};
+use crate::{Funcall, Tensor, Variable};
 
 pub trait Function {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<f64>;
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor>;
     fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable>;
 
     fn call(self, xs: Vec<Variable>) -> Vec<Variable>
