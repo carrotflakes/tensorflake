@@ -121,18 +121,40 @@ impl Function for Div {
     }
 
     fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
-        let mut data1 = gys[0].data.clone();
-        let mut data2 = gys[0].data.clone();
+        let mut gx0 = gys[0].data.clone();
+        let mut gx1 = gys[0].data.clone();
         let x0 = &xs[0].data;
         let x1 = &xs[1].data;
-        for i in 0..data1.len() {
-            data1[i] = data1[i] / x1[i];
-            data2[i] = data2[i] * (-x0[i] / x1[i].powi(2));
+        for i in 0..gx0.len() {
+            gx0[i] = gx0[i] / x1[i];
+            gx1[i] = gx1[i] * (-x0[i] / x1[i].powi(2));
         }
         vec![
-            Variable::new(Tensor::new(data1, &gys[0].shape)),
-            Variable::new(Tensor::new(data2, &gys[0].shape)),
+            Variable::new(Tensor::new(gx0, &gys[0].shape)),
+            Variable::new(Tensor::new(gx1, &gys[0].shape)),
         ]
+    }
+}
+
+pub struct Pow(f32);
+
+impl Function for Pow {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+        assert!(xs.len() == 1);
+
+        vec![Tensor::new(
+            xs[0].data.iter().map(|a| a.powf(self.0)).collect(),
+            &xs[0].shape,
+        )]
+    }
+
+    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
+        let mut gx = gys[0].data.clone();
+        let x0 = &xs[0].data;
+        for i in 0..gx.len() {
+            gx[i] = gx[i] * self.0 * x0[i].powf(self.0 - 1.0);
+        }
+        vec![Variable::new(Tensor::new(gx, &gys[0].shape))]
     }
 }
 
@@ -175,4 +197,15 @@ fn test_sub() {
     ys[0].backward();
     assert_eq!(*a.get_grad().unwrap(), 1.0.into());
     assert_eq!(*b.get_grad().unwrap(), (-1.0).into());
+}
+
+#[test]
+fn test_pow() {
+    let a = Variable::new(5.0.into());
+    let ys = Pow(2.0).call(vec![a.clone()]);
+    assert_eq!(*ys[0], 25.0.into());
+
+    ys[0].set_grad(Variable::new(1.0.into()));
+    ys[0].backward();
+    assert_eq!(*a.get_grad().unwrap(), 4.0.into());
 }
