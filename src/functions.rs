@@ -1,37 +1,33 @@
 use crate::{Function, Tensor, Variable};
 
-pub struct Square;
-
-impl Function for Square {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
-        assert!(xs.len() == 1);
-        vec![xs[0].multiply(&xs[0])]
-    }
-
-    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
-        vec![Variable::new(
-            gys[0].multiply(&xs[0]).multiply_with_scalar(2.0),
-        )]
-    }
-}
-
 pub struct Exp;
 
 impl Function for Exp {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+    fn forward<const ENABLE_BACKPROP: bool>(
+        &self,
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Tensor> {
         assert!(xs.len() == 1);
         vec![xs[0].map(|x| x.exp())]
     }
 
-    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
-        vec![Variable::new(gys[0].multiply(&xs[0].map(|x| x.exp())))]
+    fn backward(
+        &self,
+        xs: &Vec<Variable<true>>,
+        gys: &Vec<Variable<true>>,
+    ) -> Vec<Variable<true>> {
+        Mul.call(vec![gys[0].clone(), Exp.call(xs.clone()).pop().unwrap()])
+        // vec![Variable::new(gys[0].multiply(&xs[0].map(|x| x.exp())))]
     }
 }
 
 pub struct Sum;
 
 impl Function for Sum {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+    fn forward<const ENABLE_BACKPROP: bool>(
+        &self,
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Tensor> {
         assert!(xs.len() >= 1);
         let mut y = (*xs[0]).clone();
         for x in xs.iter().skip(1) {
@@ -40,7 +36,11 @@ impl Function for Sum {
         vec![y]
     }
 
-    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
+    fn backward(
+        &self,
+        xs: &Vec<Variable<true>>,
+        gys: &Vec<Variable<true>>,
+    ) -> Vec<Variable<true>> {
         (0..xs.len()).map(|_| gys[0].clone()).collect()
     }
 }
@@ -48,7 +48,10 @@ impl Function for Sum {
 pub struct Mul;
 
 impl Function for Mul {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+    fn forward<const ENABLE_BACKPROP: bool>(
+        &self,
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Tensor> {
         assert!(xs.len() >= 1);
         let mut data = xs[0].data.clone();
         for x in xs.iter().skip(1) {
@@ -59,27 +62,54 @@ impl Function for Mul {
         vec![Tensor::new(data, &xs[0].shape)]
     }
 
-    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
+    fn backward(
+        &self,
+        xs: &Vec<Variable<true>>,
+        gys: &Vec<Variable<true>>,
+    ) -> Vec<Variable<true>> {
         (0..xs.len())
             .map(|i| {
-                let mut data = gys[0].data.clone();
-                for j in 0..xs.len() {
-                    if j != i {
-                        for (a, b) in data.iter_mut().zip(&xs[j].data) {
-                            *a *= *b;
-                        }
-                    }
-                }
-                Variable::new(Tensor::new(data, &xs[0].shape))
+                Mul.call(
+                    (0..xs.len())
+                        .filter(|j| *j != i)
+                        .map(|j| xs[j].clone())
+                        .chain(gys.iter().cloned())
+                        .collect(),
+                )
+                .pop()
+                .unwrap()
             })
             .collect()
+    }
+}
+
+pub struct Neg;
+
+impl Function for Neg {
+    fn forward<const ENABLE_BACKPROP: bool>(
+        &self,
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Tensor> {
+        assert!(xs.len() == 1);
+        vec![xs[0].map(|x| -x)]
+    }
+
+    fn backward(
+        &self,
+        _xs: &Vec<Variable<true>>,
+        gys: &Vec<Variable<true>>,
+    ) -> Vec<Variable<true>> {
+        Neg.call(gys.clone())
     }
 }
 
 pub struct Sub;
 
 impl Function for Sub {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+    fn forward<const ENABLE_BACKPROP: bool>(
+        &self,
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Tensor> {
         assert!(xs.len() == 2);
         assert_eq!(xs[0].shape, xs[1].shape);
 
@@ -94,18 +124,22 @@ impl Function for Sub {
         )]
     }
 
-    fn backward(&self, _xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
-        vec![
-            gys[0].clone(),
-            Variable::new(gys[0].multiply_with_scalar(-1.0)),
-        ]
+    fn backward(
+        &self,
+        _xs: &Vec<Variable<true>>,
+        gys: &Vec<Variable<true>>,
+    ) -> Vec<Variable<true>> {
+        vec![gys[0].clone(), Neg.call(gys.clone()).pop().unwrap()]
     }
 }
 
 pub struct Div;
 
 impl Function for Div {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+    fn forward<const ENABLE_BACKPROP: bool>(
+        &self,
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Tensor> {
         assert!(xs.len() == 2);
         assert_eq!(xs[0].shape, xs[1].shape);
 
@@ -120,19 +154,39 @@ impl Function for Div {
         )]
     }
 
-    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
-        let mut gx0 = gys[0].data.clone();
-        let mut gx1 = gys[0].data.clone();
-        let x0 = &xs[0].data;
-        let x1 = &xs[1].data;
-        for i in 0..gx0.len() {
-            gx0[i] = gx0[i] / x1[i];
-            gx1[i] = gx1[i] * (-x0[i] / x1[i].powi(2));
-        }
+    fn backward(
+        &self,
+        xs: &Vec<Variable<true>>,
+        gys: &Vec<Variable<true>>,
+    ) -> Vec<Variable<true>> {
         vec![
-            Variable::new(Tensor::new(gx0, &gys[0].shape)),
-            Variable::new(Tensor::new(gx1, &gys[0].shape)),
+            Div.call(vec![gys[0].clone(), gys[1].clone()])
+                .pop()
+                .unwrap(),
+            Mul.call(vec![
+                gys[0].clone(),
+                Div.call(vec![
+                    Neg.call(vec![xs[0].clone()]).pop().unwrap(),
+                    Pow::new(2.0).call(vec![xs[1].clone()]).pop().unwrap(),
+                ])
+                .pop()
+                .unwrap(),
+            ])
+            .pop()
+            .unwrap(),
         ]
+        // let mut gx0 = gys[0].data.clone();
+        // let mut gx1 = gys[1].data.clone();
+        // let x0 = &xs[0].data;
+        // let x1 = &xs[1].data;
+        // for i in 0..gx0.len() {
+        //     gx0[i] = gx0[i] / x1[i];
+        //     gx1[i] = gx1[i] * (-x0[i] / x1[i].powi(2));
+        // }
+        // vec![
+        //     Variable::new(Tensor::new(gx0, &gys[0].shape)),
+        //     Variable::new(Tensor::new(gx1, &gys[0].shape)),
+        // ]
     }
 }
 
@@ -145,7 +199,10 @@ impl Pow {
 }
 
 impl Function for Pow {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+    fn forward<const ENABLE_BACKPROP: bool>(
+        &self,
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
         vec![Tensor::new(
@@ -154,7 +211,12 @@ impl Function for Pow {
         )]
     }
 
-    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
+    fn backward(
+        &self,
+        xs: &Vec<Variable<true>>,
+        gys: &Vec<Variable<true>>,
+    ) -> Vec<Variable<true>> {
+        // TODO
         let mut gx = gys[0].data.clone();
         let x0 = &xs[0].data;
         for i in 0..gx.len() {
@@ -167,7 +229,10 @@ impl Function for Pow {
 pub struct Sin;
 
 impl Function for Sin {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+    fn forward<const ENABLE_BACKPROP: bool>(
+        &self,
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
         vec![Tensor::new(
@@ -176,15 +241,46 @@ impl Function for Sin {
         )]
     }
 
-    fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
-        vec![Variable::new(gys[0].multiply(&xs[0].map(|x| x.cos())))]
+    fn backward(
+        &self,
+        xs: &Vec<Variable<true>>,
+        gys: &Vec<Variable<true>>,
+    ) -> Vec<Variable<true>> {
+        Mul.call(vec![gys[0].clone(), Cos.call(xs.clone()).pop().unwrap()])
+        // vec![Variable::new(gys[0].multiply(&xs[0].map(|x| x.cos())))]
+    }
+}
+pub struct Cos;
+
+impl Function for Cos {
+    fn forward<const ENABLE_BACKPROP: bool>(
+        &self,
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Tensor> {
+        assert!(xs.len() == 1);
+
+        vec![Tensor::new(
+            xs[0].data.iter().map(|a| a.cos()).collect(),
+            &xs[0].shape,
+        )]
+    }
+
+    fn backward(
+        &self,
+        xs: &Vec<Variable<true>>,
+        gys: &Vec<Variable<true>>,
+    ) -> Vec<Variable<true>> {
+        Mul.call(vec![
+            gys[0].clone(),
+            Neg.call(Sin.call(xs.clone())).pop().unwrap(),
+        ])
     }
 }
 
 #[test]
 fn test_sum() {
     {
-        let x = Variable::new(1.0.into());
+        let x = Variable::<true>::new(1.0.into());
         let y = Variable::new(2.0.into());
         let z = Variable::new(3.0.into());
         let xs = vec![x.clone(), y.clone(), z.clone()];
@@ -192,43 +288,43 @@ fn test_sum() {
         assert_eq!(*ys[0], 6.0.into());
 
         ys[0].set_grad(Variable::new(1.0.into()));
-        ys[0].backward(false);
-        assert_eq!(*x.get_grad().unwrap(), 1.0.into());
-        assert_eq!(*y.get_grad().unwrap(), 1.0.into());
-        assert_eq!(*z.get_grad().unwrap(), 1.0.into());
+        ys[0].backward::<false>(false);
+        assert_eq!(*x.get_grad::<false>().unwrap(), 1.0.into());
+        assert_eq!(*y.get_grad::<false>().unwrap(), 1.0.into());
+        assert_eq!(*z.get_grad::<false>().unwrap(), 1.0.into());
     }
     {
-        let x = Variable::new(3.0.into());
+        let x = Variable::<true>::new(3.0.into());
         Sum.call(vec![x.clone(), x.clone()]);
         let ys = Sum.call(vec![x.clone(), x.clone()]);
         assert_eq!(*ys[0], 6.0.into());
 
         ys[0].set_grad(Variable::new(1.0.into()));
-        ys[0].backward(false);
-        assert_eq!(*x.get_grad().unwrap(), 2.0.into());
+        ys[0].backward::<false>(false);
+        assert_eq!(*x.get_grad::<false>().unwrap(), 2.0.into());
     }
 }
 
 #[test]
 fn test_sub() {
-    let a = Variable::new(5.0.into());
+    let a = Variable::<true>::new(5.0.into());
     let b = Variable::new(3.0.into());
     let ys = Sub.call(vec![a.clone(), b.clone()]);
     assert_eq!(*ys[0], 2.0.into());
 
     ys[0].set_grad(Variable::new(1.0.into()));
-    ys[0].backward(false);
-    assert_eq!(*a.get_grad().unwrap(), 1.0.into());
-    assert_eq!(*b.get_grad().unwrap(), (-1.0).into());
+    ys[0].backward::<false>(false);
+    assert_eq!(*a.get_grad::<false>().unwrap(), 1.0.into());
+    assert_eq!(*b.get_grad::<false>().unwrap(), (-1.0).into());
 }
 
 #[test]
 fn test_pow() {
-    let a = Variable::new(5.0.into());
+    let a = Variable::<true>::new(5.0.into());
     let ys = Pow(2.0).call(vec![a.clone()]);
     assert_eq!(*ys[0], 25.0.into());
 
     ys[0].set_grad(Variable::new(1.0.into()));
-    ys[0].backward(false);
-    assert_eq!(*a.get_grad().unwrap(), 10.0.into());
+    ys[0].backward::<false>(false);
+    assert_eq!(*a.get_grad::<false>().unwrap(), 10.0.into());
 }

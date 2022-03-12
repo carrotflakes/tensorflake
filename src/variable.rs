@@ -4,21 +4,21 @@ use std::rc::Rc;
 
 use std::cell::RefCell;
 
-use crate::{collect_funcalls, Funcall, Tensor};
+use crate::{collect_funcalls, functions::Sum, Funcall, Function, Tensor};
 
 pub(crate) struct VariableInner {
     pub data: Tensor,
-    pub grad: RefCell<Option<Variable>>,
+    grad: RefCell<Option<Rc<VariableInner>>>,
     pub creator: RefCell<Option<Rc<Funcall>>>,
     pub generation: u32,
 }
 
-pub struct Variable {
+pub struct Variable<const ENABLE_BACKPROP: bool = false> {
     pub(crate) inner: Rc<VariableInner>,
 }
 
-impl Variable {
-    pub fn new(data: Tensor) -> Variable {
+impl<const ENABLE_BACKPROP: bool> Variable<ENABLE_BACKPROP> {
+    pub fn new(data: Tensor) -> Self {
         Variable {
             inner: Rc::new(VariableInner {
                 data,
@@ -28,8 +28,10 @@ impl Variable {
             }),
         }
     }
+}
 
-    pub fn new_with_gen(data: Tensor, generation: u32) -> Variable {
+impl Variable<true> {
+    pub fn new_with_gen(data: Tensor, generation: u32) -> Self {
         Variable {
             inner: Rc::new(VariableInner {
                 data,
@@ -40,20 +42,37 @@ impl Variable {
         }
     }
 
-    pub fn get_grad(&self) -> Option<Variable> {
-        self.inner.grad.borrow().clone()
+    pub fn get_next_gen(vars: &[Variable<true>]) -> u32 {
+        vars.iter().map(|v| v.inner.generation).max().unwrap_or(0) + 1
+    }
+
+    pub fn get_grad<const CREATE_GRAPH: bool>(&self) -> Option<Variable<CREATE_GRAPH>> {
+        self.inner
+            .grad
+            .borrow()
+            .as_ref()
+            .map(|i| Variable { inner: i.clone() })
     }
 
     pub fn set_grad(&self, grad: Variable) {
-        *self.inner.grad.borrow_mut() = Some(grad);
+        *self.inner.grad.borrow_mut() = Some(grad.inner);
     }
 
-    pub fn add_grad(&self, v: Variable) {
+    pub fn add_grad<const CREATE_GRAPH: bool>(&self, v: Variable<CREATE_GRAPH>) {
         let mut grad = self.inner.grad.borrow_mut();
-        if let Some(g) = grad.as_mut() {
-            *g = Variable::new(&g.inner.data + &v.inner.data);
+        if let Some(grad) = grad.as_mut() {
+            *grad = Sum
+                .call(vec![
+                    Variable {
+                        inner: grad.clone(),
+                    },
+                    v,
+                ])
+                .pop()
+                .unwrap()
+                .inner;
         } else {
-            *grad = Some(v);
+            *grad = Some(v.inner);
         }
     }
 
@@ -61,20 +80,16 @@ impl Variable {
         *self.inner.grad.borrow_mut() = None;
     }
 
-    pub fn backward(&self, retain_grad: bool) {
+    pub fn backward<const CREATE_GRAPH: bool>(&self, retain_grad: bool) {
         let mut funcalls = collect_funcalls(vec![self.clone()]);
         funcalls.sort_by_key(|fc| -(fc.generation as i32));
         for fc in funcalls {
-            fc.backward(retain_grad);
+            fc.backward::<CREATE_GRAPH>(retain_grad);
         }
-    }
-
-    pub fn get_next_gen(vars: &[Variable]) -> u32 {
-        vars.iter().map(|v| v.inner.generation).max().unwrap_or(0) + 1
     }
 }
 
-impl std::ops::Deref for Variable {
+impl<const ENABLE_BACKPROP: bool> std::ops::Deref for Variable<ENABLE_BACKPROP> {
     type Target = Tensor;
 
     fn deref(&self) -> &Tensor {
@@ -82,7 +97,7 @@ impl std::ops::Deref for Variable {
     }
 }
 
-impl Clone for Variable {
+impl<const ENABLE_BACKPROP: bool> Clone for Variable<ENABLE_BACKPROP> {
     fn clone(&self) -> Self {
         Variable {
             inner: self.inner.clone(),
@@ -90,7 +105,7 @@ impl Clone for Variable {
     }
 }
 
-impl PartialEq for Variable {
+impl<const ENABLE_BACKPROP: bool> PartialEq for Variable<ENABLE_BACKPROP> {
     fn eq(&self, other: &Self) -> bool {
         Rc::ptr_eq(&self.inner, &other.inner)
     }

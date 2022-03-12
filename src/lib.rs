@@ -14,7 +14,7 @@ pub use function::*;
 pub use tensor::*;
 pub use variable::*;
 
-pub(crate) fn collect_funcalls(mut vars: Vec<Variable>) -> Vec<Rc<Funcall>> {
+pub(crate) fn collect_funcalls(mut vars: Vec<Variable<true>>) -> Vec<Rc<Funcall>> {
     let mut funcall_vec = Vec::new();
     let mut closed_vars = Vec::new();
     while let Some(var) = vars.pop() {
@@ -32,17 +32,17 @@ pub(crate) fn collect_funcalls(mut vars: Vec<Variable>) -> Vec<Rc<Funcall>> {
     funcall_vec
 }
 
-pub fn release_variables(var: &Variable) {
+pub fn release_variables(var: &Variable<true>) {
     let fcs = collect_funcalls(vec![var.clone()]);
     for v in fcs.iter().flat_map(|fc| fc.input.iter().cloned()) {
-        v.inner.grad.replace(None);
+        v.clear_grad();
         v.inner.creator.replace(None);
     }
 }
 
 #[test]
 fn test_collect_funcalls() {
-    let x = Variable::new(1.0.into());
+    let x = Variable::<true>::new(1.0.into());
     let y = Variable::new(2.0.into());
     let z = Variable::new(3.0.into());
     let f = functions::Sum.call(vec![x.clone(), y.clone()]);
