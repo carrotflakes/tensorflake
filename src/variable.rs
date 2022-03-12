@@ -10,6 +10,7 @@ pub struct VariableInner {
     pub(crate) data: f64,
     pub(crate) grad: RefCell<Option<Variable>>,
     pub(crate) creator: RefCell<Option<Rc<Funcall>>>,
+    pub(crate) generation: u32,
 }
 
 pub struct Variable {
@@ -23,6 +24,18 @@ impl Variable {
                 data,
                 grad: RefCell::new(None),
                 creator: RefCell::new(None),
+                generation: 0,
+            }),
+        }
+    }
+
+    pub fn new_with_gen(data: f64, generation: u32) -> Variable {
+        Variable {
+            inner: Rc::new(VariableInner {
+                data,
+                grad: RefCell::new(None),
+                creator: RefCell::new(None),
+                generation,
             }),
         }
     }
@@ -51,6 +64,10 @@ impl Variable {
                 v.backward();
             }
         }
+    }
+
+    pub fn get_next_gen(vars: &[Variable]) -> u32 {
+        vars.iter().map(|v| v.inner.generation).max().unwrap_or(0) + 1
     }
 }
 

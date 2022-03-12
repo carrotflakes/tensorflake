@@ -9,10 +9,14 @@ pub struct Funcall {
 impl Funcall {
     pub fn new(function: Box<dyn Function>, input: Vec<Variable>) -> Self {
         let output = function.forward(&input);
+        let gen = Variable::get_next_gen(&input);
         Self {
             function,
             input,
-            output,
+            output: output
+                .into_iter()
+                .map(|x| Variable::new_with_gen(x, gen))
+                .collect(),
         }
     }
 

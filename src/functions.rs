@@ -2,10 +2,12 @@ use crate::{Function, Variable};
 
 pub struct Double;
 
+type Data = f64;
+
 impl Function for Double {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Data> {
         assert!(xs.len() == 1);
-        vec![Variable::new(*xs[0] * 2.0)]
+        vec![*xs[0] * 2.0]
     }
 
     fn backward(&self, _xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
@@ -16,9 +18,9 @@ impl Function for Double {
 pub struct Square;
 
 impl Function for Square {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Data> {
         assert!(xs.len() == 1);
-        vec![Variable::new(*xs[0] * *xs[0])]
+        vec![*xs[0] * *xs[0]]
     }
 
     fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
@@ -29,9 +31,9 @@ impl Function for Square {
 pub struct Exp;
 
 impl Function for Exp {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Data> {
         assert!(xs.len() == 1);
-        vec![Variable::new(xs[0].exp())]
+        vec![xs[0].exp()]
     }
 
     fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
@@ -42,13 +44,13 @@ impl Function for Exp {
 pub struct Sum;
 
 impl Function for Sum {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Data> {
         assert!(xs.len() >= 1);
         let mut y = *xs[0].clone();
         for x in xs.iter().skip(1) {
             y += **x;
         }
-        vec![Variable::new(y)]
+        vec![y]
     }
 
     fn backward(&self, xs: &Vec<Variable>, gys: &Vec<Variable>) -> Vec<Variable> {
