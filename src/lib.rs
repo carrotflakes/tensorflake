@@ -27,6 +27,14 @@ pub(crate) fn collect_funcalls(mut vars: Vec<Variable>) -> Vec<Rc<Funcall>> {
     funcall_vec
 }
 
+pub fn release_variables(var: &Variable) {
+    let fcs = collect_funcalls(vec![var.clone()]);
+    for v in fcs.iter().flat_map(|fc| fc.input.iter().cloned()) {
+        v.inner.grad.replace(None);
+        v.inner.creator.replace(None);
+    }
+}
+
 #[test]
 fn test_collect_funcalls() {
     let x = Variable::new(1.0);

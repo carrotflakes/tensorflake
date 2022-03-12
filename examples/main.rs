@@ -20,6 +20,7 @@ fn main() {
         y[0].set_grad(Variable::new(1.0));
         y[0].backward();
         println!("{}", *x.get_grad().unwrap()); // 3.29
+        ruzero::release_variables(&y[0]);
         // y.set_grad(1.0);
         // b.set_grad(*Square.backward(&b, &Variable::new(y.get_grad().unwrap())));
         // a.set_grad(*Exp.backward(&a, &Variable::new(b.get_grad().unwrap())));
