@@ -20,10 +20,7 @@ impl Funcall {
         let gys = self.output.iter().map(|y| y.get_grad().unwrap()).collect();
         let gxs = self.function.backward(&self.input, &gys);
         for (x, gx) in self.input.iter().zip(gxs) {
-            x.set_grad(gx);
-        }
-        for x in &self.input {
-            x.backward();
+            x.add_grad(gx);
         }
     }
 }

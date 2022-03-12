@@ -35,6 +35,15 @@ impl Variable {
         *self.inner.grad.borrow_mut() = Some(grad);
     }
 
+    pub fn add_grad(&self, v: Variable) {
+        let mut grad = self.inner.grad.borrow_mut();
+        if let Some(g) = grad.as_mut() {
+            *g = Variable::new(g.inner.data + v.inner.data);
+        } else {
+            *grad = Some(v);
+        }
+    }
+
     pub fn backward(&self) {
         if let Some(creator) = self.inner.creator.borrow().clone() {
             creator.backward();
