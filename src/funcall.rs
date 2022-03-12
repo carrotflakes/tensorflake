@@ -4,6 +4,7 @@ pub struct Funcall {
     pub(crate) function: Box<dyn Function>,
     pub(crate) input: Vec<Variable>,
     pub(crate) output: Vec<Variable>,
+    pub(crate) generation: u32,
 }
 
 impl Funcall {
@@ -17,6 +18,7 @@ impl Funcall {
                 .into_iter()
                 .map(|x| Variable::new_with_gen(x, gen))
                 .collect(),
+            generation: gen,
         }
     }
 

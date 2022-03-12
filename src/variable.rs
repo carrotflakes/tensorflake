@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use std::cell::RefCell;
 
-use crate::Funcall;
+use crate::{collect_funcalls, Funcall};
 
 pub struct VariableInner {
     pub(crate) data: f64,
@@ -58,11 +58,10 @@ impl Variable {
     }
 
     pub fn backward(&self) {
-        if let Some(creator) = self.inner.creator.borrow().clone() {
-            creator.backward();
-            for v in &creator.input {
-                v.backward();
-            }
+        let mut funcalls = collect_funcalls(vec![self.clone()]);
+        funcalls.sort_by_key(|fc| -(fc.generation as i32));
+        for fc in funcalls {
+            fc.backward();
         }
     }
 
