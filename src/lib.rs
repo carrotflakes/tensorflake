@@ -14,6 +14,9 @@ pub use function::*;
 pub use tensor::*;
 pub use variable::*;
 
+pub const ENABLE_BACKPROP: bool = true;
+pub const DISABLE_BACKPROP: bool = false;
+
 pub(crate) fn collect_funcalls(mut vars: Vec<Variable<true>>) -> Vec<Rc<Funcall>> {
     let mut funcall_vec = Vec::new();
     let mut closed_vars = Vec::new();
@@ -50,20 +53,4 @@ fn test_collect_funcalls() {
     let f = functions::Add.call([g.clone(), vec![x.clone()]].concat());
     let funcall_vec = collect_funcalls(vec![f[0].clone()]);
     assert_eq!(funcall_vec.len(), 3);
-}
-
-// pub fn numerical_diff(f: impl Function + Sized + 'static, x: &Variable) -> Variable {
-//     let eps = 1e-4;
-//     let y1 = Box::new(f).call(vec![Variable::new(**x - eps)]);
-//     let y2 = Box::new(f).call(vec![Variable::new(**x + eps)]);
-//     Variable::new((*y2[0] - *y1[0]) / (2.0 * eps))
-// }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
 }

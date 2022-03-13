@@ -147,7 +147,7 @@ fn test_rosenbrock_sgd() {
 
 macro_rules! call {
     ($e:expr, $($es:expr),*) => {
-        $e.call(vec![$($es),*]).pop().unwrap()
+        $e.call(vec![$($es.clone()),*]).pop().unwrap()
     };
 }
 
@@ -158,16 +158,16 @@ fn second_order_differentia() {
     let y = call!(
         Sub,
         // call!(Pow::new(4.0),
-        //     x.clone()
+        //     x
         // ),
-        call!(Mul, x.clone(), x.clone(), x.clone(), x.clone()),
+        call!(Mul, x, x, x, x),
         call!(
             Mul,
             Variable::new(2.0.into()),
             // call!(Pow::new(2.0),
-            //     x.clone()
+            //     x
             // )
-            call!(Mul, x.clone(), x.clone())
+            call!(Mul, x, x)
         )
     );
     assert_eq!(y.data[0], 8.0.into());
