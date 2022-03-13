@@ -1,7 +1,6 @@
 mod funcall;
 mod function;
 pub mod functions;
-mod tensor;
 mod variable;
 
 #[cfg(test)]
@@ -11,11 +10,12 @@ use std::rc::Rc;
 
 pub use funcall::*;
 pub use function::*;
-pub use tensor::*;
 pub use variable::*;
 
 pub const ENABLE_BACKPROP: bool = true;
 pub const DISABLE_BACKPROP: bool = false;
+
+pub type Tensor = ndarray::ArrayD<f32>;
 
 pub(crate) fn collect_funcalls(mut vars: Vec<Variable<true>>) -> Vec<Rc<Funcall>> {
     let mut funcall_vec = Vec::new();
@@ -45,9 +45,9 @@ pub fn release_variables(var: &Variable<true>) {
 
 #[test]
 fn test_collect_funcalls() {
-    let x = Variable::<true>::new(1.0.into());
-    let y = Variable::new(2.0.into());
-    let z = Variable::new(3.0.into());
+    let x = Variable::<true>::new(ndarray::arr0(1.0).into_dyn());
+    let y = Variable::new(ndarray::arr0(2.0).into_dyn());
+    let z = Variable::new(ndarray::arr0(3.0).into_dyn());
     let f = functions::Add.call(vec![x.clone(), y.clone()]);
     let g = functions::Add.call([f.clone(), vec![z.clone()]].concat());
     let f = functions::Add.call([g.clone(), vec![x.clone()]].concat());

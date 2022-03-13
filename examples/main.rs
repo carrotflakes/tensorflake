@@ -1,10 +1,10 @@
 use ruzero::{
     functions::{Exp, Mul, Sin},
-    Function, Variable, Tensor, DISABLE_BACKPROP, ENABLE_BACKPROP,
+    Function, Variable, DISABLE_BACKPROP, ENABLE_BACKPROP,
 };
 
 fn main() {
-    let x = Variable::<DISABLE_BACKPROP>::new(2.0.into());
+    let x = Variable::<DISABLE_BACKPROP>::new(ndarray::arr0(2.0).into_dyn());
     let y = Mul.call(vec![x.clone(), x.clone()]);
     println!("{:?}", *y[0]);
 
@@ -12,18 +12,18 @@ fn main() {
     // println!("{}", *d);
 
     {
-        let x = Variable::new(0.5.into());
+        let x = Variable::new(ndarray::arr0(0.5).into_dyn());
         let a = Mul.call(vec![x.clone(), x.clone()]);
         let b = Exp.call(a);
         let y = Mul.call(vec![b[0].clone(), b[0].clone()]);
         println!("{:?}", *y[0]);
-        y[0].set_grad(Variable::<ENABLE_BACKPROP>::new(1.0.into()));
+        y[0].set_grad(Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(1.0).into_dyn()));
         y[0].backward(false, true);
         println!("{:?}", *x.get_grad::<DISABLE_BACKPROP>().unwrap()); // 3.29
 
         let gx = x.get_grad::<ENABLE_BACKPROP>().unwrap().clone();
         x.clear_grad();
-        gx.set_grad(Variable::<ENABLE_BACKPROP>::new(1.0.into()));
+        gx.set_grad(Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(1.0).into_dyn()));
         gx.backward(false, false);
         println!("{:?}", *x.get_grad::<DISABLE_BACKPROP>().unwrap()); // 13.18
 
@@ -36,9 +36,9 @@ fn main() {
     }
 
     {
-        let x = Variable::<ENABLE_BACKPROP>::new(Tensor::new(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3]));
+        let x = Variable::<ENABLE_BACKPROP>::new(ndarray::array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]].into_dyn());
         let y = Sin.call(vec![x]);
         println!("{:?}", *y[0]);
-        println!("{:?}", y[0].reshape(&[3, 2, 1]));
+        println!("{:?}", y[0].to_shape((3, 2, 1)));
     }
 }

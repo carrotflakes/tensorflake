@@ -1,8 +1,5 @@
-use std;
-
-use std::rc::Rc;
-
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::{collect_funcalls, functions::Add, Funcall, Function, Tensor};
 
@@ -55,7 +52,7 @@ impl Variable<true> {
     }
 
     pub fn set_grad<const ENABLE_BACKPROP: bool>(&self, grad: Variable<ENABLE_BACKPROP>) {
-        assert_eq!(self.shape, grad.shape);
+        assert_eq!(self.shape(), grad.shape());
         *self.inner.grad.borrow_mut() = Some(grad.inner);
     }
 

@@ -31,7 +31,7 @@ impl Function for Add {
         assert!(xs.len() >= 1);
         let mut y = (*xs[0]).clone();
         for x in xs.iter().skip(1) {
-            y = &y + &x;
+            y = y + &**x;
         }
         vec![y]
     }
@@ -53,13 +53,11 @@ impl Function for Mul {
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Tensor> {
         assert!(xs.len() >= 1);
-        let mut data = xs[0].data.as_ref().clone();
+        let mut y = (*xs[0]).clone();
         for x in xs.iter().skip(1) {
-            for (a, b) in data.iter_mut().zip(x.data.iter()) {
-                *a *= *b;
-            }
+            y = y * &**x;
         }
-        vec![Tensor::new(data, &xs[0].shape)]
+        vec![y]
     }
 
     fn backward<const ENABLE_BACKPROP: bool>(
@@ -111,17 +109,9 @@ impl Function for Sub {
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Tensor> {
         assert!(xs.len() == 2);
-        assert_eq!(xs[0].shape, xs[1].shape);
+        assert_eq!(xs[0].shape(), xs[1].shape());
 
-        vec![Tensor::new(
-            xs[0]
-                .data
-                .iter()
-                .zip(xs[1].data.iter())
-                .map(|(a, b)| a - b)
-                .collect(),
-            &xs[0].shape,
-        )]
+        vec![&*xs[0] - &*xs[1]]
     }
 
     fn backward<const ENABLE_BACKPROP: bool>(
@@ -144,17 +134,9 @@ impl Function for Div {
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Tensor> {
         assert!(xs.len() == 2);
-        assert_eq!(xs[0].shape, xs[1].shape);
+        assert_eq!(xs[0].shape(), xs[1].shape());
 
-        vec![Tensor::new(
-            xs[0]
-                .data
-                .iter()
-                .zip(xs[1].data.iter())
-                .map(|(a, b)| a / b)
-                .collect(),
-            &xs[0].shape,
-        )]
+        vec![&*xs[0] / &*xs[1]]
     }
 
     fn backward<const ENABLE_BACKPROP: bool>(
@@ -187,8 +169,8 @@ impl Function for Div {
         //     gx1[i] = gx1[i] * (-x0[i] / x1[i].powi(2));
         // }
         // vec![
-        //     Variable::new(Tensor::new(gx0, &gys[0].shape)),
-        //     Variable::new(Tensor::new(gx1, &gys[0].shape)),
+        //     Variable::new(Tensor::new(gx0, &gys[0].shape())),
+        //     Variable::new(Tensor::new(gx1, &gys[0].shape())),
         // ]
     }
 }
@@ -208,10 +190,7 @@ impl Function for Pow {
     ) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
-        vec![Tensor::new(
-            xs[0].data.iter().map(|a| a.powf(self.0)).collect(),
-            &xs[0].shape,
-        )]
+        vec![xs[0].map(|x| x.powf(self.0))]
     }
 
     fn backward<const ENABLE_BACKPROP: bool>(
@@ -219,13 +198,14 @@ impl Function for Pow {
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
-        // TODO
-        let mut gx = gys[0].data.as_ref().clone();
-        let x0 = &xs[0].data;
-        for i in 0..gx.len() {
-            gx[i] = gx[i] * self.0 * x0[i].powf(self.0 - 1.0);
-        }
-        vec![Variable::new(Tensor::new(gx, &gys[0].shape))]
+        Mul.call(vec![
+            Pow::new(self.0 - 1.0)
+                .call(vec![xs[0].clone()])
+                .pop()
+                .unwrap(),
+            gys[0].clone(),
+            Variable::new(ndarray::arr0(self.0).into_dyn()),
+        ])
     }
 }
 
@@ -238,10 +218,7 @@ impl Function for Sin {
     ) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
-        vec![Tensor::new(
-            xs[0].data.iter().map(|a| a.sin()).collect(),
-            &xs[0].shape,
-        )]
+        vec![xs[0].map(|x| x.sin())]
     }
 
     fn backward<const ENABLE_BACKPROP: bool>(
@@ -262,10 +239,7 @@ impl Function for Cos {
     ) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
-        vec![Tensor::new(
-            xs[0].data.iter().map(|a| a.cos()).collect(),
-            &xs[0].shape,
-        )]
+        vec![xs[0].map(|x| x.cos())]
     }
 
     fn backward<const ENABLE_BACKPROP: bool>(
@@ -283,51 +257,72 @@ impl Function for Cos {
 #[test]
 fn test_sum() {
     {
-        let x = Variable::<true>::new(1.0.into());
-        let y = Variable::new(2.0.into());
-        let z = Variable::new(3.0.into());
+        let x = Variable::<true>::new(ndarray::arr0(1.0).into_dyn());
+        let y = Variable::new(ndarray::arr0(2.0).into_dyn());
+        let z = Variable::new(ndarray::arr0(3.0).into_dyn());
         let xs = vec![x.clone(), y.clone(), z.clone()];
         let ys = Add.call(xs);
-        assert_eq!(*ys[0], 6.0.into());
+        assert_eq!(*ys[0], ndarray::arr0(6.0).into_dyn());
 
-        ys[0].set_grad(Variable::<true>::new(1.0.into()));
+        ys[0].set_grad(Variable::<true>::new(ndarray::arr0(1.0).into_dyn()));
         ys[0].backward(false, false);
-        assert_eq!(*x.get_grad::<false>().unwrap(), 1.0.into());
-        assert_eq!(*y.get_grad::<false>().unwrap(), 1.0.into());
-        assert_eq!(*z.get_grad::<false>().unwrap(), 1.0.into());
+        assert_eq!(
+            *x.get_grad::<false>().unwrap(),
+            ndarray::arr0(1.0).into_dyn()
+        );
+        assert_eq!(
+            *y.get_grad::<false>().unwrap(),
+            ndarray::arr0(1.0).into_dyn()
+        );
+        assert_eq!(
+            *z.get_grad::<false>().unwrap(),
+            ndarray::arr0(1.0).into_dyn()
+        );
     }
     {
-        let x = Variable::<true>::new(3.0.into());
+        let x = Variable::<true>::new(ndarray::arr0(3.0).into_dyn());
         Add.call(vec![x.clone(), x.clone()]);
         let ys = Add.call(vec![x.clone(), x.clone()]);
-        assert_eq!(*ys[0], 6.0.into());
+        assert_eq!(*ys[0], ndarray::arr0(6.0).into_dyn());
 
-        ys[0].set_grad(Variable::<true>::new(1.0.into()));
+        ys[0].set_grad(Variable::<true>::new(ndarray::arr0(1.0).into_dyn()));
         ys[0].backward(false, false);
-        assert_eq!(*x.get_grad::<false>().unwrap(), 2.0.into());
+        assert_eq!(
+            *x.get_grad::<false>().unwrap(),
+            ndarray::arr0(2.0).into_dyn()
+        );
     }
 }
 
 #[test]
 fn test_sub() {
-    let a = Variable::<true>::new(5.0.into());
-    let b = Variable::new(3.0.into());
+    let a = Variable::<true>::new(ndarray::arr0(5.0).into_dyn());
+    let b = Variable::new(ndarray::arr0(3.0).into_dyn());
     let ys = Sub.call(vec![a.clone(), b.clone()]);
-    assert_eq!(*ys[0], 2.0.into());
+    assert_eq!(*ys[0], ndarray::arr0(2.0).into_dyn());
 
-    ys[0].set_grad(Variable::<true>::new(1.0.into()));
+    ys[0].set_grad(Variable::<true>::new(ndarray::arr0(1.0).into_dyn()));
     ys[0].backward(false, false);
-    assert_eq!(*a.get_grad::<false>().unwrap(), 1.0.into());
-    assert_eq!(*b.get_grad::<false>().unwrap(), (-1.0).into());
+    assert_eq!(
+        *a.get_grad::<false>().unwrap(),
+        ndarray::arr0(1.0).into_dyn()
+    );
+    assert_eq!(
+        *b.get_grad::<false>().unwrap(),
+        (ndarray::arr0(-1.0).into_dyn())
+    );
 }
 
 #[test]
 fn test_pow() {
-    let a = Variable::<true>::new(5.0.into());
+    let a = Variable::<true>::new(ndarray::arr0(5.0).into_dyn());
     let ys = Pow(2.0).call(vec![a.clone()]);
-    assert_eq!(*ys[0], 25.0.into());
+    assert_eq!(*ys[0], ndarray::arr0(25.0).into_dyn());
 
-    ys[0].set_grad(Variable::<true>::new(1.0.into()));
+    ys[0].set_grad(Variable::<true>::new(ndarray::arr0(1.0).into_dyn()));
     ys[0].backward(false, false);
-    assert_eq!(*a.get_grad::<false>().unwrap(), 10.0.into());
+    assert_eq!(
+        *a.get_grad::<false>().unwrap(),
+        ndarray::arr0(10.0).into_dyn()
+    );
 }
