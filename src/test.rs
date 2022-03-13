@@ -1,5 +1,5 @@
 use crate::{
-    functions::{Mul, Pow, Sub, Sum},
+    functions::{Mul, Pow, Sub, Add},
     release_variables, Function, Variable,
 };
 
@@ -9,7 +9,7 @@ fn test_add_mul() {
     let b = Variable::new(2.0.into());
     let c = Variable::new(1.0.into());
 
-    let ys = Sum.call(vec![
+    let ys = Add.call(vec![
         Mul.call(vec![a.clone(), b.clone()]).pop().unwrap(),
         c.clone(),
     ]);
@@ -32,7 +32,7 @@ fn test_sphere() {
     let x = Variable::<true>::new(1.0.into());
     let y = Variable::new(1.0.into());
 
-    let ys = Sum.call(vec![
+    let ys = Add.call(vec![
         Pow::new(2.0).call(vec![x.clone()]).pop().unwrap(),
         Pow::new(2.0).call(vec![y.clone()]).pop().unwrap(),
     ]);
@@ -58,7 +58,7 @@ fn test_matyas() {
     let ys = Sub.call(vec![
         Mul.call(vec![
             Variable::new(0.26.into()),
-            Sum.call(vec![
+            Add.call(vec![
                 Pow::new(2.0).call(vec![x.clone()]).pop().unwrap(),
                 Pow::new(2.0).call(vec![y.clone()]).pop().unwrap(),
             ])
@@ -82,7 +82,7 @@ fn rosenbrock<const ENABLE_BACKPROP: bool>(
     a: Variable<ENABLE_BACKPROP>,
     b: Variable<ENABLE_BACKPROP>,
 ) -> Variable<ENABLE_BACKPROP> {
-    Sum.call(vec![
+    Add.call(vec![
         Mul.call(vec![
             Variable::new(100.0.into()),
             Pow::new(2.0)

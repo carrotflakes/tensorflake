@@ -45,9 +45,9 @@ fn test_collect_funcalls() {
     let x = Variable::<true>::new(1.0.into());
     let y = Variable::new(2.0.into());
     let z = Variable::new(3.0.into());
-    let f = functions::Sum.call(vec![x.clone(), y.clone()]);
-    let g = functions::Sum.call([f.clone(), vec![z.clone()]].concat());
-    let f = functions::Sum.call([g.clone(), vec![x.clone()]].concat());
+    let f = functions::Add.call(vec![x.clone(), y.clone()]);
+    let g = functions::Add.call([f.clone(), vec![z.clone()]].concat());
+    let f = functions::Add.call([g.clone(), vec![x.clone()]].concat());
     let funcall_vec = collect_funcalls(vec![f[0].clone()]);
     assert_eq!(funcall_vec.len(), 3);
 }

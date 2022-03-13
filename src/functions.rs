@@ -21,9 +21,9 @@ impl Function for Exp {
     }
 }
 
-pub struct Sum;
+pub struct Add;
 
-impl Function for Sum {
+impl Function for Add {
     fn forward<const ENABLE_BACKPROP: bool>(
         &self,
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
@@ -284,7 +284,7 @@ fn test_sum() {
         let y = Variable::new(2.0.into());
         let z = Variable::new(3.0.into());
         let xs = vec![x.clone(), y.clone(), z.clone()];
-        let ys = Sum.call(xs);
+        let ys = Add.call(xs);
         assert_eq!(*ys[0], 6.0.into());
 
         ys[0].set_grad(Variable::<true>::new(1.0.into()));
@@ -295,8 +295,8 @@ fn test_sum() {
     }
     {
         let x = Variable::<true>::new(3.0.into());
-        Sum.call(vec![x.clone(), x.clone()]);
-        let ys = Sum.call(vec![x.clone(), x.clone()]);
+        Add.call(vec![x.clone(), x.clone()]);
+        let ys = Add.call(vec![x.clone(), x.clone()]);
         assert_eq!(*ys[0], 6.0.into());
 
         ys[0].set_grad(Variable::<true>::new(1.0.into()));

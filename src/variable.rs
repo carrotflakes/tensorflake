@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use std::cell::RefCell;
 
-use crate::{collect_funcalls, functions::Sum, Funcall, Function, Tensor};
+use crate::{collect_funcalls, functions::Add, Funcall, Function, Tensor};
 
 pub(crate) struct VariableInner {
     pub data: Tensor,
@@ -55,13 +55,14 @@ impl Variable<true> {
     }
 
     pub fn set_grad<const ENABLE_BACKPROP: bool>(&self, grad: Variable<ENABLE_BACKPROP>) {
+        assert_eq!(self.shape, grad.shape);
         *self.inner.grad.borrow_mut() = Some(grad.inner);
     }
 
     pub fn add_grad<const ENABLE_BACKPROP: bool>(&self, v: Variable<ENABLE_BACKPROP>) {
         let mut grad = self.inner.grad.borrow_mut();
         if let Some(grad) = grad.as_mut() {
-            *grad = Sum
+            *grad = Add
                 .call(vec![
                     Variable {
                         inner: grad.clone(),
