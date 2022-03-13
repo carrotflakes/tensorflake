@@ -9,6 +9,7 @@ mod reshape;
 mod sin;
 mod sub;
 mod sum_to;
+mod t;
 
 pub use add::*;
 pub use broadcast_to::*;
@@ -21,3 +22,4 @@ pub use reshape::*;
 pub use sin::*;
 pub use sub::*;
 pub use sum_to::*;
+pub use t::*;

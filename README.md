@@ -5,6 +5,7 @@ TBD
 ## TODO
 
 - Is ndarray::ArrayD efficient enough?
+- grad broadcast
 
 ## Author
 
