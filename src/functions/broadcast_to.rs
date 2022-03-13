@@ -4,11 +4,15 @@ use super::SumTo;
 
 pub struct BroadcastTo {
     pub shape: Vec<usize>,
+    axises: Vec<usize>,
 }
 
 impl BroadcastTo {
     pub fn new(shape: Vec<usize>) -> Self {
-        Self { shape }
+        Self {
+            shape,
+            axises: Vec::new(),
+        }
     }
 }
 
@@ -28,15 +32,17 @@ impl Function for BroadcastTo {
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
         #![allow(unused_variables)]
-        unreachable!()
+
+        let gy = gys[0].broadcast(self.shape.as_slice()).unwrap();
+        SumTo::new(self.axises.clone()).call(vec![Variable::new(gy.into_owned())])
     }
 
-    fn into_backward(self, xs: &Vec<Variable<true>>) -> Box<dyn Backward>
+    fn into_backward(mut self, xs: &Vec<Variable<true>>) -> Box<dyn Backward>
     where
         Self: Sized + 'static,
     {
         // TODO: test
-        let mut axises = Vec::new();
+        let axises = &mut self.axises;
         let mut target = xs[0].shape().to_vec();
         for (axis, size) in self.shape.iter().enumerate() {
             if let Some(s) = target.first() {
@@ -47,29 +53,7 @@ impl Function for BroadcastTo {
             }
             axises.push(axis);
         }
-        Box::new(BroadcastToBw {
-            broadcasted_shape: self.shape,
-            axises,
-        })
-    }
-}
-
-pub struct BroadcastToBw {
-    broadcasted_shape: Vec<usize>,
-    axises: Vec<usize>,
-}
-
-impl Backward for BroadcastToBw {
-    fn backward(
-        &self,
-        xs: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-        enable_backprop: bool,
-    ) -> Vec<Variable<true>> {
-        #![allow(unused_variables)]
-
-        let gy = gys[0].broadcast(self.broadcasted_shape.as_slice()).unwrap();
-        SumTo::new(self.axises.clone()).call(vec![Variable::new(gy.into_owned())])
+        Box::new(self)
     }
 }
 

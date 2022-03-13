@@ -1,12 +1,16 @@
-use crate::{Backward, Function, Variable};
+use crate::{Function, Variable};
 
 pub struct Reshape {
     pub shape: Vec<usize>,
+    original_shape: Vec<usize>,
 }
 
 impl Reshape {
     pub fn new(shape: Vec<usize>) -> Self {
-        Self { shape }
+        Self {
+            shape,
+            original_shape: Vec::new(),
+        }
     }
 }
 
@@ -27,42 +31,22 @@ impl Function for Reshape {
     ) -> Vec<crate::Variable<ENABLE_BACKPROP>> {
         #![allow(unused_variables)]
 
-        unreachable!()
-    }
-
-    fn into_backward(self, xs: &Vec<crate::Variable<true>>) -> Box<dyn crate::Backward>
-    where
-        Self: Sized + 'static,
-    {
-        Box::new(ReshapeBw {
-            original_shape: xs[0].shape().to_vec(),
-            reshaped_shape: self.shape,
-        })
-    }
-}
-
-struct ReshapeBw {
-    original_shape: Vec<usize>,
-    reshaped_shape: Vec<usize>,
-}
-
-impl Backward for ReshapeBw {
-    fn backward(
-        &self,
-        xs: &Vec<crate::Variable<true>>,
-        gys: &Vec<crate::Variable<true>>,
-        enable_backprop: bool,
-    ) -> Vec<crate::Variable<true>> {
-        #![allow(unused_variables)]
-
         vec![Variable::new(
             gys[0]
-                .broadcast(self.reshaped_shape.as_slice())
+                .broadcast(self.shape.as_slice())
                 .unwrap()
                 .to_shape(self.original_shape.as_slice())
                 .unwrap()
                 .into_owned(),
         )]
+    }
+
+    fn into_backward(mut self, xs: &Vec<crate::Variable<true>>) -> Box<dyn crate::Backward>
+    where
+        Self: Sized + 'static,
+    {
+        self.original_shape = xs[0].shape().to_vec();
+        Box::new(self)
     }
 }
 

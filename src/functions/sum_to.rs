@@ -5,12 +5,16 @@ use super::BroadcastTo;
 pub struct SumTo {
     // NOTE: axises are in order
     pub axises: Vec<usize>,
+    original_shape: Vec<usize>,
 }
 
 impl SumTo {
     pub fn new(axises: Vec<usize>) -> Self {
         assert!(axises.windows(2).all(|w| w[0] < w[1]));
-        Self { axises }
+        Self {
+            axises,
+            original_shape: Vec::new(),
+        }
     }
 }
 
@@ -35,34 +39,16 @@ impl Function for SumTo {
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
         #![allow(unused_variables)]
-        unreachable!()
+
+        BroadcastTo::new(self.original_shape.clone()).call(vec![gys[0].clone()])
     }
 
-    fn into_backward(self, xs: &Vec<Variable<true>>) -> Box<dyn Backward>
+    fn into_backward(mut self, xs: &Vec<Variable<true>>) -> Box<dyn Backward>
     where
         Self: Sized + 'static,
     {
-        Box::new(SumToBw {
-            original_shape: xs[0].shape().to_vec(),
-        })
-    }
-}
-
-pub struct SumToBw {
-    original_shape: Vec<usize>,
-}
-
-impl Backward for SumToBw {
-    fn backward(
-        &self,
-        xs: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-        enable_backprop: bool,
-    ) -> Vec<Variable<true>> {
-        #![allow(unused_variables)]
-
-        BroadcastTo::new(self.original_shape.clone()).call(vec![gys[0].clone()])
-        // OK?
+        self.original_shape = xs[0].shape().to_vec();
+        Box::new(self)
     }
 }
 
