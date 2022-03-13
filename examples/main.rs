@@ -1,6 +1,6 @@
 use ruzero::{
-    functions::{Exp, Mul},
-    Function, Variable,
+    functions::{Exp, Mul, Sin},
+    Function, Variable, Tensor,
 };
 
 fn main() {
@@ -33,5 +33,11 @@ fn main() {
         // a.set_grad(*Exp.backward(&a, &Variable::new(b.get_grad().unwrap())));
         // x.set_grad(*Square.backward(&x, &Variable::new(a.get_grad().unwrap())));
         // println!("{:?}", x.get_grad());
+    }
+
+    {
+        let x = Variable::<true>::new(Tensor::new(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3, 1]));
+        let y = Sin.call(vec![x]);
+        println!("{:?}", *y[0]);
     }
 }

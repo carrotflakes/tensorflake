@@ -2,7 +2,7 @@ use std::ops::Add;
 
 use smallvec::SmallVec;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Tensor {
     pub(crate) data: Vec<f32>,
     pub(crate) shape: SmallVec<[usize; 4]>,
@@ -89,5 +89,36 @@ impl Add<&Tensor> for &Tensor {
 impl From<f32> for Tensor {
     fn from(x: f32) -> Self {
         Tensor::new(vec![x], &[])
+    }
+}
+
+impl std::fmt::Debug for Tensor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let t: Vec<usize> = self
+            .shape
+            .iter()
+            .rev()
+            .scan(1, |a, b| {
+                *a *= *b;
+                Some(*a)
+            })
+            .collect();
+        for (i, x) in self.data.iter().enumerate() {
+            for y in &t {
+                if i % y == 0 {
+                    write!(f, "[")?;
+                }
+            }
+            write!(f, "{:?}", x)?;
+            for y in &t {
+                if i % y == y - 1 {
+                    write!(f, "]")?;
+                }
+            }
+            if i != self.data.len() - 1 {
+                write!(f, ",")?;
+            }
+        }
+        write!(f, "")
     }
 }
