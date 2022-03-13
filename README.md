@@ -2,6 +2,10 @@
 
 TBD
 
+## TODO
+
+- Is ndarray::ArrayD efficient enough?
+
 ## Author
 
 * carrotflakes (carrotflakes@gmail.com)
