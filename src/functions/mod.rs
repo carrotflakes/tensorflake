@@ -1,4 +1,5 @@
 mod add;
+mod broadcast_to;
 mod div;
 mod exp;
 mod mul;
@@ -6,8 +7,10 @@ mod neg;
 mod pow;
 mod sin;
 mod sub;
+mod sum_to;
 
 pub use add::*;
+pub use broadcast_to::*;
 pub use div::*;
 pub use exp::*;
 pub use mul::*;
@@ -15,3 +18,4 @@ pub use neg::*;
 pub use pow::*;
 pub use sin::*;
 pub use sub::*;
+pub use sum_to::*;

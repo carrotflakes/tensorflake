@@ -13,6 +13,15 @@ pub trait Function {
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>>;
 
+    fn into_backward(self, xs: &Vec<Variable<true>>) -> Box<dyn Backward>
+    where
+        Self: Sized + 'static,
+    {
+        #![allow(unused_variables)]
+
+        Box::new(self)
+    }
+
     fn call<const ENABLE_BACKPROP: bool>(
         self,
         xs: Vec<Variable<ENABLE_BACKPROP>>,
@@ -25,7 +34,8 @@ pub trait Function {
             ys.into_iter().map(|x| Variable::new(x)).collect()
         } else {
             let xs = unsafe { std::mem::transmute(xs) };
-            let fc = Funcall::new(Box::new(self), xs, ys);
+            let backward = self.into_backward(&xs);
+            let fc = Funcall::new(backward, xs, ys);
             let fc = Rc::new(fc);
             for y in &fc.output {
                 y.inner.creator.replace(Some(fc.clone()));

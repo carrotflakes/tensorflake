@@ -17,6 +17,10 @@ pub const DISABLE_BACKPROP: bool = false;
 
 pub type Tensor = ndarray::ArrayD<f32>;
 
+pub fn scalar(x: f32) -> Tensor {
+    ndarray::arr0(x).into_dyn()
+}
+
 pub(crate) fn collect_funcalls(mut vars: Vec<Variable<true>>) -> Vec<Rc<Funcall>> {
     let mut funcall_vec = Vec::new();
     let mut closed_vars = Vec::new();

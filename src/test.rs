@@ -1,11 +1,7 @@
 use crate::{
     functions::{Add, Mul, Pow, Sub},
-    release_variables, Function, Tensor, Variable,
+    release_variables, scalar, Function, Variable,
 };
-
-fn scalar(x: f32) -> Tensor {
-    ndarray::arr0(x).into_dyn()
-}
 
 #[test]
 fn test_add_mul() {
