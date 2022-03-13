@@ -1,10 +1,10 @@
-use std::ops::Add;
+use std::{ops::Add, rc::Rc};
 
 use smallvec::SmallVec;
 
 #[derive(Clone, PartialEq)]
 pub struct Tensor {
-    pub(crate) data: Vec<f32>,
+    pub(crate) data: Rc<Vec<f32>>,
     pub(crate) shape: SmallVec<[usize; 4]>,
 }
 
@@ -13,7 +13,7 @@ impl Tensor {
         assert_eq!(data.len(), shape.iter().product::<usize>());
 
         Self {
-            data,
+            data: Rc::new(data),
             shape: shape.into(),
         }
     }
@@ -27,12 +27,12 @@ impl Tensor {
     }
 
     pub fn map(&self, f: impl Fn(f32) -> f32) -> Self {
-        let mut data = self.data.clone();
+        let mut data = self.data.as_ref().clone();
         for x in &mut data {
             *x = f(*x);
         }
         Self {
-            data,
+            data: Rc::new(data),
             shape: self.shape.clone(),
         }
     }
@@ -50,7 +50,7 @@ impl Tensor {
             data.push(self.data[i] * other.data[i]);
         }
         Self {
-            data,
+            data: Rc::new(data),
             shape: self.shape.clone(),
         }
     }
@@ -62,8 +62,17 @@ impl Tensor {
             data.push(self.data[i] * rhs);
         }
         Self {
-            data,
+            data: Rc::new(data),
             shape: self.shape.clone(),
+        }
+    }
+
+    pub fn reshape(&self, shape: &[usize]) -> Self {
+        assert_eq!(shape.iter().product::<usize>(), self.data.len());
+
+        Self {
+            data: self.data.clone(),
+            shape: shape.into(),
         }
     }
 }
@@ -80,7 +89,7 @@ impl Add<&Tensor> for &Tensor {
         }
 
         Tensor {
-            data,
+            data: Rc::new(data),
             shape: self.shape.clone(),
         }
     }

@@ -36,8 +36,9 @@ fn main() {
     }
 
     {
-        let x = Variable::<true>::new(Tensor::new(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3, 1]));
+        let x = Variable::<true>::new(Tensor::new(vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0], &[2, 3]));
         let y = Sin.call(vec![x]);
         println!("{:?}", *y[0]);
+        println!("{:?}", y[0].reshape(&[3, 2, 1]));
     }
 }

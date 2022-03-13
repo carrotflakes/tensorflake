@@ -53,9 +53,9 @@ impl Function for Mul {
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Tensor> {
         assert!(xs.len() >= 1);
-        let mut data = xs[0].data.clone();
+        let mut data = xs[0].data.as_ref().clone();
         for x in xs.iter().skip(1) {
-            for (a, b) in data.iter_mut().zip(&x.data) {
+            for (a, b) in data.iter_mut().zip(x.data.iter()) {
                 *a *= *b;
             }
         }
@@ -117,7 +117,7 @@ impl Function for Sub {
             xs[0]
                 .data
                 .iter()
-                .zip(&xs[1].data)
+                .zip(xs[1].data.iter())
                 .map(|(a, b)| a - b)
                 .collect(),
             &xs[0].shape,
@@ -129,7 +129,10 @@ impl Function for Sub {
         _xs: &Vec<Variable<ENABLE_BACKPROP>>,
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
-        vec![gys[0].clone(), Neg.call(vec![gys[0].clone()]).pop().unwrap()]
+        vec![
+            gys[0].clone(),
+            Neg.call(vec![gys[0].clone()]).pop().unwrap(),
+        ]
     }
 }
 
@@ -147,7 +150,7 @@ impl Function for Div {
             xs[0]
                 .data
                 .iter()
-                .zip(&xs[1].data)
+                .zip(xs[1].data.iter())
                 .map(|(a, b)| a / b)
                 .collect(),
             &xs[0].shape,
@@ -217,7 +220,7 @@ impl Function for Pow {
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
         // TODO
-        let mut gx = gys[0].data.clone();
+        let mut gx = gys[0].data.as_ref().clone();
         let x0 = &xs[0].data;
         for i in 0..gx.len() {
             gx[i] = gx[i] * self.0 * x0[i].powf(self.0 - 1.0);
