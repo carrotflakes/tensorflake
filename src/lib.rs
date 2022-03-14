@@ -2,6 +2,7 @@ pub mod export_dot;
 mod funcall;
 mod function;
 pub mod functions;
+pub mod nn;
 mod variable;
 
 #[cfg(test)]
