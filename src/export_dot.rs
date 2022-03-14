@@ -28,7 +28,7 @@ pub fn write_dot(
         let v_id = Rc::as_ptr(&v.inner) as usize;
         writeln!(
             w,
-            "{} [label={:?} color=lightblue, style=filled, shape=box]",
+            "{} [label={:?} color=orange, style=filled]",
             v_id,
             var_printer(&v)
         )?;
@@ -39,7 +39,7 @@ pub fn write_dot(
         let fc_name = fc.function.get_function_name();
         writeln!(
             w,
-            "{} [label={:?} color=orange, style=filled]",
+            "{} [label={:?} color=lightblue, style=filled, shape=box]",
             fc_id, fc_name
         )?;
 
