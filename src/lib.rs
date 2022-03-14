@@ -16,9 +16,17 @@ pub const ENABLE_BACKPROP: bool = true;
 pub const DISABLE_BACKPROP: bool = false;
 
 pub type Tensor = ndarray::ArrayD<f32>;
+// pub type Tensor = ndarray::ArcArray<f32, ndarray::IxDyn>;
 
 pub fn scalar(x: f32) -> Tensor {
     ndarray::arr0(x).into_dyn()
+}
+
+#[macro_export]
+macro_rules! call {
+    ($e:expr, $($es:expr),*) => {
+        $e.call(vec![$($es.clone()),*]).pop().unwrap()
+    };
 }
 
 pub(crate) fn collect_funcalls(mut vars: Vec<Variable<true>>) -> Vec<Rc<Funcall>> {

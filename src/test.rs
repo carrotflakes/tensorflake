@@ -1,4 +1,5 @@
 use crate::{
+    call,
     functions::{Add, Mul, Pow, Sub},
     release_variables, scalar, Function, Variable,
 };
@@ -171,12 +172,6 @@ fn test_rosenbrock_sgd() {
 
     assert!((&*a - 1.0).iter().next().unwrap().abs() < 1e-3);
     assert!((&*b - 1.0).iter().next().unwrap().abs() < 1e-3);
-}
-
-macro_rules! call {
-    ($e:expr, $($es:expr),*) => {
-        $e.call(vec![$($es.clone()),*]).pop().unwrap()
-    };
 }
 
 #[test]
