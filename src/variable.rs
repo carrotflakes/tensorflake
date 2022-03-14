@@ -42,6 +42,10 @@ impl<const ENABLE_BACKPROP: bool> Variable<ENABLE_BACKPROP> {
     pub fn set_name(&self, name: impl Into<String>) {
         self.inner.attrs.borrow_mut().name = name.into();
     }
+
+    pub fn get_name(&self) -> String {
+        self.inner.attrs.borrow().name.to_owned()
+    }
 }
 
 impl Variable<true> {

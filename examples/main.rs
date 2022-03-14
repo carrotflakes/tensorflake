@@ -32,6 +32,13 @@ fn main() {
         x.get_grad::<DISABLE_BACKPROP>().unwrap().set_name("x_grad");
 
         ruzero::export_dot::export_dot(&x.get_grad::<ENABLE_BACKPROP>().unwrap(), "graph.dot").unwrap();
+        
+        // let f = std::fs::File::create("graph.dot").unwrap();
+        // let mut w = std::io::BufWriter::new(f);    
+        // ruzero::export_dot::write_dot(&mut w, &x.get_grad::<ENABLE_BACKPROP>().unwrap(), &mut |v| {
+        //     format!("{} {}", v.get_name(), (*v).to_string())
+        // })
+        // .unwrap();
 
         // ruzero::release_variables(&y[0]);
         // y.set_grad(1.0);

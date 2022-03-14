@@ -1,9 +1,19 @@
-use std::io::Write;
 use std::rc::Rc;
 
 use crate::{collect_funcalls, Variable, ENABLE_BACKPROP};
 
 pub fn export_dot(var: &Variable<ENABLE_BACKPROP>, file: &str) -> Result<(), std::io::Error> {
+    let f = std::fs::File::create(file).unwrap();
+    let mut w = std::io::BufWriter::new(f);
+
+    write_dot(&mut w, var, &mut default_var_printer)
+}
+
+pub fn write_dot(
+    w: &mut impl std::io::Write,
+    var: &Variable<ENABLE_BACKPROP>,
+    var_printer: &mut impl FnMut(&Variable<ENABLE_BACKPROP>) -> String,
+) -> Result<(), std::io::Error> {
     let fcs = collect_funcalls(vec![var.clone()]);
     let mut vars = fcs
         .iter()
@@ -11,9 +21,6 @@ pub fn export_dot(var: &Variable<ENABLE_BACKPROP>, file: &str) -> Result<(), std
         .collect::<Vec<_>>();
     vars.push(var.clone());
     vars.dedup();
-
-    let f = std::fs::File::create(file).unwrap();
-    let mut w = std::io::BufWriter::new(f);
 
     writeln!(w, "digraph g {{")?;
 
@@ -23,7 +30,7 @@ pub fn export_dot(var: &Variable<ENABLE_BACKPROP>, file: &str) -> Result<(), std
             w,
             "{} [label={:?} color=lightblue, style=filled, shape=box]",
             v_id,
-            v.inner.attrs.borrow().name
+            var_printer(&v)
         )?;
     }
 
@@ -51,12 +58,29 @@ pub fn export_dot(var: &Variable<ENABLE_BACKPROP>, file: &str) -> Result<(), std
     Ok(())
 }
 
+pub fn default_var_printer(var: &Variable<ENABLE_BACKPROP>) -> String {
+    var.get_name()
+}
+
 #[test]
 fn test() {
     use crate::{call, functions::Mul, Function, Variable, ENABLE_BACKPROP};
 
-    let a = Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(1.0).into_dyn()).named("a");
-    let b = Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(1.0).into_dyn()).named("b");
+    let a = Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(2.0).into_dyn()).named("a");
+    let b = Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(3.0).into_dyn()).named("b");
     let y = call!(Mul, a, b).named("y");
-    export_dot(&y, "graph.dot").unwrap();
+
+    // export_dot(&y, "graph.dot").unwrap();
+
+    let mut w = Vec::new();
+    write_dot(&mut w, &y, &mut default_var_printer).unwrap();
+    println!("{}", String::from_utf8(w).unwrap());
+
+    // print variable values
+    let mut w = Vec::new();
+    write_dot(&mut w, &y, &mut |v| {
+        format!("{} {}", v.get_name(), (*v).to_string())
+    })
+    .unwrap();
+    println!("{}", String::from_utf8(w).unwrap());
 }
