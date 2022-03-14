@@ -3,10 +3,15 @@ use std::rc::Rc;
 
 use crate::{collect_funcalls, functions::Add, Funcall, Function, Tensor};
 
+pub(crate) struct VariableAttrs {
+    grad: Option<Rc<VariableInner>>,
+    pub creator: Option<Rc<Funcall>>,
+    pub name: String,
+}
+
 pub(crate) struct VariableInner {
     pub data: Tensor,
-    grad: RefCell<Option<Rc<VariableInner>>>,
-    pub creator: RefCell<Option<Rc<Funcall>>>,
+    pub attrs: RefCell<VariableAttrs>,
     pub generation: u32,
 }
 
@@ -19,45 +24,61 @@ impl<const ENABLE_BACKPROP: bool> Variable<ENABLE_BACKPROP> {
         Variable {
             inner: Rc::new(VariableInner {
                 data,
-                grad: RefCell::new(None),
-                creator: RefCell::new(None),
                 generation: 0,
+                attrs: RefCell::new(VariableAttrs {
+                    grad: None,
+                    creator: None,
+                    name: String::new(),
+                }),
             }),
         }
+    }
+
+    pub fn named(self, name: impl Into<String>) -> Self {
+        self.inner.attrs.borrow_mut().name = name.into();
+        self
+    }
+
+    pub fn set_name(&self, name: impl Into<String>) {
+        self.inner.attrs.borrow_mut().name = name.into();
     }
 }
 
 impl Variable<true> {
-    pub fn new_with_gen(data: Tensor, generation: u32) -> Self {
+    pub(crate) fn new_with_gen(data: Tensor, generation: u32) -> Self {
         Variable {
             inner: Rc::new(VariableInner {
                 data,
-                grad: RefCell::new(None),
-                creator: RefCell::new(None),
                 generation,
+                attrs: RefCell::new(VariableAttrs {
+                    grad: None,
+                    creator: None,
+                    name: String::new(),
+                }),
             }),
         }
     }
 
-    pub fn get_next_gen(vars: &[Variable<true>]) -> u32 {
+    pub(crate) fn get_next_gen(vars: &[Variable<true>]) -> u32 {
         vars.iter().map(|v| v.inner.generation).max().unwrap_or(0) + 1
     }
 
     pub fn get_grad<const ENABLE_BACKPROP: bool>(&self) -> Option<Variable<ENABLE_BACKPROP>> {
         self.inner
-            .grad
+            .attrs
             .borrow()
+            .grad
             .as_ref()
             .map(|i| Variable { inner: i.clone() })
     }
 
     pub fn set_grad<const ENABLE_BACKPROP: bool>(&self, grad: Variable<ENABLE_BACKPROP>) {
         // assert_eq!(self.shape(), grad.shape());
-        *self.inner.grad.borrow_mut() = Some(grad.inner);
+        self.inner.attrs.borrow_mut().grad = Some(grad.inner);
     }
 
     pub fn add_grad<const ENABLE_BACKPROP: bool>(&self, v: Variable<ENABLE_BACKPROP>) {
-        let mut grad = self.inner.grad.borrow_mut();
+        let grad = &mut self.inner.attrs.borrow_mut().grad;
         if let Some(grad) = grad.as_mut() {
             *grad = Add
                 .call(vec![
@@ -75,7 +96,7 @@ impl Variable<true> {
     }
 
     pub fn clear_grad(&self) {
-        *self.inner.grad.borrow_mut() = None;
+        self.inner.attrs.borrow_mut().grad = None;
     }
 
     pub fn backward(&self, retain_grad: bool, create_graph: bool) {

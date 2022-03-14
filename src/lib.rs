@@ -38,7 +38,7 @@ pub(crate) fn collect_funcalls(mut vars: Vec<Variable<true>>) -> Vec<Rc<Funcall>
         }
         closed_vars.push(var.clone());
 
-        if let Some(creator) = var.inner.creator.borrow().clone() {
+        if let Some(creator) = var.inner.attrs.borrow().creator.clone() {
             vars.extend(creator.input.iter().cloned());
             vars.extend(creator.output.iter().cloned());
             funcall_vec.push(creator);
@@ -51,7 +51,7 @@ pub fn release_variables(var: &Variable<true>) {
     let fcs = collect_funcalls(vec![var.clone()]);
     for v in fcs.iter().flat_map(|fc| fc.input.iter().cloned()) {
         v.clear_grad();
-        v.inner.creator.replace(None);
+        v.inner.attrs.borrow_mut().creator = None;
     }
 }
 

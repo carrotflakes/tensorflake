@@ -38,7 +38,7 @@ pub trait Function {
             let fc = Funcall::new(backward, xs, ys);
             let fc = Rc::new(fc);
             for y in &fc.output {
-                y.inner.creator.replace(Some(fc.clone()));
+                y.inner.attrs.borrow_mut().creator = Some(fc.clone());
             }
             unsafe { std::mem::transmute(fc.output.clone()) }
         }
@@ -52,6 +52,15 @@ pub trait Backward {
         gys: &Vec<Variable<true>>,
         enable_backprop: bool,
     ) -> Vec<Variable<true>>;
+
+    fn get_function_name(&self) -> &'static str {
+        let name = std::any::type_name::<Self>();
+        if name.starts_with("ruzero::functions::") {
+            name.split("::").last().unwrap()
+        } else {
+            name
+        }
+    }
 }
 
 impl<T: Function> Backward for T {
