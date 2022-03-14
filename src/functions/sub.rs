@@ -15,9 +15,12 @@ impl Function for Sub {
 
     fn backward<const ENABLE_BACKPROP: bool>(
         &self,
-        _xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        ys: &Vec<Variable<ENABLE_BACKPROP>>,
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        #![allow(unused_variables)]
+
         vec![
             gys[0].clone(),
             Neg.call(vec![gys[0].clone()]).pop().unwrap(),

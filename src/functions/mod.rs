@@ -11,6 +11,7 @@ mod sin;
 mod sub;
 mod sum_to;
 mod t;
+mod tanh;
 
 pub use add::*;
 pub use broadcast_to::*;
@@ -25,3 +26,4 @@ pub use sin::*;
 pub use sub::*;
 pub use sum_to::*;
 pub use t::*;
+pub use tanh::*;

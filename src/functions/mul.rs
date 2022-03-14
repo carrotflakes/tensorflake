@@ -18,8 +18,11 @@ impl Function for Mul {
     fn backward<const ENABLE_BACKPROP: bool>(
         &self,
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        ys: &Vec<Variable<ENABLE_BACKPROP>>,
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        #![allow(unused_variables)]
+
         (0..xs.len())
             .map(|i| {
                 Mul.call(

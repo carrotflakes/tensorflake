@@ -1,11 +1,11 @@
-use crate::Function;
+use crate::{Function, Variable};
 
 pub struct T;
 
 impl Function for T {
     fn forward<const ENABLE_BACKPROP: bool>(
         &self,
-        xs: &Vec<crate::Variable<ENABLE_BACKPROP>>,
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<crate::Tensor> {
         assert!(xs.len() == 1);
 
@@ -14,9 +14,10 @@ impl Function for T {
 
     fn backward<const ENABLE_BACKPROP: bool>(
         &self,
-        xs: &Vec<crate::Variable<ENABLE_BACKPROP>>,
-        gys: &Vec<crate::Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<crate::Variable<ENABLE_BACKPROP>> {
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        ys: &Vec<Variable<ENABLE_BACKPROP>>,
+        gys: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Variable<ENABLE_BACKPROP>> {
         #![allow(unused_variables)]
 
         T.call(vec![gys[0].clone()])

@@ -16,8 +16,11 @@ impl Function for Sin {
     fn backward<const ENABLE_BACKPROP: bool>(
         &self,
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        ys: &Vec<Variable<ENABLE_BACKPROP>>,
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        #![allow(unused_variables)]
+
         Mul.call(vec![gys[0].clone(), Cos.call(xs.clone()).pop().unwrap()])
         // vec![Variable::new(gys[0].multiply(&xs[0].map(|x| x.cos())))]
     }
@@ -38,8 +41,11 @@ impl Function for Cos {
     fn backward<const ENABLE_BACKPROP: bool>(
         &self,
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        ys: &Vec<Variable<ENABLE_BACKPROP>>,
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        #![allow(unused_variables)]
+
         Mul.call(vec![
             gys[0].clone(),
             Neg.call(Sin.call(xs.clone())).pop().unwrap(),

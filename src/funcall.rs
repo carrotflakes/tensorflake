@@ -32,7 +32,9 @@ impl Funcall {
             .map(|y| y.get_grad().expect("ensure terminal variable's grad"))
             .collect();
 
-        let gxs = self.function.backward(&self.input, &gys, enable_backprop);
+        let gxs = self
+            .function
+            .backward(&self.input, &self.output, &gys, enable_backprop);
 
         for (x, gx) in self.input.iter().zip(gxs) {
             x.add_grad(gx);

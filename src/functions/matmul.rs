@@ -1,6 +1,6 @@
 use ndarray::Ix2;
 
-use crate::Function;
+use crate::{Function, Variable};
 
 use super::T;
 
@@ -9,7 +9,7 @@ pub struct Matmul;
 impl Function for Matmul {
     fn forward<const ENABLE_BACKPROP: bool>(
         &self,
-        xs: &Vec<crate::Variable<ENABLE_BACKPROP>>,
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<crate::Tensor> {
         assert!(xs.len() == 2);
 
@@ -22,9 +22,12 @@ impl Function for Matmul {
 
     fn backward<const ENABLE_BACKPROP: bool>(
         &self,
-        xs: &Vec<crate::Variable<ENABLE_BACKPROP>>,
-        gys: &Vec<crate::Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<crate::Variable<ENABLE_BACKPROP>> {
+        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        ys: &Vec<Variable<ENABLE_BACKPROP>>,
+        gys: &Vec<Variable<ENABLE_BACKPROP>>,
+    ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        #![allow(unused_variables)]
+
         let x = xs[0].clone();
         let w = xs[1].clone();
         let gx = Matmul.call(vec![gys[0].clone(), T.call(vec![w.clone()])[0].clone()])[0].clone();

@@ -27,6 +27,7 @@ impl Function for Reshape {
     fn backward<const ENABLE_BACKPROP: bool>(
         &self,
         xs: &Vec<crate::Variable<ENABLE_BACKPROP>>,
+        ys: &Vec<Variable<ENABLE_BACKPROP>>,
         gys: &Vec<crate::Variable<ENABLE_BACKPROP>>,
     ) -> Vec<crate::Variable<ENABLE_BACKPROP>> {
         #![allow(unused_variables)]

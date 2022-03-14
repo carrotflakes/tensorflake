@@ -10,6 +10,7 @@ pub trait Function {
     fn backward<const ENABLE_BACKPROP: bool>(
         &self,
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        ys: &Vec<Variable<ENABLE_BACKPROP>>,
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>>;
 
@@ -49,6 +50,7 @@ pub trait Backward {
     fn backward(
         &self,
         xs: &Vec<Variable<true>>,
+        ys: &Vec<Variable<true>>,
         gys: &Vec<Variable<true>>,
         enable_backprop: bool,
     ) -> Vec<Variable<true>>;
@@ -67,15 +69,17 @@ impl<T: Function> Backward for T {
     fn backward(
         &self,
         xs: &Vec<Variable<true>>,
+        ys: &Vec<Variable<true>>,
         gys: &Vec<Variable<true>>,
         enable_backprop: bool,
     ) -> Vec<Variable<true>> {
         if enable_backprop {
-            self.backward(xs, gys)
+            self.backward(xs, ys, gys)
         } else {
             let xs = unsafe { std::mem::transmute(xs) };
+            let ys = unsafe { std::mem::transmute(ys) };
             let gys = unsafe { std::mem::transmute(gys) };
-            let gxs = self.backward::<false>(xs, gys);
+            let gxs = self.backward::<false>(xs, ys, gys);
             unsafe { std::mem::transmute(gxs) }
         }
     }

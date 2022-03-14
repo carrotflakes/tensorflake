@@ -19,8 +19,11 @@ impl Function for Div {
     fn backward<const ENABLE_BACKPROP: bool>(
         &self,
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        ys: &Vec<Variable<ENABLE_BACKPROP>>,
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        #![allow(unused_variables)]
+
         vec![
             Div.call(vec![gys[0].clone(), xs[0].clone()])
                 .pop()
