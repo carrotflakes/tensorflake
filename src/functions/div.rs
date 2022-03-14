@@ -22,7 +22,7 @@ impl Function for Div {
         gys: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
         vec![
-            Div.call(vec![gys[0].clone(), gys[1].clone()])
+            Div.call(vec![gys[0].clone(), xs[0].clone()])
                 .pop()
                 .unwrap(),
             Mul.call(vec![
