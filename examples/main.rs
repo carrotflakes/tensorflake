@@ -12,20 +12,26 @@ fn main() {
     // println!("{}", *d);
 
     {
-        let x = Variable::new(ndarray::arr0(0.5).into_dyn());
+        let x = Variable::new(ndarray::arr0(0.5).into_dyn()).named("x");
         let a = Mul.call(vec![x.clone(), x.clone()]);
         let b = Exp.call(a);
         let y = Mul.call(vec![b[0].clone(), b[0].clone()]);
+        y[0].set_name("y");
+
         println!("{:?}", *y[0]);
-        y[0].set_grad(Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(1.0).into_dyn()));
+        y[0].set_grad(Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(1.0).into_dyn()).named("dy"));
         y[0].backward(false, true);
         println!("{:?}", *x.get_grad::<DISABLE_BACKPROP>().unwrap()); // 3.29
 
         let gx = x.get_grad::<ENABLE_BACKPROP>().unwrap().clone();
         x.clear_grad();
         gx.set_grad(Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(1.0).into_dyn()));
-        gx.backward(false, false);
+        gx.backward(false, true);
         println!("{:?}", *x.get_grad::<DISABLE_BACKPROP>().unwrap()); // 13.18
+
+        x.get_grad::<DISABLE_BACKPROP>().unwrap().set_name("x_grad");
+
+        ruzero::export_dot::export_dot(&x.get_grad::<ENABLE_BACKPROP>().unwrap(), "graph.dot").unwrap();
 
         // ruzero::release_variables(&y[0]);
         // y.set_grad(1.0);

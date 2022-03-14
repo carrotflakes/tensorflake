@@ -1,0 +1,62 @@
+use std::io::Write;
+use std::rc::Rc;
+
+use crate::{collect_funcalls, Variable, ENABLE_BACKPROP};
+
+pub fn export_dot(var: &Variable<ENABLE_BACKPROP>, file: &str) -> Result<(), std::io::Error> {
+    let fcs = collect_funcalls(vec![var.clone()]);
+    let mut vars = fcs
+        .iter()
+        .flat_map(|fc| fc.input.iter().cloned())
+        .collect::<Vec<_>>();
+    vars.push(var.clone());
+    vars.dedup();
+
+    let f = std::fs::File::create(file).unwrap();
+    let mut w = std::io::BufWriter::new(f);
+
+    writeln!(w, "digraph g {{")?;
+
+    for v in vars {
+        let v_id = Rc::as_ptr(&v.inner) as usize;
+        writeln!(
+            w,
+            "{} [label={:?} color=lightblue, style=filled, shape=box]",
+            v_id,
+            v.inner.attrs.borrow().name
+        )?;
+    }
+
+    for fc in fcs.iter() {
+        let fc_id = Rc::as_ptr(fc) as usize;
+        let fc_name = fc.function.get_function_name();
+        writeln!(
+            w,
+            "{} [label={:?} color=orange, style=filled]",
+            fc_id, fc_name
+        )?;
+
+        for v in fc.input.iter() {
+            let v_id = Rc::as_ptr(&v.inner) as usize;
+            writeln!(w, "{} -> {}", v_id, fc_id)?;
+        }
+        for v in fc.output.iter() {
+            let v_id = Rc::as_ptr(&v.inner) as usize;
+            writeln!(w, "{} -> {}", fc_id, v_id)?;
+        }
+    }
+
+    writeln!(w, "}}")?;
+
+    Ok(())
+}
+
+#[test]
+fn test() {
+    use crate::{call, functions::Mul, Function, Variable, ENABLE_BACKPROP};
+
+    let a = Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(1.0).into_dyn()).named("a");
+    let b = Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(1.0).into_dyn()).named("b");
+    let y = call!(Mul, a, b).named("y");
+    export_dot(&y, "graph.dot").unwrap();
+}
