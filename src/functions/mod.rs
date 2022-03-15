@@ -12,6 +12,7 @@ mod sub;
 mod sum_to;
 mod t;
 mod tanh;
+mod transpose;
 
 pub use add::*;
 pub use broadcast_to::*;
@@ -27,3 +28,4 @@ pub use sub::*;
 pub use sum_to::*;
 pub use t::*;
 pub use tanh::*;
+pub use transpose::*;
