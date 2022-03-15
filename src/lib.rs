@@ -30,7 +30,7 @@ macro_rules! call {
     };
 }
 
-pub(crate) fn collect_funcalls(mut vars: Vec<Variable<true>>) -> Vec<Rc<Funcall>> {
+pub(crate) fn collect_funcalls(mut vars: Vec<Variable<ENABLE_BACKPROP>>) -> Vec<Rc<Funcall>> {
     let mut funcall_vec = Vec::new();
     let mut closed_vars = Vec::new();
     while let Some(var) = vars.pop() {
@@ -48,7 +48,14 @@ pub(crate) fn collect_funcalls(mut vars: Vec<Variable<true>>) -> Vec<Rc<Funcall>
     funcall_vec
 }
 
-pub fn release_variables(var: &Variable<true>) {
+pub fn collect_variables(vars: Vec<Variable<ENABLE_BACKPROP>>) -> Vec<Variable<ENABLE_BACKPROP>> {
+    let fcs = collect_funcalls(vars);
+    let mut vars: Vec<_> = fcs.iter().flat_map(|fc| fc.input.iter()).cloned().collect();
+    vars.dedup();
+    vars
+}
+
+pub fn release_variables(var: &Variable<ENABLE_BACKPROP>) {
     let fcs = collect_funcalls(vec![var.clone()]);
     for v in fcs.iter().flat_map(|fc| fc.input.iter().cloned()) {
         v.clear_grad();
