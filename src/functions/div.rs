@@ -1,5 +1,6 @@
 use crate::{
-    functions::{Mul, Neg, Pow},
+    call,
+    functions::{sum_to_axes_to_desire, Mul, Neg, Pow, SumTo},
     Function, Tensor, Variable,
 };
 
@@ -24,11 +25,10 @@ impl Function for Div {
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
         #![allow(unused_variables)]
 
-        vec![
-            Div.call(vec![gys[0].clone(), xs[0].clone()])
-                .pop()
-                .unwrap(),
-            Mul.call(vec![
+        let mut gx0 = Div.call(vec![gys[0].clone(), xs[0].clone()]).pop().unwrap();
+
+        let mut gx1 = Mul
+            .call(vec![
                 gys[0].clone(),
                 Div.call(vec![
                     Neg.call(vec![xs[0].clone()]).pop().unwrap(),
@@ -38,8 +38,24 @@ impl Function for Div {
                 .unwrap(),
             ])
             .pop()
-            .unwrap(),
-        ]
+            .unwrap();
+
+        // fit shape
+        if xs[0].shape() != gx0.shape() {
+            gx0 = call!(
+                SumTo::new(sum_to_axes_to_desire(gx0.shape(), xs[0].shape())),
+                gx0
+            );
+        }
+
+        if xs[1].shape() != gx1.shape() {
+            gx1 = call!(
+                SumTo::new(sum_to_axes_to_desire(gx1.shape(), xs[0].shape())),
+                gx1
+            );
+        }
+
+        vec![gx0, gx1]
         // let mut gx0 = gys[0].data.clone();
         // let mut gx1 = gys[1].data.clone();
         // let x0 = &xs[0].data;
