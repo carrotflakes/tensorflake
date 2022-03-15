@@ -64,10 +64,10 @@ pub fn default_var_printer(var: &Variable<ENABLE_BACKPROP>) -> String {
 
 #[test]
 fn test() {
-    use crate::{call, functions::Mul, Function, Variable, ENABLE_BACKPROP};
+    use crate::{call, functions::Mul, scalar, Function, Variable, ENABLE_BACKPROP};
 
-    let a = Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(2.0).into_dyn()).named("a");
-    let b = Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(3.0).into_dyn()).named("b");
+    let a = Variable::<ENABLE_BACKPROP>::new(scalar(2.0)).named("a");
+    let b = Variable::<ENABLE_BACKPROP>::new(scalar(3.0)).named("b");
     let y = call!(Mul, a, b).named("y");
 
     // export_dot(&y, "graph.dot").unwrap();

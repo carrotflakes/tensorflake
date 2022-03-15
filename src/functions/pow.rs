@@ -1,5 +1,5 @@
 use super::Mul;
-use crate::{Function, Tensor, Variable};
+use crate::{scalar, Function, Tensor, Variable};
 
 pub struct Pow(f32);
 
@@ -33,21 +33,18 @@ impl Function for Pow {
                 .pop()
                 .unwrap(),
             gys[0].clone(),
-            Variable::new(ndarray::arr0(self.0).into_dyn()),
+            Variable::new(scalar(self.0)),
         ])
     }
 }
 
 #[test]
 fn test_pow() {
-    let a = Variable::<true>::new(ndarray::arr0(5.0).into_dyn());
+    let a = Variable::<true>::new(scalar(5.0));
     let ys = Pow(2.0).call(vec![a.clone()]);
-    assert_eq!(*ys[0], ndarray::arr0(25.0).into_dyn());
+    assert_eq!(*ys[0], scalar(25.0));
 
-    ys[0].set_grad(Variable::<true>::new(ndarray::arr0(1.0).into_dyn()));
+    ys[0].set_grad(Variable::<true>::new(scalar(1.0)));
     ys[0].backward(false, false);
-    assert_eq!(
-        *a.get_grad::<false>().unwrap(),
-        ndarray::arr0(10.0).into_dyn()
-    );
+    assert_eq!(*a.get_grad::<false>().unwrap(), scalar(10.0));
 }

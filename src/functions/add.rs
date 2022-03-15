@@ -29,40 +29,30 @@ impl Function for Add {
 
 #[test]
 fn test_add() {
+    use crate::scalar;
+
     {
-        let x = Variable::<true>::new(ndarray::arr0(1.0).into_dyn());
-        let y = Variable::new(ndarray::arr0(2.0).into_dyn());
-        let z = Variable::new(ndarray::arr0(3.0).into_dyn());
+        let x = Variable::<true>::new(scalar(1.0));
+        let y = Variable::new(scalar(2.0));
+        let z = Variable::new(scalar(3.0));
         let xs = vec![x.clone(), y.clone(), z.clone()];
         let ys = Add.call(xs);
-        assert_eq!(*ys[0], ndarray::arr0(6.0).into_dyn());
+        assert_eq!(*ys[0], scalar(6.0));
 
-        ys[0].set_grad(Variable::<true>::new(ndarray::arr0(1.0).into_dyn()));
+        ys[0].set_grad(Variable::<true>::new(scalar(1.0)));
         ys[0].backward(false, false);
-        assert_eq!(
-            *x.get_grad::<false>().unwrap(),
-            ndarray::arr0(1.0).into_dyn()
-        );
-        assert_eq!(
-            *y.get_grad::<false>().unwrap(),
-            ndarray::arr0(1.0).into_dyn()
-        );
-        assert_eq!(
-            *z.get_grad::<false>().unwrap(),
-            ndarray::arr0(1.0).into_dyn()
-        );
+        assert_eq!(*x.get_grad::<false>().unwrap(), scalar(1.0));
+        assert_eq!(*y.get_grad::<false>().unwrap(), scalar(1.0));
+        assert_eq!(*z.get_grad::<false>().unwrap(), scalar(1.0));
     }
     {
-        let x = Variable::<true>::new(ndarray::arr0(3.0).into_dyn());
+        let x = Variable::<true>::new(scalar(3.0));
         Add.call(vec![x.clone(), x.clone()]);
         let ys = Add.call(vec![x.clone(), x.clone()]);
-        assert_eq!(*ys[0], ndarray::arr0(6.0).into_dyn());
+        assert_eq!(*ys[0], scalar(6.0));
 
-        ys[0].set_grad(Variable::<true>::new(ndarray::arr0(1.0).into_dyn()));
+        ys[0].set_grad(Variable::<true>::new(scalar(1.0)));
         ys[0].backward(false, false);
-        assert_eq!(
-            *x.get_grad::<false>().unwrap(),
-            ndarray::arr0(2.0).into_dyn()
-        );
+        assert_eq!(*x.get_grad::<false>().unwrap(), scalar(2.0));
     }
 }

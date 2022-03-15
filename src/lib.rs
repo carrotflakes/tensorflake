@@ -18,7 +18,6 @@ pub const ENABLE_BACKPROP: bool = true;
 pub const DISABLE_BACKPROP: bool = false;
 
 pub type Tensor = ndarray::ArrayD<f32>;
-// pub type Tensor = ndarray::ArcArray<f32, ndarray::IxDyn>;
 
 pub fn scalar(x: f32) -> Tensor {
     ndarray::arr0(x).into_dyn()
@@ -59,9 +58,9 @@ pub fn release_variables(var: &Variable<true>) {
 
 #[test]
 fn test_collect_funcalls() {
-    let x = Variable::<true>::new(ndarray::arr0(1.0).into_dyn());
-    let y = Variable::new(ndarray::arr0(2.0).into_dyn());
-    let z = Variable::new(ndarray::arr0(3.0).into_dyn());
+    let x = Variable::<true>::new(scalar(1.0));
+    let y = Variable::new(scalar(2.0));
+    let z = Variable::new(scalar(3.0));
     let f = functions::Add.call(vec![x.clone(), y.clone()]);
     let g = functions::Add.call([f.clone(), vec![z.clone()]].concat());
     let f = functions::Add.call([g.clone(), vec![x.clone()]].concat());

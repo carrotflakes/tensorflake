@@ -1,10 +1,10 @@
 use ruzero::{
     functions::{Exp, Mul, Sin},
-    Function, Variable, DISABLE_BACKPROP, ENABLE_BACKPROP,
+    scalar, Function, Variable, DISABLE_BACKPROP, ENABLE_BACKPROP,
 };
 
 fn main() {
-    let x = Variable::<DISABLE_BACKPROP>::new(ndarray::arr0(2.0).into_dyn());
+    let x = Variable::<DISABLE_BACKPROP>::new(scalar(2.0));
     let y = Mul.call(vec![x.clone(), x.clone()]);
     println!("{:?}", *y[0]);
 
@@ -12,29 +12,30 @@ fn main() {
     // println!("{}", *d);
 
     {
-        let x = Variable::new(ndarray::arr0(0.5).into_dyn()).named("x");
+        let x = Variable::new(scalar(0.5)).named("x");
         let a = Mul.call(vec![x.clone(), x.clone()]);
         let b = Exp.call(a);
         let y = Mul.call(vec![b[0].clone(), b[0].clone()]);
         y[0].set_name("y");
 
         println!("{:?}", *y[0]);
-        y[0].set_grad(Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(1.0).into_dyn()).named("dy"));
+        y[0].set_grad(Variable::<ENABLE_BACKPROP>::new(scalar(1.0)).named("dy"));
         y[0].backward(false, true);
         println!("{:?}", *x.get_grad::<DISABLE_BACKPROP>().unwrap()); // 3.29
 
         let gx = x.get_grad::<ENABLE_BACKPROP>().unwrap().clone();
         x.clear_grad();
-        gx.set_grad(Variable::<ENABLE_BACKPROP>::new(ndarray::arr0(1.0).into_dyn()));
+        gx.set_grad(Variable::<ENABLE_BACKPROP>::new(scalar(1.0)));
         gx.backward(false, true);
         println!("{:?}", *x.get_grad::<DISABLE_BACKPROP>().unwrap()); // 13.18
 
         x.get_grad::<DISABLE_BACKPROP>().unwrap().set_name("x_grad");
 
-        ruzero::export_dot::export_dot(&x.get_grad::<ENABLE_BACKPROP>().unwrap(), "graph.dot").unwrap();
-        
+        ruzero::export_dot::export_dot(&x.get_grad::<ENABLE_BACKPROP>().unwrap(), "graph.dot")
+            .unwrap();
+
         // let f = std::fs::File::create("graph.dot").unwrap();
-        // let mut w = std::io::BufWriter::new(f);    
+        // let mut w = std::io::BufWriter::new(f);
         // ruzero::export_dot::write_dot(&mut w, &x.get_grad::<ENABLE_BACKPROP>().unwrap(), &mut |v| {
         //     format!("{} {}", v.get_name(), (*v).to_string())
         // })
@@ -49,7 +50,9 @@ fn main() {
     }
 
     {
-        let x = Variable::<ENABLE_BACKPROP>::new(ndarray::array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]].into_dyn());
+        let x = Variable::<ENABLE_BACKPROP>::new(
+            ndarray::array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]].into_dyn(),
+        );
         let y = Sin.call(vec![x]);
         println!("{:?}", *y[0]);
         println!("{:?}", y[0].to_shape((3, 2, 1)));
