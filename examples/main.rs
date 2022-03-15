@@ -19,13 +19,11 @@ fn main() {
         y[0].set_name("y");
 
         println!("{:?}", *y[0]);
-        y[0].set_grad(Variable::<ENABLE_BACKPROP>::new(scalar(1.0)).named("dy"));
         y[0].backward(false, true);
         println!("{:?}", *x.get_grad::<DISABLE_BACKPROP>().unwrap()); // 3.29
 
         let gx = x.get_grad::<ENABLE_BACKPROP>().unwrap().clone();
         x.clear_grad();
-        gx.set_grad(Variable::<ENABLE_BACKPROP>::new(scalar(1.0)));
         gx.backward(false, true);
         println!("{:?}", *x.get_grad::<DISABLE_BACKPROP>().unwrap()); // 13.18
 

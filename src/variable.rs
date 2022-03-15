@@ -104,6 +104,11 @@ impl Variable<true> {
     }
 
     pub fn backward(&self, retain_grad: bool, create_graph: bool) {
+        // ensure grad is not None
+        self.inner.attrs.borrow_mut().grad.get_or_insert_with(|| {
+            Variable::<true>::new(ndarray::Array::ones(self.inner.data.shape()).into_dyn()).inner
+        });
+
         let mut funcalls = collect_funcalls(vec![self.clone()]);
         funcalls.sort_by_key(|fc| -(fc.generation as i32));
         for fc in funcalls {

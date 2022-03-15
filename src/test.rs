@@ -16,7 +16,6 @@ fn test_add_mul() {
     ]);
     assert_eq!(*ys[0], scalar(7.0));
 
-    ys[0].set_grad(Variable::<true>::new(scalar(1.0)));
     ys[0].backward(false, false);
     assert_eq!(
         a.get_grad::<false>().map(|v| (*v).clone()),
@@ -39,7 +38,6 @@ fn test_sphere() {
     ]);
     assert_eq!(*ys[0], scalar(2.0));
 
-    ys[0].set_grad(Variable::<true>::new(scalar(1.0)));
     ys[0].backward(false, false);
     assert_eq!(
         x.get_grad::<false>().map(|v| (*v).clone()),
@@ -73,7 +71,6 @@ fn test_matyas() {
             .unwrap(),
     ]);
 
-    ys[0].set_grad(Variable::<true>::new(scalar(1.0)));
     ys[0].backward(false, false);
     assert!(
         (&*x.get_grad::<false>().unwrap() - 0.04)
@@ -132,7 +129,6 @@ fn test_rosenbrock() {
 
     let y = rosenbrock(a.clone(), b.clone());
 
-    y.set_grad(Variable::<true>::new(scalar(1.0)));
     y.backward(false, false);
     assert!(
         (&*a.get_grad::<false>().unwrap() - -2.0)
@@ -162,7 +158,6 @@ fn test_rosenbrock_sgd() {
         // dbg!((a.get_data()[0], b.get_data()[0]));
         let y = rosenbrock(a.clone(), b.clone());
 
-        y.set_grad(Variable::<true>::new(scalar(1.0)));
         y.backward(false, false);
 
         a = Variable::new(&*a - &*a.get_grad::<false>().unwrap() * lr);
@@ -185,13 +180,11 @@ fn second_order_differentia() {
     );
     assert_eq!(*y, scalar(8.0));
 
-    y.set_grad(Variable::<true>::new(scalar(1.0)));
     y.backward(false, true);
     assert_eq!(*x.get_grad::<true>().unwrap(), scalar(24.0));
 
     let gx = x.get_grad::<true>().unwrap();
     x.clear_grad();
-    gx.set_grad(Variable::<true>::new(scalar(1.0)));
     gx.backward(false, false);
     assert_eq!(*x.get_grad::<false>().unwrap(), scalar(44.0));
 }
