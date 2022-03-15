@@ -77,11 +77,21 @@ impl Variable<true> {
     }
 
     pub fn set_grad<const ENABLE_BACKPROP: bool>(&self, grad: Variable<ENABLE_BACKPROP>) {
-        // assert_eq!(self.shape(), grad.shape());
+        // broadcast
+        // if self.shape() != grad.shape() {
+        //     grad = call!(BroadcastTo::new(self.shape().to_vec()), grad);
+        // }
+
         self.inner.attrs.borrow_mut().grad = Some(grad.inner);
     }
 
     pub fn add_grad<const ENABLE_BACKPROP: bool>(&self, v: Variable<ENABLE_BACKPROP>) {
+        // broadcast
+        // if self.shape() != v.shape() {
+        //     assert!(v.shape().iter().product::<usize>() <= self.shape().iter().product(), "invalid broadcast: {:?} to {:?} in {:?}", v.shape(), self.shape(), self.get_name());
+        //     v = call!(BroadcastTo::new(self.shape().to_vec()), v);
+        // }
+
         let grad = &mut self.inner.attrs.borrow_mut().grad;
         if let Some(grad) = grad.as_mut() {
             *grad = Add

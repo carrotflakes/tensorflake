@@ -23,7 +23,10 @@ impl Function for BroadcastTo {
     ) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].broadcast(self.shape.as_slice()).unwrap().into_owned()]
+        vec![xs[0]
+            .broadcast(self.shape.as_slice())
+            .unwrap_or_else(|| panic!("illegal broadcast: {:?} to {:?}", xs[0].shape(), self.shape))
+            .into_owned()]
     }
 
     fn backward<const ENABLE_BACKPROP: bool>(

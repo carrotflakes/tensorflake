@@ -2,8 +2,8 @@ use ndarray::Array;
 use ndarray_rand::{rand_distr::Uniform, RandomExt};
 use ruzero::{
     call,
-    functions::{Add, Div, Matmul, Mul, Pow, Sub, SumTo, BroadcastTo},
-    release_variables, scalar, Function, Variable, DISABLE_BACKPROP, ENABLE_BACKPROP,
+    functions::{Add, BroadcastTo, Div, Matmul, Mul, Pow, Sub, SumTo},
+    release_variables, scalar, Function, Variable, ENABLE_BACKPROP,
 };
 
 fn main() {
@@ -24,10 +24,15 @@ fn main() {
     let mut w = Variable::new(ndarray::array![[[0.0]]].into_dyn()).named("w");
     let mut b = Variable::new(ndarray::array![0.0].into_dyn()).named("b");
 
-    let predict =
-        |w: Variable<ENABLE_BACKPROP>,
-         b: Variable<ENABLE_BACKPROP>,
-         x: Variable<ENABLE_BACKPROP>| call!(Add, call!(Matmul, x, call!(BroadcastTo::new(vec![n, 1, 1]), w)), call!(BroadcastTo::new(vec![n, 1, 1]), b));
+    let predict = |w: Variable<ENABLE_BACKPROP>,
+                   b: Variable<ENABLE_BACKPROP>,
+                   x: Variable<ENABLE_BACKPROP>| {
+        call!(
+            Add,
+            call!(Matmul, x, call!(BroadcastTo::new(vec![n, 1, 1]), w)),
+            b
+        )
+    };
 
     for _ in 0..100 {
         let y_ = predict(w.clone(), b.clone(), x.clone());
@@ -36,7 +41,6 @@ fn main() {
         let loss = mean_squared_error(y.clone(), y_.clone());
         println!("loss: {}", loss[[]]);
 
-        loss.set_grad(Variable::<ENABLE_BACKPROP>::new(scalar(1.0)));
         loss.backward(false, false);
 
         let gw = w.get_grad::<ENABLE_BACKPROP>().unwrap();

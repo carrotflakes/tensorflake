@@ -1,4 +1,6 @@
-use crate::{Function, Tensor, Variable};
+use crate::{call, Function, Tensor, Variable};
+
+use super::{sum_to_axes_to_desire, SumTo};
 
 pub struct Add;
 
@@ -23,7 +25,18 @@ impl Function for Add {
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
         #![allow(unused_variables)]
 
-        (0..xs.len()).map(|_| gys[0].clone()).collect()
+        xs.iter()
+            .map(|x| {
+                let mut gy = gys[0].clone();
+
+                // fit shape
+                if x.shape() != gy.shape() {
+                    gy = call!(SumTo::new(sum_to_axes_to_desire(gy.shape(), x.shape())), gy);
+                }
+
+                gy
+            })
+            .collect()
     }
 }
 

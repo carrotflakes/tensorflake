@@ -53,6 +53,21 @@ impl Function for SumTo {
     }
 }
 
+pub fn sum_to_axes_to_desire(src_shape: &[usize], dst_shape: &[usize]) -> Vec<usize> {
+    let mut axes = Vec::new();
+    let mut target = dst_shape.to_vec();
+    for (axis, size) in src_shape.iter().enumerate() {
+        if let Some(s) = target.first() {
+            if s == size {
+                target.remove(0);
+                continue;
+            }
+        }
+        axes.push(axis);
+    }
+    axes
+}
+
 #[test]
 fn test() {
     use crate::ENABLE_BACKPROP;
