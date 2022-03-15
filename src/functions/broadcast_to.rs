@@ -4,14 +4,14 @@ use super::SumTo;
 
 pub struct BroadcastTo {
     pub shape: Vec<usize>,
-    axises: Vec<usize>,
+    axes: Vec<usize>,
 }
 
 impl BroadcastTo {
     pub fn new(shape: Vec<usize>) -> Self {
         Self {
             shape,
-            axises: Vec::new(),
+            axes: Vec::new(),
         }
     }
 }
@@ -35,7 +35,7 @@ impl Function for BroadcastTo {
         #![allow(unused_variables)]
 
         let gy = gys[0].broadcast(self.shape.as_slice()).unwrap();
-        SumTo::new(self.axises.clone()).call(vec![Variable::new(gy.into_owned())])
+        SumTo::new(self.axes.clone()).call(vec![Variable::new(gy.into_owned())])
     }
 
     fn into_backward(mut self, xs: &Vec<Variable<true>>) -> Box<dyn Backward>
@@ -43,7 +43,7 @@ impl Function for BroadcastTo {
         Self: Sized + 'static,
     {
         // TODO: test
-        let axises = &mut self.axises;
+        let axes = &mut self.axes;
         let mut target = xs[0].shape().to_vec();
         for (axis, size) in self.shape.iter().enumerate() {
             if let Some(s) = target.first() {
@@ -52,7 +52,7 @@ impl Function for BroadcastTo {
                     continue;
                 }
             }
-            axises.push(axis);
+            axes.push(axis);
         }
         Box::new(self)
     }

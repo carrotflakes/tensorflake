@@ -3,16 +3,16 @@ use crate::{Backward, Function, Tensor, Variable};
 use super::BroadcastTo;
 
 pub struct SumTo {
-    // NOTE: axises are in order
-    pub axises: Vec<usize>,
+    // NOTE: axes are in order
+    pub axes: Vec<usize>,
     original_shape: Vec<usize>,
 }
 
 impl SumTo {
-    pub fn new(axises: Vec<usize>) -> Self {
-        assert!(axises.windows(2).all(|w| w[0] < w[1]));
+    pub fn new(axes: Vec<usize>) -> Self {
+        assert!(axes.windows(2).all(|w| w[0] < w[1]));
         Self {
-            axises,
+            axes,
             original_shape: Vec::new(),
         }
     }
@@ -26,7 +26,7 @@ impl Function for SumTo {
         assert!(xs.len() == 1);
 
         let mut x = (*xs[0]).to_owned();
-        for axise in self.axises.iter().rev() {
+        for axise in self.axes.iter().rev() {
             x = x.sum_axis(ndarray::Axis(*axise));
         }
 
