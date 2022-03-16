@@ -1,8 +1,10 @@
 mod layer;
 mod linear;
+mod mlp;
 
 pub use layer::*;
 pub use linear::*;
+pub use mlp::*;
 
 use crate::{functions::*, *};
 
