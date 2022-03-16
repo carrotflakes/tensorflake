@@ -44,6 +44,12 @@ impl<const ENABLE_BACKPROP: bool> Variable<ENABLE_BACKPROP> {
     pub fn get_name(&self) -> String {
         self.inner.attrs.borrow().name.to_owned()
     }
+
+    pub fn flip_bp<const EB: bool>(&self) -> Variable<EB> {
+        Variable {
+            inner: self.inner.clone(),
+        }
+    }
 }
 
 impl Variable<true> {
