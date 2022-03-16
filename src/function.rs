@@ -37,12 +37,8 @@ pub trait Function {
             let xs = unsafe { std::mem::transmute(xs) };
             let backward = self.into_backward(&xs);
 
-            let gen = Variable::get_next_gen(&xs);
-            let ys: Vec<_> = ys
-                .into_iter()
-                .map(|y| Variable::new_with_gen(y, gen))
-                .collect();
-            let fc = Funcall::new(backward, xs, &ys, gen);
+            let ys: Vec<_> = ys.into_iter().map(|y| Variable::new(y)).collect();
+            let fc = Funcall::new(backward, xs, &ys);
             let fc = Rc::new(fc);
             for y in &ys {
                 y.inner.attrs.borrow_mut().creator = Some(fc.clone());

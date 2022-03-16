@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::{collect_funcalls, functions::Add, Funcall, Function, Tensor};
+use crate::{collect_funcalls, functions::Add, sort_for_backward, Funcall, Function, Tensor};
 
 pub(crate) struct VariableAttrs {
     grad: Option<Rc<VariableInner>>,
@@ -12,7 +12,6 @@ pub(crate) struct VariableAttrs {
 pub(crate) struct VariableInner {
     pub data: Tensor,
     pub attrs: RefCell<VariableAttrs>,
-    pub generation: u32,
 }
 
 pub struct Variable<const ENABLE_BACKPROP: bool = false> {
@@ -24,7 +23,6 @@ impl<const ENABLE_BACKPROP: bool> Variable<ENABLE_BACKPROP> {
         Variable {
             inner: Rc::new(VariableInner {
                 data,
-                generation: 0,
                 attrs: RefCell::new(VariableAttrs {
                     grad: None,
                     creator: None,
@@ -49,24 +47,6 @@ impl<const ENABLE_BACKPROP: bool> Variable<ENABLE_BACKPROP> {
 }
 
 impl Variable<true> {
-    pub(crate) fn new_with_gen(data: Tensor, generation: u32) -> Self {
-        Variable {
-            inner: Rc::new(VariableInner {
-                data,
-                generation,
-                attrs: RefCell::new(VariableAttrs {
-                    grad: None,
-                    creator: None,
-                    name: String::new(),
-                }),
-            }),
-        }
-    }
-
-    pub(crate) fn get_next_gen(vars: &[Variable<true>]) -> u32 {
-        vars.iter().map(|v| v.inner.generation).max().unwrap_or(0) + 1
-    }
-
     pub fn get_grad<const ENABLE_BACKPROP: bool>(&self) -> Option<Variable<ENABLE_BACKPROP>> {
         self.inner
             .attrs
@@ -119,9 +99,8 @@ impl Variable<true> {
             Variable::<true>::new(ndarray::Array::ones(self.inner.data.shape()).into_dyn()).inner
         });
 
-        let mut funcalls = collect_funcalls(vec![self.clone()]);
-        funcalls.sort_by_key(|fc| -(fc.generation as i32));
-        for fc in funcalls {
+        let funcalls = collect_funcalls(vec![self.clone()]);
+        for fc in sort_for_backward(funcalls) {
             fc.backward(retain_grad, create_graph);
         }
     }

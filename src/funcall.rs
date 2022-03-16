@@ -6,7 +6,6 @@ pub struct Funcall {
     pub(crate) function: Box<dyn Backward>,
     pub(crate) xs: Vec<Variable<true>>,
     pub(crate) ys: Vec<Weak<VariableInner>>,
-    pub(crate) generation: u32,
 }
 
 impl Funcall {
@@ -14,13 +13,11 @@ impl Funcall {
         function: Box<dyn Backward>,
         xs: Vec<Variable<true>>,
         ys: &Vec<Variable<true>>,
-        generation: u32,
     ) -> Self {
         Self {
             function,
             xs,
             ys: ys.iter().map(|y| Rc::downgrade(&y.inner)).collect(),
-            generation,
         }
     }
 
@@ -52,4 +49,28 @@ impl Funcall {
             })
             .collect()
     }
+}
+
+pub fn sort_for_backward(mut fcs: Vec<Rc<Funcall>>) -> Vec<Rc<Funcall>> {
+    let mut sorted = Vec::with_capacity(fcs.len());
+    let ys = fcs.iter().flat_map(|fc| fc.get_ys()).collect::<Vec<_>>();
+    let mut visited: Vec<_> = fcs
+        .iter()
+        .flat_map(|fc| &fc.xs)
+        .filter(|v| !ys.contains(v))
+        .cloned()
+        .collect();
+    while !fcs.is_empty() {
+        let (a, b): (Vec<_>, _) = fcs
+            .into_iter()
+            .partition(|fc| fc.xs.iter().all(|x| visited.contains(&x)));
+        if a.is_empty() {
+            panic!("cycle detected");
+        }
+        visited.extend(a.iter().flat_map(|fc| fc.get_ys()));
+        sorted.extend(a);
+        fcs = b;
+    }
+    sorted.reverse();
+    sorted
 }
