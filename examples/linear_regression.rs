@@ -3,7 +3,7 @@ use ndarray_rand::{rand_distr::Uniform, RandomExt};
 use ruzero::{
     call,
     functions::{Add, BroadcastTo, Div, Matmul, Mul, Pow, Sub, SumTo},
-    release_variables, scalar, Function, Variable, ENABLE_BACKPROP,
+    scalar, Function, Variable, ENABLE_BACKPROP,
 };
 
 fn main() {
@@ -51,7 +51,6 @@ fn main() {
         let lr = 0.01;
         w = Variable::new(&*w - &*gw * lr);
         b = Variable::new(&*b - &*gb * lr);
-        release_variables(&loss);
     }
 }
 

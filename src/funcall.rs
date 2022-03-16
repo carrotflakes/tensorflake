@@ -1,49 +1,55 @@
-use crate::{Backward, Tensor, Variable};
+use std::rc::{Rc, Weak};
+
+use crate::{Backward, Variable, VariableInner};
 
 pub struct Funcall {
     pub(crate) function: Box<dyn Backward>,
-    pub(crate) input: Vec<Variable<true>>,
-    pub(crate) output: Vec<Variable<true>>,
+    pub(crate) xs: Vec<Variable<true>>,
+    pub(crate) ys: Vec<Weak<VariableInner>>,
     pub(crate) generation: u32,
 }
 
 impl Funcall {
     pub fn new(
         function: Box<dyn Backward>,
-        input: Vec<Variable<true>>,
-        output: Vec<Tensor>,
+        xs: Vec<Variable<true>>,
+        ys: &Vec<Variable<true>>,
+        generation: u32,
     ) -> Self {
-        let gen = Variable::get_next_gen(&input);
         Self {
             function,
-            input,
-            output: output
-                .into_iter()
-                .map(|x| Variable::new_with_gen(x, gen))
-                .collect(),
-            generation: gen,
+            xs,
+            ys: ys.iter().map(|y| Rc::downgrade(&y.inner)).collect(),
+            generation,
         }
     }
 
     pub(crate) fn backward(&self, retain_grad: bool, enable_backprop: bool) {
-        let gys = self
-            .output
+        let ys = self.get_ys();
+        let gys = ys
             .iter()
             .map(|y| y.get_grad().expect("ensure terminal variable's grad"))
             .collect();
 
-        let gxs = self
-            .function
-            .backward(&self.input, &self.output, &gys, enable_backprop);
+        let gxs = self.function.backward(&self.xs, &ys, &gys, enable_backprop);
 
-        for (x, gx) in self.input.iter().zip(gxs) {
+        for (x, gx) in self.xs.iter().zip(gxs) {
             x.add_grad(gx);
         }
 
         if !retain_grad {
-            for y in &self.output {
+            for y in &ys {
                 y.clear_grad();
             }
         }
+    }
+
+    pub fn get_ys<const ENABLE_BACKPROP: bool>(&self) -> Vec<Variable<ENABLE_BACKPROP>> {
+        self.ys
+            .iter()
+            .map(|y| Variable {
+                inner: y.upgrade().unwrap(),
+            })
+            .collect()
     }
 }

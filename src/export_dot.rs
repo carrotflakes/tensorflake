@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use crate::{collect_funcalls, Variable, ENABLE_BACKPROP};
 
@@ -17,7 +17,7 @@ pub fn write_dot(
     let fcs = collect_funcalls(vec![var.clone()]);
     let mut vars = fcs
         .iter()
-        .flat_map(|fc| fc.input.iter().cloned())
+        .flat_map(|fc| fc.xs.iter().cloned())
         .collect::<Vec<_>>();
     vars.push(var.clone());
     vars.dedup();
@@ -43,12 +43,12 @@ pub fn write_dot(
             fc_id, fc_name
         )?;
 
-        for v in fc.input.iter() {
+        for v in fc.xs.iter() {
             let v_id = Rc::as_ptr(&v.inner) as usize;
             writeln!(w, "{} -> {}", v_id, fc_id)?;
         }
-        for v in fc.output.iter() {
-            let v_id = Rc::as_ptr(&v.inner) as usize;
+        for v in fc.ys.iter() {
+            let v_id = Weak::as_ptr(&v) as usize;
             writeln!(w, "{} -> {}", fc_id, v_id)?;
         }
     }

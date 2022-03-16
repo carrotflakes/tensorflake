@@ -40,8 +40,8 @@ pub(crate) fn collect_funcalls(mut vars: Vec<Variable<ENABLE_BACKPROP>>) -> Vec<
         closed_vars.push(var.clone());
 
         if let Some(creator) = var.inner.attrs.borrow().creator.clone() {
-            vars.extend(creator.input.iter().cloned());
-            vars.extend(creator.output.iter().cloned());
+            vars.extend(creator.xs.iter().cloned());
+            vars.extend(creator.get_ys());
             funcall_vec.push(creator);
         }
     }
@@ -50,17 +50,9 @@ pub(crate) fn collect_funcalls(mut vars: Vec<Variable<ENABLE_BACKPROP>>) -> Vec<
 
 pub fn collect_variables(vars: Vec<Variable<ENABLE_BACKPROP>>) -> Vec<Variable<ENABLE_BACKPROP>> {
     let fcs = collect_funcalls(vars);
-    let mut vars: Vec<_> = fcs.iter().flat_map(|fc| fc.input.iter()).cloned().collect();
+    let mut vars: Vec<_> = fcs.iter().flat_map(|fc| fc.xs.iter()).cloned().collect();
     vars.dedup();
     vars
-}
-
-pub fn release_variables(var: &Variable<ENABLE_BACKPROP>) {
-    let fcs = collect_funcalls(vec![var.clone()]);
-    for v in fcs.iter().flat_map(|fc| fc.input.iter().cloned()) {
-        v.clear_grad();
-        v.inner.attrs.borrow_mut().creator = None;
-    }
 }
 
 #[test]

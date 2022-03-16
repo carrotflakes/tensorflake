@@ -1,7 +1,7 @@
 use crate::{
     call,
     functions::{Add, Mul, Pow, Sub},
-    release_variables, scalar, Function, Variable,
+    scalar, Function, Variable,
 };
 
 #[test]
@@ -162,7 +162,6 @@ fn test_rosenbrock_sgd() {
 
         a = Variable::new(&*a - &*a.get_grad::<false>().unwrap() * lr);
         b = Variable::new(&*b - &*b.get_grad::<false>().unwrap() * lr);
-        release_variables(&y);
     }
 
     assert!((&*a - 1.0).iter().next().unwrap().abs() < 1e-3);

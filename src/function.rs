@@ -32,16 +32,22 @@ pub trait Function {
     {
         let ys = self.forward(&xs);
         if !ENABLE_BACKPROP {
-            ys.into_iter().map(|x| Variable::new(x)).collect()
+            ys.into_iter().map(|y| Variable::new(y)).collect()
         } else {
             let xs = unsafe { std::mem::transmute(xs) };
             let backward = self.into_backward(&xs);
-            let fc = Funcall::new(backward, xs, ys);
+
+            let gen = Variable::get_next_gen(&xs);
+            let ys: Vec<_> = ys
+                .into_iter()
+                .map(|y| Variable::new_with_gen(y, gen))
+                .collect();
+            let fc = Funcall::new(backward, xs, &ys, gen);
             let fc = Rc::new(fc);
-            for y in &fc.output {
+            for y in &ys {
                 y.inner.attrs.borrow_mut().creator = Some(fc.clone());
             }
-            unsafe { std::mem::transmute(fc.output.clone()) }
+            unsafe { std::mem::transmute(ys) }
         }
     }
 }
