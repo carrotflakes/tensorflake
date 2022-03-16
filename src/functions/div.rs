@@ -12,7 +12,6 @@ impl Function for Div {
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Tensor> {
         assert!(xs.len() == 2);
-        assert_eq!(xs[0].shape(), xs[1].shape());
 
         vec![&*xs[0] / &*xs[1]]
     }
