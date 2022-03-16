@@ -61,13 +61,11 @@ fn main() {
 }
 
 fn mean_squared_error<const EB: bool>(x0: Variable<EB>, x1: Variable<EB>) -> Variable<EB> {
+    let x = call!(Pow::new(2.0), call!(Sub, x0, x1));
     call!(
         Div,
-        call!(
-            SumTo::new(vec![0, 1, 2]),
-            call!(Pow::new(2.0), call!(Sub, x0, x1))
-        ),
-        Variable::new(scalar(x0.shape().iter().sum::<usize>() as f32))
+        call!(SumTo::new((0..x.ndim()).collect()), x),
+        Variable::new(scalar(x.shape().iter().product::<usize>() as f32))
     )
 }
 
