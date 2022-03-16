@@ -24,7 +24,7 @@ fn main() {
 
     for i in 0..10000 {
         let h = l1.forward(x.clone());
-        let h = sigmoid_simple(h).named("hidden");
+        let h = call!(Sigmoid, h).named("hidden");
         let y_ = l2.forward(h);
         // dbg!(&*y_);
         if i == 0 {
