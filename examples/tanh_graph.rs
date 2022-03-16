@@ -21,6 +21,6 @@ fn main() {
         x.clear_grad();
         gx.backward(false, true);
 
-        export_dot::export_dot(&gx, &format!("tanh_{}.dot", i)).unwrap();
+        export_dot::export_dot(&[gx], &format!("tanh_{}.dot", i)).unwrap();
     }
 }

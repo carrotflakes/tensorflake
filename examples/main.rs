@@ -29,7 +29,7 @@ fn main() {
 
         x.get_grad::<DISABLE_BACKPROP>().unwrap().set_name("x_grad");
 
-        ruzero::export_dot::export_dot(&x.get_grad::<ENABLE_BACKPROP>().unwrap(), "graph.dot")
+        ruzero::export_dot::export_dot(&[x.get_grad::<ENABLE_BACKPROP>().unwrap()], "graph.dot")
             .unwrap();
 
         // let f = std::fs::File::create("graph.dot").unwrap();

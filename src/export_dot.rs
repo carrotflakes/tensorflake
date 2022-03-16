@@ -2,24 +2,25 @@ use std::rc::{Rc, Weak};
 
 use crate::{collect_funcalls, Variable, ENABLE_BACKPROP};
 
-pub fn export_dot(var: &Variable<ENABLE_BACKPROP>, file: &str) -> Result<(), std::io::Error> {
+pub fn export_dot(vars: &[Variable<ENABLE_BACKPROP>], file: &str) -> Result<(), std::io::Error> {
     let f = std::fs::File::create(file).unwrap();
     let mut w = std::io::BufWriter::new(f);
 
-    write_dot(&mut w, var, &mut default_var_printer)
+    write_dot(&mut w, vars, &mut default_var_printer)
 }
 
 pub fn write_dot(
     w: &mut impl std::io::Write,
-    var: &Variable<ENABLE_BACKPROP>,
+    vars: &[Variable<ENABLE_BACKPROP>],
     var_printer: &mut impl FnMut(&Variable<ENABLE_BACKPROP>) -> String,
 ) -> Result<(), std::io::Error> {
-    let fcs = collect_funcalls(vec![var.clone()]);
+    let fcs = collect_funcalls(vars.to_vec());
     let mut vars = fcs
         .iter()
-        .flat_map(|fc| fc.xs.iter().cloned())
+        .flat_map(|fc| fc.xs.iter())
+        .chain(vars.iter())
+        .cloned()
         .collect::<Vec<_>>();
-    vars.push(var.clone());
     vars.dedup();
 
     writeln!(w, "digraph g {{")?;
@@ -73,12 +74,12 @@ fn test() {
     // export_dot(&y, "graph.dot").unwrap();
 
     let mut w = Vec::new();
-    write_dot(&mut w, &y, &mut default_var_printer).unwrap();
+    write_dot(&mut w, &[y.clone()], &mut default_var_printer).unwrap();
     println!("{}", String::from_utf8(w).unwrap());
 
     // print variable values
     let mut w = Vec::new();
-    write_dot(&mut w, &y, &mut |v| {
+    write_dot(&mut w, &[y.clone()], &mut |v| {
         format!("{} {}", v.get_name(), (*v).to_string())
     })
     .unwrap();
