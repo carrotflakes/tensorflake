@@ -48,9 +48,6 @@ fn test() {
         let y = call!(Transpose::new(vec![1, 2, 0]), x);
         assert_eq!(y.shape(), &[2, 3, 1]);
 
-        y.set_grad(Variable::<ENABLE_BACKPROP>::new(
-            ndarray::Array::zeros([2, 3, 1]).into_dyn(),
-        ));
         y.backward(false, false);
 
         assert_eq!(x.get_grad::<ENABLE_BACKPROP>().unwrap().shape(), &[1, 2, 3]);

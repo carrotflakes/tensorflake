@@ -53,7 +53,7 @@ impl Function for Reshape {
 
 #[test]
 fn test() {
-    use crate::{scalar, ENABLE_BACKPROP};
+    use crate::ENABLE_BACKPROP;
 
     {
         let x = Variable::<ENABLE_BACKPROP>::new(
@@ -63,7 +63,6 @@ fn test() {
         dbg!(&*ys[0]);
         assert_eq!(ys[0].shape(), &[3, 2]);
 
-        ys[0].set_grad(Variable::<ENABLE_BACKPROP>::new(scalar(1.0)));
         ys[0].backward(false, false);
         dbg!(&*x.get_grad::<ENABLE_BACKPROP>().unwrap());
         assert_eq!(x.get_grad::<ENABLE_BACKPROP>().unwrap().shape(), &[2, 3]);

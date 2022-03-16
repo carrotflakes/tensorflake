@@ -20,9 +20,14 @@ impl Function for Matmul {
         let x1s = x1.shape();
         assert!(2 <= x0s.len());
         assert!(2 <= x1s.len());
-        assert_eq!(x0s[..x0s.len() - 2], x1s[..x1s.len() - 2]);
         assert_eq!(x0s[x0s.len() - 1], x1s[x1s.len() - 2]);
-        let outer_shape = &x0s[..x0s.len() - 2];
+
+        let outer_shape =
+            broadcast_shape(&x0s[..x0s.len() - 2], &x1s[..x1s.len() - 2]).expect(&format!(
+                "Matmul: shape mismatch: {:?} and {:?}",
+                x0.shape(),
+                x1.shape()
+            ));
         let mat_shape = [x0s[x0s.len() - 2], x1s[x1s.len() - 1]];
 
         if outer_shape.is_empty() {
@@ -31,6 +36,24 @@ impl Function for Matmul {
 
             vec![x0.dot(&x1).into_dyn()]
         } else {
+            let x0 = x0
+                .broadcast(
+                    outer_shape
+                        .iter()
+                        .chain(&x0s[x0s.len() - 2..])
+                        .cloned()
+                        .collect::<Vec<usize>>(),
+                )
+                .unwrap();
+            let x1 = x1
+                .broadcast(
+                    outer_shape
+                        .iter()
+                        .chain(&x1s[x1s.len() - 2..])
+                        .cloned()
+                        .collect::<Vec<usize>>(),
+                )
+                .unwrap();
             let outer_size = outer_shape.iter().product();
             let mut es = Vec::with_capacity(outer_size * mat_shape.iter().product::<usize>());
             let x0 = x0
@@ -99,6 +122,23 @@ impl Function for Matmul {
     }
 }
 
+fn broadcast_shape(a: &[usize], b: &[usize]) -> Option<Vec<usize>> {
+    (0..a.len().max(b.len()))
+        .rev()
+        .map(|i| {
+            let a = a.get(i).copied().unwrap_or(1);
+            let b = b.get(i).copied().unwrap_or(1);
+            if a == b || b == 1 {
+                Some(a)
+            } else if a == 1 {
+                Some(b)
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
 #[test]
 fn test() {
     use crate::{Variable, ENABLE_BACKPROP};
@@ -113,9 +153,6 @@ fn test() {
         let ys = Matmul.call(vec![a.clone(), b.clone()]);
         assert_eq!(&ys[0].shape(), &[2, 2]);
 
-        ys[0].set_grad(Variable::<ENABLE_BACKPROP>::new(
-            ndarray::array![[1., 1.], [1., 1.]].into_dyn(),
-        ));
         ys[0].backward(false, false);
         dbg!(&*a.get_grad::<ENABLE_BACKPROP>().unwrap());
 
@@ -133,9 +170,6 @@ fn test() {
         let ys = Matmul.call(vec![a.clone(), b.clone()]);
         assert_eq!(&ys[0].shape(), &[1, 2, 2]);
 
-        ys[0].set_grad(Variable::<ENABLE_BACKPROP>::new(
-            ndarray::array![[[1., 1.], [1., 1.]]].into_dyn(),
-        ));
         ys[0].backward(false, false);
         dbg!(&*a.get_grad::<ENABLE_BACKPROP>().unwrap());
 

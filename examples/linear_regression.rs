@@ -1,5 +1,5 @@
 use ndarray::Array;
-use ndarray_rand::{rand_distr::Uniform, RandomExt};
+use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use ruzero::{
     call,
     functions::{Add, BroadcastTo, Div, Matmul, Mul, Pow, Sub, SumTo},
@@ -8,14 +8,16 @@ use ruzero::{
 
 fn main() {
     let n = 10;
+    let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
 
     // make dataset
-    let x =
-        Variable::<ENABLE_BACKPROP>::new(Array::random((n, 1, 1), Uniform::new(0., 1.)).into_dyn());
+    let x = Variable::<ENABLE_BACKPROP>::new(
+        Array::random_using((n, 1, 1), Uniform::new(0., 1.), &mut rng).into_dyn(),
+    );
     let y = call!(
         Add,
         call!(Mul, x, Variable::new(scalar(2.0))),
-        Variable::new(Array::random((n, 1, 1), Uniform::new(-0.01, 0.01)).into_dyn())
+        Variable::new(Array::zeros((n, 1, 1)).into_dyn())
     );
 
     // dbg!(&*x);
@@ -34,7 +36,7 @@ fn main() {
         )
     };
 
-    for _ in 0..100 {
+    for i in 0..100 {
         let y_ = predict(w.clone(), b.clone(), x.clone());
         // dbg!(&*y_);
 
@@ -42,6 +44,10 @@ fn main() {
         println!("loss: {}", loss[[]]);
 
         loss.backward(false, false);
+
+        if i == 0 {
+            graph(&[loss]);
+        }
 
         let gw = w.get_grad::<ENABLE_BACKPROP>().unwrap();
         let gb = b.get_grad::<ENABLE_BACKPROP>().unwrap();
@@ -65,11 +71,13 @@ fn mean_squared_error<const EB: bool>(x0: Variable<EB>, x1: Variable<EB>) -> Var
     )
 }
 
-fn graph(var: &Variable<ENABLE_BACKPROP>) {
+fn graph(vars: &[Variable<ENABLE_BACKPROP>]) {
     let f = std::fs::File::create("graph.dot").unwrap();
     let mut w = std::io::BufWriter::new(f);
-    ruzero::export_dot::write_dot(&mut w, var, &mut |v| {
-        format!("{} {}", v.get_name(), (*v).to_string())
+    ruzero::export_dot::write_dot(&mut w, vars, &mut |v| {
+        // format!("{} {}", v.get_name(), (*v).to_string())
+        // v.get_name().to_string()
+        format!("{} {:?}", v.get_name(), v.shape())
     })
     .unwrap();
 }

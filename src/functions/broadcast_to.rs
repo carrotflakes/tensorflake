@@ -1,4 +1,4 @@
-use crate::{Backward, Function, Tensor, Variable};
+use crate::{call, Backward, Function, Tensor, Variable};
 
 use super::SumTo;
 
@@ -37,8 +37,7 @@ impl Function for BroadcastTo {
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
         #![allow(unused_variables)]
 
-        let gy = gys[0].broadcast(self.shape.as_slice()).unwrap();
-        SumTo::new(self.axes.clone()).call(vec![Variable::new(gy.into_owned())])
+        vec![call!(SumTo::new(self.axes.clone()), &gys[0])]
     }
 
     fn into_backward(mut self, xs: &Vec<Variable<true>>) -> Box<dyn Backward>
@@ -63,7 +62,7 @@ impl Function for BroadcastTo {
 
 #[test]
 fn test() {
-    use crate::{scalar, ENABLE_BACKPROP};
+    use crate::ENABLE_BACKPROP;
 
     {
         let x = Variable::<ENABLE_BACKPROP>::new(
@@ -73,7 +72,6 @@ fn test() {
         assert_eq!(ys[0].shape(), &[2, 3]);
         assert_eq!(&*ys[0], &*x);
 
-        ys[0].set_grad(Variable::<ENABLE_BACKPROP>::new(scalar(1.0)));
         ys[0].backward(false, false);
         dbg!(&*x.get_grad::<ENABLE_BACKPROP>().unwrap()); // = [1], are you ok?
     }
@@ -86,7 +84,6 @@ fn test() {
         // dbg!(&*ys[0]);
         assert_eq!(ys[0].shape(), &[4, 2, 3]);
 
-        ys[0].set_grad(Variable::<ENABLE_BACKPROP>::new(scalar(1.0)));
         ys[0].backward(false, false);
         dbg!(&*x.get_grad::<ENABLE_BACKPROP>().unwrap());
     }

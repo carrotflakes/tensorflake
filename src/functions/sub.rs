@@ -56,7 +56,6 @@ fn test_sub() {
     let ys = Sub.call(vec![a.clone(), b.clone()]);
     assert_eq!(*ys[0], scalar(2.0));
 
-    ys[0].set_grad(Variable::<true>::new(scalar(1.0)));
     ys[0].backward(false, false);
     assert_eq!(*a.get_grad::<false>().unwrap(), scalar(1.0));
     assert_eq!(*b.get_grad::<false>().unwrap(), scalar(-1.0));

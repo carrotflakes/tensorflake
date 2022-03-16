@@ -10,3 +10,4 @@ ndarray = "0.15.4"
 
 [dev-dependencies]
 ndarray-rand = "0.14.0"
+rand_isaac = "0.3.0"

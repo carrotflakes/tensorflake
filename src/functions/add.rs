@@ -52,7 +52,6 @@ fn test_add() {
         let ys = Add.call(xs);
         assert_eq!(*ys[0], scalar(6.0));
 
-        ys[0].set_grad(Variable::<true>::new(scalar(1.0)));
         ys[0].backward(false, false);
         assert_eq!(*x.get_grad::<false>().unwrap(), scalar(1.0));
         assert_eq!(*y.get_grad::<false>().unwrap(), scalar(1.0));
@@ -64,7 +63,6 @@ fn test_add() {
         let ys = Add.call(vec![x.clone(), x.clone()]);
         assert_eq!(*ys[0], scalar(6.0));
 
-        ys[0].set_grad(Variable::<true>::new(scalar(1.0)));
         ys[0].backward(false, false);
         assert_eq!(*x.get_grad::<false>().unwrap(), scalar(2.0));
     }

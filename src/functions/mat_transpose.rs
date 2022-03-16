@@ -37,9 +37,6 @@ fn test() {
         let y = call!(MatTranspose, x);
         assert_eq!(y.shape(), &[1, 3, 2]);
 
-        y.set_grad(Variable::<ENABLE_BACKPROP>::new(
-            ndarray::Array::zeros([1, 3, 2]).into_dyn(),
-        ));
         y.backward(false, false);
 
         assert_eq!(x.get_grad::<ENABLE_BACKPROP>().unwrap().shape(), &[1, 2, 3]);

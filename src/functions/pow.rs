@@ -44,7 +44,6 @@ fn test_pow() {
     let ys = Pow(2.0).call(vec![a.clone()]);
     assert_eq!(*ys[0], scalar(25.0));
 
-    ys[0].set_grad(Variable::<true>::new(scalar(1.0)));
     ys[0].backward(false, false);
     assert_eq!(*a.get_grad::<false>().unwrap(), scalar(10.0));
 }
