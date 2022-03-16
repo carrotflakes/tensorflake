@@ -4,8 +4,8 @@ TBD
 
 ## TODO
 
-- Is ndarray::ArrayD efficient enough?
-- grad broadcast
+- Is clear_grad necessary?
+- Parameters
 
 ## Author
 
