@@ -1,15 +1,19 @@
-use super::Mul;
-use crate::{Function, Tensor, Variable};
+use crate::{
+    call,
+    functions::{Mul, Sub},
+    scalar, Function, Tensor, Variable,
+};
 
-pub struct Exp;
+pub struct Tanh;
 
-impl Function for Exp {
+impl Function for Tanh {
     fn forward<const ENABLE_BACKPROP: bool>(
         &self,
         xs: &Vec<Variable<ENABLE_BACKPROP>>,
     ) -> Vec<Tensor> {
         assert!(xs.len() == 1);
-        vec![xs[0].map(|x| x.exp())]
+
+        vec![xs[0].map(|x| x.tanh())]
     }
 
     fn backward<const ENABLE_BACKPROP: bool>(
@@ -20,6 +24,10 @@ impl Function for Exp {
     ) -> Vec<Variable<ENABLE_BACKPROP>> {
         #![allow(unused_variables)]
 
-        Mul.call(vec![gys[0].clone(), Exp.call(xs.clone()).pop().unwrap()])
+        vec![call!(
+            Mul,
+            gys[0],
+            call!(Sub, Variable::new(scalar(1.0)), call!(Mul, ys[0], ys[0]))
+        )]
     }
 }

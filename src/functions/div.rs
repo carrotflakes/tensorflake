@@ -55,17 +55,5 @@ impl Function for Div {
         }
 
         vec![gx0, gx1]
-        // let mut gx0 = gys[0].data.clone();
-        // let mut gx1 = gys[1].data.clone();
-        // let x0 = &xs[0].data;
-        // let x1 = &xs[1].data;
-        // for i in 0..gx0.len() {
-        //     gx0[i] = gx0[i] / x1[i];
-        //     gx1[i] = gx1[i] * (-x0[i] / x1[i].powi(2));
-        // }
-        // vec![
-        //     Variable::new(Tensor::new(gx0, &gys[0].shape())),
-        //     Variable::new(Tensor::new(gx1, &gys[0].shape())),
-        // ]
     }
 }

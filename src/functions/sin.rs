@@ -22,7 +22,6 @@ impl Function for Sin {
         #![allow(unused_variables)]
 
         Mul.call(vec![gys[0].clone(), Cos.call(xs.clone()).pop().unwrap()])
-        // vec![Variable::new(gys[0].multiply(&xs[0].map(|x| x.cos())))]
     }
 }
 
