@@ -19,10 +19,7 @@ impl MLP {
 }
 
 impl Layer for MLP {
-    fn call<const ENABLE_BACKPROP: bool>(
-        &self,
-        xs: Vec<Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<Variable<ENABLE_BACKPROP>>
+    fn call(&self, xs: Vec<Variable>) -> Vec<Variable>
     where
         Self: Sized + 'static,
     {
@@ -34,7 +31,7 @@ impl Layer for MLP {
         self.linears.last().unwrap().call(ys)
     }
 
-    fn all_params(&self) -> Vec<Variable<ENABLE_BACKPROP>> {
+    fn all_params(&self) -> Vec<Variable> {
         self.linears
             .iter()
             .flat_map(|linear| linear.all_params())
@@ -49,9 +46,7 @@ fn test() {
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let mlp = MLP::new(&[2, 3, 1], &mut rng);
 
-    let x = Variable::<ENABLE_BACKPROP>::new(
-        array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_dyn(),
-    );
+    let x = Variable::new(array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_dyn());
 
     let y = call!(mlp, x);
     // dbg!(&*y);

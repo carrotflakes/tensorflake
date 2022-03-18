@@ -5,9 +5,9 @@ use super::{sum_to_axes_to_desire, SumTo};
 pub struct Mul;
 
 impl Function for Mul {
-    fn forward<const ENABLE_BACKPROP: bool>(
+    fn forward(
         &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        xs: &Vec<Variable>,
     ) -> Vec<Tensor> {
         assert!(xs.len() >= 1);
         let mut y = (*xs[0]).clone();
@@ -17,12 +17,12 @@ impl Function for Mul {
         vec![y]
     }
 
-    fn backward<const ENABLE_BACKPROP: bool>(
+    fn backward(
         &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
-        ys: &Vec<Variable<ENABLE_BACKPROP>>,
-        gys: &Vec<Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        xs: &Vec<Variable>,
+        ys: &Vec<Variable>,
+        gys: &Vec<Variable>,
+    ) -> Vec<Variable> {
         #![allow(unused_variables)]
 
         xs.iter()

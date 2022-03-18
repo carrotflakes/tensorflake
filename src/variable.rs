@@ -1,126 +1,79 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 
-use crate::{collect_funcalls, functions::Add, sort_for_backward, Funcall, Function, Tensor};
+use crate::{Funcall, Tensor};
 
 pub(crate) struct VariableAttrs {
-    grad: Option<Rc<VariableInner>>,
-    pub creator: Option<Rc<Funcall>>,
     pub name: String,
+    pub trainable: bool,
+    // pub recorder: Option<Recorder>, // todo: weak
+    pub creator: Option<Arc<Funcall>>,
 }
 
 pub(crate) struct VariableInner {
     pub data: Tensor,
-    pub attrs: RefCell<VariableAttrs>,
+    pub attrs: Mutex<VariableAttrs>,
 }
 
-pub struct Variable<const ENABLE_BACKPROP: bool = false> {
-    pub(crate) inner: Rc<VariableInner>,
+pub struct Variable {
+    pub(crate) inner: Arc<VariableInner>,
 }
 
-impl<const ENABLE_BACKPROP: bool> Variable<ENABLE_BACKPROP> {
+impl Variable {
     pub fn new(data: Tensor) -> Self {
         Variable {
-            inner: Rc::new(VariableInner {
+            inner: Arc::new(VariableInner {
                 data,
-                attrs: RefCell::new(VariableAttrs {
-                    grad: None,
+                attrs: Mutex::new(VariableAttrs {
+                    name: "".to_string(),
+                    trainable: true,
+                    // recorder: None,
                     creator: None,
-                    name: String::new(),
                 }),
             }),
         }
     }
 
     pub fn named(self, name: impl Into<String>) -> Self {
-        self.inner.attrs.borrow_mut().name = name.into();
+        self.inner.attrs.lock().unwrap().name = name.into();
         self
     }
 
     pub fn set_name(&self, name: impl Into<String>) {
-        self.inner.attrs.borrow_mut().name = name.into();
+        self.inner.attrs.lock().unwrap().name = name.into();
     }
 
     pub fn get_name(&self) -> String {
-        self.inner.attrs.borrow().name.to_owned()
+        self.inner.attrs.lock().unwrap().name.to_owned()
     }
 
-    pub fn flip_bp<const EB: bool>(&self) -> Variable<EB> {
-        Variable {
-            inner: self.inner.clone(),
-        }
-    }
-}
+    // pub fn recorded(self) -> Self {
+    //     self.inner
+    //         .attrs
+    //         .lock()
+    //         .unwrap()
+    //         .recorder
+    //         .get_or_insert(Recorder::new());
+    //     self
+    // }
 
-impl Variable<true> {
-    pub fn get_grad<const ENABLE_BACKPROP: bool>(&self) -> Option<Variable<ENABLE_BACKPROP>> {
-        self.inner
-            .attrs
-            .borrow()
-            .grad
-            .as_ref()
-            .map(|i| Variable { inner: i.clone() })
-    }
+    // pub fn set_recorder(&self, recorder: Recorder) {
+    //     self.inner.attrs.lock().unwrap().recorder = Some(recorder);
+    // }
 
-    pub fn set_grad<const ENABLE_BACKPROP: bool>(&self, grad: Variable<ENABLE_BACKPROP>) {
-        // broadcast
-        // if self.shape() != grad.shape() {
-        //     grad = call!(BroadcastTo::new(self.shape().to_vec()), grad);
-        // }
-
-        self.inner.attrs.borrow_mut().grad = Some(grad.inner);
-    }
-
-    pub fn add_grad<const ENABLE_BACKPROP: bool>(&self, v: Variable<ENABLE_BACKPROP>) {
-        // broadcast
-        // if self.shape() != v.shape() {
-        //     assert!(v.shape().iter().product::<usize>() <= self.shape().iter().product(), "invalid broadcast: {:?} to {:?} in {:?}", v.shape(), self.shape(), self.get_name());
-        //     v = call!(BroadcastTo::new(self.shape().to_vec()), v);
-        // }
-
-        let grad = &mut self.inner.attrs.borrow_mut().grad;
-        if let Some(grad) = grad.as_mut() {
-            *grad = Add
-                .call(vec![
-                    Variable {
-                        inner: grad.clone(),
-                    },
-                    v,
-                ])
-                .pop()
-                .unwrap()
-                .inner;
-        } else {
-            *grad = Some(v.inner);
-        }
-    }
-
-    pub fn clear_grad(&self) {
-        self.inner.attrs.borrow_mut().grad = None;
-    }
-
-    pub fn backward(&self, retain_grad: bool, create_graph: bool) {
-        // ensure grad is not None
-        self.inner.attrs.borrow_mut().grad.get_or_insert_with(|| {
-            Variable::<true>::new(ndarray::Array::ones(self.inner.data.shape()).into_dyn()).inner
-        });
-
-        let funcalls = collect_funcalls(vec![self.clone()]);
-        for fc in sort_for_backward(funcalls) {
-            fc.backward(retain_grad, create_graph);
-        }
+    pub fn has_creator(&self) -> bool {
+        self.inner.attrs.lock().unwrap().creator.is_some()
     }
 }
 
-impl<const ENABLE_BACKPROP: bool> std::ops::Deref for Variable<ENABLE_BACKPROP> {
+impl std::ops::Deref for Variable {
     type Target = Tensor;
 
-    fn deref(&self) -> &Tensor {
+    fn deref(&self) -> &Self::Target {
         &self.inner.data
     }
 }
 
-impl<const ENABLE_BACKPROP: bool> Clone for Variable<ENABLE_BACKPROP> {
+impl Clone for Variable {
     fn clone(&self) -> Self {
         Variable {
             inner: self.inner.clone(),
@@ -128,8 +81,16 @@ impl<const ENABLE_BACKPROP: bool> Clone for Variable<ENABLE_BACKPROP> {
     }
 }
 
-impl<const ENABLE_BACKPROP: bool> PartialEq for Variable<ENABLE_BACKPROP> {
+impl PartialEq for Variable {
     fn eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.inner, &other.inner)
+        Arc::ptr_eq(&self.inner, &other.inner)
+    }
+}
+
+impl Eq for Variable {}
+
+impl std::hash::Hash for Variable {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        Arc::as_ptr(&self.inner).hash(state);
     }
 }

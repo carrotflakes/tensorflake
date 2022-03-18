@@ -1,27 +1,23 @@
 use crate::{
-    call,
     functions::{Mul, Sub},
-    scalar, Function, Tensor, Variable,
+    *,
 };
 
 pub struct Tanh;
 
 impl Function for Tanh {
-    fn forward<const ENABLE_BACKPROP: bool>(
-        &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<Tensor> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].map(|x| x.tanh())]
+        vec![xs[0].map(|x| x.tanh()).into_tensor()]
     }
 
-    fn backward<const ENABLE_BACKPROP: bool>(
+    fn backward(
         &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
-        ys: &Vec<Variable<ENABLE_BACKPROP>>,
-        gys: &Vec<Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        xs: &Vec<Variable>,
+        ys: &Vec<Variable>,
+        gys: &Vec<Variable>,
+    ) -> Vec<Variable> {
         #![allow(unused_variables)]
 
         vec![call!(

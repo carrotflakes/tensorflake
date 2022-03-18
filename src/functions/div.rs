@@ -1,27 +1,26 @@
 use crate::{
-    call,
+    *,
     functions::{sum_to_axes_to_desire, Mul, Neg, Pow, SumTo},
-    Function, Tensor, Variable,
 };
 
 pub struct Div;
 
 impl Function for Div {
-    fn forward<const ENABLE_BACKPROP: bool>(
+    fn forward(
         &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        xs: &Vec<Variable>,
     ) -> Vec<Tensor> {
         assert!(xs.len() == 2);
 
-        vec![&*xs[0] / &*xs[1]]
+        vec![(&*xs[0] / &*xs[1]).into_tensor()]
     }
 
-    fn backward<const ENABLE_BACKPROP: bool>(
+    fn backward(
         &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
-        ys: &Vec<Variable<ENABLE_BACKPROP>>,
-        gys: &Vec<Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        xs: &Vec<Variable>,
+        ys: &Vec<Variable>,
+        gys: &Vec<Variable>,
+    ) -> Vec<Variable> {
         #![allow(unused_variables)]
 
         let mut gx0 = Div.call(vec![gys[0].clone(), xs[0].clone()]).pop().unwrap();

@@ -1,22 +1,22 @@
-use crate::{Function, Tensor, Variable};
+use crate::*;
 
 pub struct Neg;
 
 impl Function for Neg {
-    fn forward<const ENABLE_BACKPROP: bool>(
+    fn forward(
         &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        xs: &Vec<Variable>,
     ) -> Vec<Tensor> {
         assert!(xs.len() == 1);
-        vec![xs[0].map(|x| -x)]
+        vec![xs[0].map(|x| -x).into_tensor()]
     }
 
-    fn backward<const ENABLE_BACKPROP: bool>(
+    fn backward(
         &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
-        ys: &Vec<Variable<ENABLE_BACKPROP>>,
-        gys: &Vec<Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        xs: &Vec<Variable>,
+        ys: &Vec<Variable>,
+        gys: &Vec<Variable>,
+    ) -> Vec<Variable> {
         #![allow(unused_variables)]
 
         Neg.call(gys.clone())

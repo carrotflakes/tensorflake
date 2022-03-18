@@ -1,10 +1,10 @@
 use ruzero::{
     functions::{Exp, Mul, Sin},
-    scalar, Function, Variable, DISABLE_BACKPROP, ENABLE_BACKPROP,
+    scalar, Function, Variable, backprop, gradients,
 };
 
 fn main() {
-    let x = Variable::<DISABLE_BACKPROP>::new(scalar(2.0));
+    let x = backprop(scalar(2.0));
     let y = Mul.call(vec![x.clone(), x.clone()]);
     println!("{:?}", *y[0]);
 
@@ -12,29 +12,29 @@ fn main() {
     // println!("{}", *d);
 
     {
-        let x = Variable::new(scalar(0.5)).named("x");
+        let x = backprop(scalar(0.5)).named("x");
         let a = Mul.call(vec![x.clone(), x.clone()]);
         let b = Exp.call(a);
         let y = Mul.call(vec![b[0].clone(), b[0].clone()]);
         y[0].set_name("y");
 
         println!("{:?}", *y[0]);
-        y[0].backward(false, true);
-        println!("{:?}", *x.get_grad::<DISABLE_BACKPROP>().unwrap()); // 3.29
+        // y[0].backward(false, true);
+        let gs = gradients(&y, &vec![x.clone()], true);
+        println!("{:?}", gs[0][[]]); // 3.29
 
-        let gx = x.get_grad::<ENABLE_BACKPROP>().unwrap().clone();
-        x.clear_grad();
-        gx.backward(false, true);
-        println!("{:?}", *x.get_grad::<DISABLE_BACKPROP>().unwrap()); // 13.18
+        let gs = gradients(&gs, &vec![x.clone()], false);
+        // gx.backward(false, true);
+        println!("{:?}", gs[0][[]]); // 13.18
 
-        x.get_grad::<DISABLE_BACKPROP>().unwrap().set_name("x_grad");
+        gs[0].set_name("x_grad");
 
-        ruzero::export_dot::export_dot(&[x.get_grad::<ENABLE_BACKPROP>().unwrap()], "graph.dot")
+        ruzero::export_dot::export_dot(&[gs[0].clone()], "graph.dot")
             .unwrap();
 
         // let f = std::fs::File::create("graph.dot").unwrap();
         // let mut w = std::io::BufWriter::new(f);
-        // ruzero::export_dot::write_dot(&mut w, &x.get_grad::<ENABLE_BACKPROP>().unwrap(), &mut |v| {
+        // ruzero::export_dot::write_dot(&mut w, &x.get_grad().unwrap(), &mut |v| {
         //     format!("{} {}", v.get_name(), (*v).to_string())
         // })
         // .unwrap();
@@ -48,7 +48,7 @@ fn main() {
     }
 
     {
-        let x = Variable::<ENABLE_BACKPROP>::new(
+        let x = Variable::new(
             ndarray::array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]].into_dyn(),
         );
         let y = Sin.call(vec![x]);

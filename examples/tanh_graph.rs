@@ -7,19 +7,17 @@ dot tanh_3.dot -T png -o tanh_3.png
 use ruzero::{functions::*, *};
 
 fn main() {
-    let x = Variable::<ENABLE_BACKPROP>::new(scalar(1.0)).named("x");
+    let x = backprop(scalar(1.0)).named("x");
     let y = call!(Tanh, x).named("y");
 
-    y.backward(false, true);
+    let mut gs = gradients(&[y.clone()], &[x.clone()], true);
 
     for i in 1..=3 {
-        let gx = x
-            .get_grad::<ENABLE_BACKPROP>()
-            .unwrap()
+        let gx = gs[0]
             .clone()
             .named(format!("gx{}", i));
-        x.clear_grad();
-        gx.backward(false, true);
+            
+        gs = gradients(&gs, &[x.clone()], true);
 
         export_dot::export_dot(&[gx], &format!("tanh_{}.dot", i)).unwrap();
     }

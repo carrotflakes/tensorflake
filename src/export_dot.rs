@@ -1,8 +1,8 @@
-use std::rc::{Rc, Weak};
+use std::sync::{Arc, Weak};
 
-use crate::{collect_funcalls, Variable, ENABLE_BACKPROP};
+use crate::{collect_funcalls, Variable};
 
-pub fn export_dot(vars: &[Variable<ENABLE_BACKPROP>], file: &str) -> Result<(), std::io::Error> {
+pub fn export_dot(vars: &[Variable], file: &str) -> Result<(), std::io::Error> {
     let f = std::fs::File::create(file).unwrap();
     let mut w = std::io::BufWriter::new(f);
 
@@ -11,8 +11,8 @@ pub fn export_dot(vars: &[Variable<ENABLE_BACKPROP>], file: &str) -> Result<(), 
 
 pub fn write_dot(
     w: &mut impl std::io::Write,
-    vars: &[Variable<ENABLE_BACKPROP>],
-    var_printer: &mut impl FnMut(&Variable<ENABLE_BACKPROP>) -> String,
+    vars: &[Variable],
+    var_printer: &mut impl FnMut(&Variable) -> String,
 ) -> Result<(), std::io::Error> {
     let fcs = collect_funcalls(vars.to_vec());
     let mut vars = fcs
@@ -26,7 +26,7 @@ pub fn write_dot(
     writeln!(w, "digraph g {{")?;
 
     for v in vars {
-        let v_id = Rc::as_ptr(&v.inner) as usize;
+        let v_id = Arc::as_ptr(&v.inner) as usize;
         writeln!(
             w,
             "{} [label={:?} color=orange, style=filled]",
@@ -36,8 +36,8 @@ pub fn write_dot(
     }
 
     for fc in fcs.iter() {
-        let fc_id = Rc::as_ptr(fc) as usize;
-        let fc_name = fc.function.get_function_name();
+        let fc_id = Arc::as_ptr(fc) as usize;
+        let fc_name = fc.backward.get_function_name();
         writeln!(
             w,
             "{} [label={:?} color=lightblue, style=filled, shape=box]",
@@ -45,7 +45,7 @@ pub fn write_dot(
         )?;
 
         for v in fc.xs.iter() {
-            let v_id = Rc::as_ptr(&v.inner) as usize;
+            let v_id = Arc::as_ptr(&v.inner) as usize;
             writeln!(w, "{} -> {}", v_id, fc_id)?;
         }
         for v in fc.ys.iter() {
@@ -59,16 +59,16 @@ pub fn write_dot(
     Ok(())
 }
 
-pub fn default_var_printer(var: &Variable<ENABLE_BACKPROP>) -> String {
+pub fn default_var_printer(var: &Variable) -> String {
     var.get_name()
 }
 
 #[test]
 fn test() {
-    use crate::{call, functions::Mul, scalar, Function, Variable, ENABLE_BACKPROP};
+    use crate::{backprop, call, functions::Mul, scalar, Function};
 
-    let a = Variable::<ENABLE_BACKPROP>::new(scalar(2.0)).named("a");
-    let b = Variable::<ENABLE_BACKPROP>::new(scalar(3.0)).named("b");
+    let a = backprop(scalar(2.0)).named("a");
+    let b = backprop(scalar(3.0)).named("b");
     let y = call!(Mul, a, b).named("y");
 
     // export_dot(&y, "graph.dot").unwrap();

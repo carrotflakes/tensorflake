@@ -1,5 +1,6 @@
 mod add;
 mod broadcast_to;
+mod constant;
 mod div;
 mod exp;
 mod mat_transpose;
@@ -18,6 +19,7 @@ mod transpose;
 
 pub use add::*;
 pub use broadcast_to::*;
+pub use constant::*;
 pub use div::*;
 pub use exp::*;
 pub use mat_transpose::*;

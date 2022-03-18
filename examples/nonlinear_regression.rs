@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ndarray::{Array, array};
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use ruzero::{functions::*, nn::*, *};
@@ -6,7 +8,7 @@ fn main() {
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let n = 100;
 
-    let x = Variable::<ENABLE_BACKPROP>::new(
+    let x = Variable::new(
         Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_dyn(),
     )
     .named("x");
@@ -19,6 +21,8 @@ fn main() {
 
     let mut l1 = Layer::new(1, 10);
     let mut l2 = Layer::new(10, 1);
+
+    let start = std::time::Instant::now();
 
     // let mut ll = 1000.0;
 
@@ -43,16 +47,21 @@ fn main() {
         
         // graph(&[loss.clone()], format!("loss{}", i));
 
-        loss.backward(false, false);
+        let trainables = l1.all_params()
+        .into_iter()
+        .chain(l2.all_params())
+        .collect::<Vec<_>>();
+        let gs = gradients(&[loss.clone()], &trainables, false);
+        let gs = HashMap::from_iter(trainables.iter().cloned().zip(gs.into_iter()));
 
-        // dbg!(&*l1.w.get_grad::<ENABLE_BACKPROP>().unwrap());
-        // dbg!(&*l1.b.get_grad::<ENABLE_BACKPROP>().unwrap());
+        // dbg!(&*l1.w.get_grad().unwrap());
+        // dbg!(&*l1.b.get_grad().unwrap());
         let lr = 0.1;
-        l1.update(lr);
-        l2.update(lr);
+        l1.update(lr, &gs);
+        l2.update(lr, &gs);
     }
     for i in 0..20 {
-        let x = Variable::<ENABLE_BACKPROP>::new(
+        let x = Variable::new(
             array![[i as f32 / 20.0]].into_dyn()
         );
         let h = l1.forward(x);
@@ -60,10 +69,10 @@ fn main() {
         let y_ = l2.forward(h);
         println!("{}", &*y_);
     }
-    println!("end");
+    println!("elapsed: {:?}", start.elapsed());
 }
 
-fn mean_squared_error<const EB: bool>(x0: Variable<EB>, x1: Variable<EB>) -> Variable<EB> {
+fn mean_squared_error(x0: Variable, x1: Variable) -> Variable {
     let x = call!(Pow::new(2.0), call!(Sub, x0, x1));
     call!(
         Div,
@@ -73,30 +82,34 @@ fn mean_squared_error<const EB: bool>(x0: Variable<EB>, x1: Variable<EB>) -> Var
 }
 
 pub struct Layer {
-    pub w: Variable<ENABLE_BACKPROP>,
-    pub b: Variable<ENABLE_BACKPROP>,
+    pub w: Variable,
+    pub b: Variable,
 }
 
 impl Layer {
     pub fn new(input: usize, output: usize) -> Self {
         Self {
-            w: Variable::new(Array::random((input, output), Uniform::new(0., 0.01)).into_dyn())
-                .named("param"),
-            b: Variable::new(Array::zeros(output).into_dyn()).named("param"),
+            w: backprop(Array::random((input, output), Uniform::new(0., 0.01)).into_dyn())
+                .named("param w"),
+            b: backprop(Array::zeros(output).into_dyn()).named("param b"),
         }
     }
 
-    pub fn forward(&self, x: Variable<ENABLE_BACKPROP>) -> Variable<ENABLE_BACKPROP> {
+    pub fn forward(&self, x: Variable) -> Variable {
         call!(Add, call!(Matmul, x, self.w), self.b).named("return")
     }
 
-    pub fn update(&mut self, lr: f32) {
-        self.w = Variable::new(&*self.w - &*self.w.get_grad::<ENABLE_BACKPROP>().unwrap() * lr);
-        self.b = Variable::new(&*self.b - &*self.b.get_grad::<ENABLE_BACKPROP>().unwrap() * lr);
+    pub fn update(&mut self, lr: f32, gs: &HashMap<Variable, Variable>) {
+        self.w = backprop(&*self.w - &*gs[&self.w] * lr);
+        self.b = backprop(&*self.b - &*gs[&self.b] * lr);
+    }
+
+    pub fn all_params(&self) -> Vec<Variable> {
+        vec![self.w.clone(), self.b.clone()]
     }
 }
 
-fn graph(vars: &[Variable<ENABLE_BACKPROP>], name: impl ToString) {
+fn graph(vars: &[Variable], name: impl ToString) {
     let f = std::fs::File::create(name.to_string() + ".dot").unwrap();
     let mut w = std::io::BufWriter::new(f);
     ruzero::export_dot::write_dot(&mut w, vars, &mut |v| {

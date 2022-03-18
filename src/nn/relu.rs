@@ -3,21 +3,21 @@ use crate::{call, functions::Mul, Function, Tensor, Variable};
 pub struct Relu;
 
 impl Function for Relu {
-    fn forward<const ENABLE_BACKPROP: bool>(
+    fn forward(
         &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        xs: &Vec<Variable>,
     ) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
         vec![xs[0].map(|x| x.max(0.0))]
     }
 
-    fn backward<const ENABLE_BACKPROP: bool>(
+    fn backward(
         &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
-        ys: &Vec<Variable<ENABLE_BACKPROP>>,
-        gys: &Vec<Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        xs: &Vec<Variable>,
+        ys: &Vec<Variable>,
+        gys: &Vec<Variable>,
+    ) -> Vec<Variable> {
         #![allow(unused_variables)]
 
         vec![call!(

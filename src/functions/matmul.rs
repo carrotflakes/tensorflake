@@ -1,15 +1,15 @@
 use ndarray::{Axis, Ix2};
 
-use crate::{Function, Variable};
+use crate::*;
 
 use super::MatTranspose;
 
 pub struct Matmul;
 
 impl Function for Matmul {
-    fn forward<const ENABLE_BACKPROP: bool>(
+    fn forward(
         &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
+        xs: &Vec<Variable>,
     ) -> Vec<crate::Tensor> {
         // 行列同士の積に限定する
         // TODO: broadcast
@@ -34,7 +34,7 @@ impl Function for Matmul {
             let x0 = (*xs[0]).to_owned().into_dimensionality::<Ix2>().unwrap();
             let x1 = (*xs[1]).to_owned().into_dimensionality::<Ix2>().unwrap();
 
-            vec![x0.dot(&x1).into_dyn()]
+            vec![x0.dot(&x1).into_dyn().into_tensor()]
         } else {
             let x0 = x0
                 .broadcast(
@@ -94,16 +94,16 @@ impl Function for Matmul {
                     .collect::<Vec<_>>(),
                 es,
             )
-            .unwrap()]
+            .unwrap().into_tensor()]
         }
     }
 
-    fn backward<const ENABLE_BACKPROP: bool>(
+    fn backward(
         &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
-        ys: &Vec<Variable<ENABLE_BACKPROP>>,
-        gys: &Vec<Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<Variable<ENABLE_BACKPROP>> {
+        xs: &Vec<Variable>,
+        ys: &Vec<Variable>,
+        gys: &Vec<Variable>,
+    ) -> Vec<Variable> {
         #![allow(unused_variables)]
 
         let x = xs[0].clone();
@@ -139,41 +139,41 @@ fn broadcast_shape(a: &[usize], b: &[usize]) -> Option<Vec<usize>> {
         .collect()
 }
 
-#[test]
-fn test() {
-    use crate::{Variable, ENABLE_BACKPROP};
+// #[test]
+// fn test() {
+//     use crate::{Variable, ENABLE_BACKPROP};
 
-    {
-        let a = Variable::<ENABLE_BACKPROP>::new(
-            ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_dyn(),
-        );
-        let b = Variable::<ENABLE_BACKPROP>::new(
-            ndarray::array![[1., 2.], [3., 4.], [5., 6.]].into_dyn(),
-        );
-        let ys = Matmul.call(vec![a.clone(), b.clone()]);
-        assert_eq!(&ys[0].shape(), &[2, 2]);
+//     {
+//         let a = Variable::new(
+//             ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_dyn(),
+//         );
+//         let b = Variable::new(
+//             ndarray::array![[1., 2.], [3., 4.], [5., 6.]].into_dyn(),
+//         );
+//         let ys = Matmul.call(vec![a.clone(), b.clone()]);
+//         assert_eq!(&ys[0].shape(), &[2, 2]);
 
-        ys[0].backward(false, false);
-        dbg!(&*a.get_grad::<ENABLE_BACKPROP>().unwrap());
+//         ys[0].backward(false, false);
+//         dbg!(&*a.get_grad().unwrap());
 
-        let ys = Matmul.call(vec![b.clone(), a.clone()]);
-        assert_eq!(&ys[0].shape(), &[3, 3]);
-    }
+//         let ys = Matmul.call(vec![b.clone(), a.clone()]);
+//         assert_eq!(&ys[0].shape(), &[3, 3]);
+//     }
 
-    {
-        let a = Variable::<ENABLE_BACKPROP>::new(
-            ndarray::array![[[1., 2., 3.], [4., 5., 6.]]].into_dyn(),
-        );
-        let b = Variable::<ENABLE_BACKPROP>::new(
-            ndarray::array![[[1., 2.], [3., 4.], [5., 6.]]].into_dyn(),
-        );
-        let ys = Matmul.call(vec![a.clone(), b.clone()]);
-        assert_eq!(&ys[0].shape(), &[1, 2, 2]);
+//     {
+//         let a = Variable::new(
+//             ndarray::array![[[1., 2., 3.], [4., 5., 6.]]].into_dyn(),
+//         );
+//         let b = Variable::new(
+//             ndarray::array![[[1., 2.], [3., 4.], [5., 6.]]].into_dyn(),
+//         );
+//         let ys = Matmul.call(vec![a.clone(), b.clone()]);
+//         assert_eq!(&ys[0].shape(), &[1, 2, 2]);
 
-        ys[0].backward(false, false);
-        dbg!(&*a.get_grad::<ENABLE_BACKPROP>().unwrap());
+//         ys[0].backward(false, false);
+//         dbg!(&*a.get_grad().unwrap());
 
-        let ys = Matmul.call(vec![b.clone(), a.clone()]);
-        assert_eq!(&ys[0].shape(), &[1, 3, 3]);
-    }
-}
+//         let ys = Matmul.call(vec![b.clone(), a.clone()]);
+//         assert_eq!(&ys[0].shape(), &[1, 3, 3]);
+//     }
+// }

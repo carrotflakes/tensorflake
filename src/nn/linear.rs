@@ -5,8 +5,8 @@ use super::Layer;
 use crate::{functions::*, *};
 
 pub struct Linear {
-    pub w: Variable<ENABLE_BACKPROP>,
-    pub b: Variable<ENABLE_BACKPROP>,
+    pub w: Variable,
+    pub b: Variable,
 }
 
 impl Linear {
@@ -22,21 +22,14 @@ impl Linear {
 }
 
 impl Layer for Linear {
-    fn call<const ENABLE_BACKPROP: bool>(
-        &self,
-        xs: Vec<Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<Variable<ENABLE_BACKPROP>>
+    fn call(&self, xs: Vec<Variable>) -> Vec<Variable>
     where
         Self: Sized + 'static,
     {
-        vec![call!(
-            Add,
-            call!(Matmul, xs[0], self.w.flip_bp()),
-            self.b.flip_bp()
-        )]
+        vec![call!(Add, call!(Matmul, xs[0], self.w), self.b)]
     }
 
-    fn all_params(&self) -> Vec<Variable<ENABLE_BACKPROP>> {
+    fn all_params(&self) -> Vec<Variable> {
         vec![self.w.clone(), self.b.clone()]
     }
 }

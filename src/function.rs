@@ -1,20 +1,17 @@
-use std::rc::Rc;
+use std::{any::TypeId, sync::Arc};
 
-use crate::{Funcall, Tensor, Variable};
+use crate::{Funcall, Tensor, Variable, functions::CreateGraph};
 
-pub trait Function {
-    fn forward<const ENABLE_BACKPROP: bool>(
+pub trait Function: 'static {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor>;
+    fn backward(
         &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<Tensor>;
-    fn backward<const ENABLE_BACKPROP: bool>(
-        &self,
-        xs: &Vec<Variable<ENABLE_BACKPROP>>,
-        ys: &Vec<Variable<ENABLE_BACKPROP>>,
-        gys: &Vec<Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<Variable<ENABLE_BACKPROP>>;
+        xs: &Vec<Variable>,
+        ys: &Vec<Variable>,
+        gys: &Vec<Variable>,
+    ) -> Vec<Variable>;
 
-    fn into_backward(self, xs: &Vec<Variable<true>>) -> Box<dyn Backward>
+    fn into_backward(self, xs: &Vec<Variable>) -> Box<dyn Backward>
     where
         Self: Sized + 'static,
     {
@@ -23,39 +20,69 @@ pub trait Function {
         Box::new(self)
     }
 
-    fn call<const ENABLE_BACKPROP: bool>(
-        self,
-        xs: Vec<Variable<ENABLE_BACKPROP>>,
-    ) -> Vec<Variable<ENABLE_BACKPROP>>
+    // fn call(self, xs: Vec<Variable>) -> Vec<Variable>
+    // where
+    //     Self: Sized + 'static,
+    // {
+    //     let ys = self.forward(&xs);
+    //     let ys: Vec<_> = ys.into_iter().map(|y| Variable::new(y)).collect();
+
+    //     let recorders = xs
+    //         .iter()
+    //         .flat_map(|x| {
+    //             x.inner
+    //                 .attrs
+    //                 .lock()
+    //                 .unwrap()
+    //                 .recorder
+    //                 .clone()
+    //                 .and_then(|r| if r.is_prevented() { None } else { Some(r) })
+    //         })
+    //         .collect::<Vec<_>>();
+
+    //     if !recorders.is_empty() {
+    //         let recorder = Recorder::merge(recorders);
+    //         let backward = self.into_backward(&xs);
+    //         let fc = Funcall::new(backward, xs, ys.clone());
+    //         recorder.push(fc);
+
+    //         for y in &ys {
+    //             y.set_recorder(recorder.clone());
+    //         }
+    //     }
+
+    //     ys
+    // }
+    
+    fn call(self, xs: Vec<Variable>) -> Vec<Variable>
     where
         Self: Sized + 'static,
     {
         let ys = self.forward(&xs);
-        if !ENABLE_BACKPROP {
-            ys.into_iter().map(|y| Variable::new(y)).collect()
-        } else {
-            let xs = unsafe { std::mem::transmute(xs) };
+        let ys: Vec<_> = ys.into_iter().map(|y| Variable::new(y)).collect();
+        if self.is_force_create_graph() || xs.iter().any(|x| x.has_creator()) {
             let backward = self.into_backward(&xs);
-
-            let ys: Vec<_> = ys.into_iter().map(|y| Variable::new(y)).collect();
             let fc = Funcall::new(backward, xs, &ys);
-            let fc = Rc::new(fc);
+            let fc = Arc::new(fc);
             for y in &ys {
-                y.inner.attrs.borrow_mut().creator = Some(fc.clone());
+                y.inner.attrs.lock().unwrap().creator = Some(fc.clone());
             }
-            unsafe { std::mem::transmute(ys) }
         }
+        ys
+    }
+
+    fn is_force_create_graph(&self) -> bool {
+        TypeId::of::<Self>() == TypeId::of::<CreateGraph>()
     }
 }
 
 pub trait Backward {
     fn backward(
         &self,
-        xs: &Vec<Variable<true>>,
-        ys: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-        enable_backprop: bool,
-    ) -> Vec<Variable<true>>;
+        xs: &Vec<Variable>,
+        ys: &Vec<Variable>,
+        gys: &Vec<Variable>,
+    ) -> Vec<Variable>;
 
     fn get_function_name(&self) -> &'static str {
         let name = std::any::type_name::<Self>();
@@ -70,19 +97,10 @@ pub trait Backward {
 impl<T: Function> Backward for T {
     fn backward(
         &self,
-        xs: &Vec<Variable<true>>,
-        ys: &Vec<Variable<true>>,
-        gys: &Vec<Variable<true>>,
-        enable_backprop: bool,
-    ) -> Vec<Variable<true>> {
-        if enable_backprop {
-            self.backward(xs, ys, gys)
-        } else {
-            let xs = unsafe { std::mem::transmute(xs) };
-            let ys = unsafe { std::mem::transmute(ys) };
-            let gys = unsafe { std::mem::transmute(gys) };
-            let gxs = self.backward::<false>(xs, ys, gys);
-            unsafe { std::mem::transmute(gxs) }
-        }
+        xs: &Vec<Variable>,
+        ys: &Vec<Variable>,
+        gys: &Vec<Variable>,
+    ) -> Vec<Variable> {
+        self.backward(xs, ys, gys)
     }
 }
