@@ -1,6 +1,6 @@
 use ruzero::{
-    functions::{Exp, Mul, Sin},
-    scalar, Function, Variable, backprop, gradients,
+    functions::*,
+    *,
 };
 
 fn main() {
@@ -49,7 +49,7 @@ fn main() {
 
     {
         let x = Variable::new(
-            ndarray::array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]].into_dyn(),
+            ndarray::array![[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]].into_tensor(),
         );
         let y = Sin.call(vec![x]);
         println!("{:?}", *y[0]);

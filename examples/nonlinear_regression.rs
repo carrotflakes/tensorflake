@@ -6,12 +6,12 @@ fn main() {
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let n = 100;
 
-    let x = Variable::new(Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_dyn())
+    let x = Variable::new(Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_tensor())
         .named("x");
     let y = call!(
         Add,
         call!(Sin, call!(Mul, x, Variable::new(scalar(2.0 * 3.14)))),
-        Variable::new(Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_dyn())
+        Variable::new(Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_tensor())
     )
     .named("y");
 
@@ -56,7 +56,7 @@ fn main() {
         }
     }
     for i in 0..20 {
-        let x = Variable::new(array![[i as f32 / 20.0]].into_dyn());
+        let x = Variable::new(array![[i as f32 / 20.0]].into_tensor());
         let h = l1.forward(x);
         let h = sigmoid_simple(h).named("hidden");
         let y_ = l2.forward(h);
@@ -82,9 +82,9 @@ pub struct Layer {
 impl Layer {
     pub fn new(input: usize, output: usize) -> Self {
         Self {
-            w: trainable(Array::random((input, output), Uniform::new(0., 0.01)).into_dyn())
+            w: trainable(Array::random((input, output), Uniform::new(0., 0.01)).into_tensor())
                 .named("param w"),
-            b: trainable(Array::zeros(output).into_dyn()).named("param b"),
+            b: trainable(Array::zeros(output).into_tensor()).named("param b"),
         }
     }
 

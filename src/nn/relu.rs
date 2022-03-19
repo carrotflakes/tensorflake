@@ -1,15 +1,12 @@
-use crate::{call, functions::Mul, Function, Tensor, Variable};
+use crate::*;
 
 pub struct Relu;
 
 impl Function for Relu {
-    fn forward(
-        &self,
-        xs: &Vec<Variable>,
-    ) -> Vec<Tensor> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].map(|x| x.max(0.0))]
+        vec![xs[0].map(|x| x.max(0.0)).into_tensor()]
     }
 
     fn backward(
@@ -21,9 +18,13 @@ impl Function for Relu {
         #![allow(unused_variables)]
 
         vec![call!(
-            Mul,
+            functions::Mul,
             gys[0],
-            Variable::new(xs[0].map(|x| if *x > 0.0 { 1.0 } else { 0.0 }))
+            Variable::new(
+                xs[0]
+                    .map(|x| if *x > 0.0 { 1.0 } else { 0.0 })
+                    .into_tensor()
+            )
         )]
     }
 }

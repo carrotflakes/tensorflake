@@ -1,10 +1,6 @@
 use ndarray::Array;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-use ruzero::{
-    backprop, call,
-    functions::{Add, BroadcastTo, Div, Matmul, Mul, Pow, Sub, SumTo},
-    gradients, scalar, Function, Variable,
-};
+use ruzero::{functions::*, *};
 
 fn main() {
     let n = 10;
@@ -12,18 +8,18 @@ fn main() {
 
     // make dataset
     let x =
-        Variable::new(Array::random_using((n, 1, 1), Uniform::new(0., 1.), &mut rng).into_dyn());
+        Variable::new(Array::random_using((n, 1, 1), Uniform::new(0., 1.), &mut rng).into_tensor());
     let y = call!(
         Add,
         call!(Mul, x, Variable::new(scalar(2.0))),
-        Variable::new(Array::zeros((n, 1, 1)).into_dyn())
+        Variable::new(Array::zeros((n, 1, 1)).into_tensor())
     );
 
     // dbg!(&*x);
     // dbg!(&*y);
 
-    let mut w = backprop(ndarray::array![[[0.0]]].into_dyn()).named("w");
-    let mut b = backprop(ndarray::array![0.0].into_dyn()).named("b");
+    let mut w = backprop(ndarray::array![[[0.0]]].into_tensor()).named("w");
+    let mut b = backprop(ndarray::array![0.0].into_tensor()).named("b");
 
     let predict = |w: Variable, b: Variable, x: Variable| {
         call!(
@@ -47,8 +43,8 @@ fn main() {
         let gs = gradients(&[loss.clone()], &[w.clone(), b.clone()], false);
 
         let lr = 0.01;
-        w = backprop(&*w - &*gs[0] * lr);
-        b = backprop(&*b - &*gs[1] * lr);
+        w = backprop((&*w - &*gs[0] * lr).into_tensor());
+        b = backprop((&*b - &*gs[1] * lr).into_tensor());
     }
 }
 

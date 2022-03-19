@@ -1,6 +1,6 @@
-use std::{any::TypeId, sync::Arc};
+use std::sync::Arc;
 
-use crate::{functions::CreateGraph, Funcall, Tensor, Variable};
+use crate::{Funcall, Tensor, Variable};
 
 pub trait Function: 'static {
     fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor>;
@@ -26,7 +26,7 @@ pub trait Function: 'static {
     {
         let ys = self.forward(&xs);
         let ys: Vec<_> = ys.into_iter().map(|y| Variable::new(y)).collect();
-        if self.is_force_create_graph() || xs.iter().any(|x| x.has_creator()) {
+        if Self::IS_FORCE_CREATE_GRAPH || xs.iter().any(|x| x.has_creator()) {
             let backward = self.into_backward(&xs);
             let fc = Funcall::new(backward, xs, &ys);
             let fc = Arc::new(fc);
@@ -37,9 +37,7 @@ pub trait Function: 'static {
         ys
     }
 
-    fn is_force_create_graph(&self) -> bool {
-        TypeId::of::<Self>() == TypeId::of::<CreateGraph>()
-    }
+    const IS_FORCE_CREATE_GRAPH: bool = false;
 }
 
 pub trait Backward {

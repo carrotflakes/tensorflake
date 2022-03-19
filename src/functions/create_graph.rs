@@ -27,4 +27,6 @@ impl Function for CreateGraph {
 
         vec![]
     }
+
+    const IS_FORCE_CREATE_GRAPH: bool = true;
 }
