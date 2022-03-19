@@ -17,16 +17,17 @@ impl BroadcastTo {
 }
 
 impl Function for BroadcastTo {
-    fn forward(
-        &self,
-        xs: &Vec<Variable>,
-    ) -> Vec<Variable> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
-        vec![Variable::new(xs[0]
-            .broadcast(self.shape.as_slice())
-            .unwrap_or_else(|| panic!("illegal broadcast: {:?} to {:?}", xs[0].shape(), self.shape))
-            .into_tensor())]
+        vec![Variable::new(
+            xs[0]
+                .broadcast(self.shape.as_slice())
+                .unwrap_or_else(|| {
+                    panic!("illegal broadcast: {:?} to {:?}", xs[0].shape(), self.shape)
+                })
+                .into_tensor(),
+        )]
     }
 
     fn backward(
@@ -60,31 +61,19 @@ impl Function for BroadcastTo {
     }
 }
 
-// #[test]
-// fn test() {
-//     use crate::ENABLE_BACKPROP;
+#[test]
+fn test() {
+    {
+        let x = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
+        let ys = BroadcastTo::new(vec![2, 3]).call(vec![x.clone()]);
+        assert_eq!(ys[0].shape(), &[2, 3]);
+        assert_eq!(&*ys[0], &*x);
+    }
 
-//     {
-//         let x = Variable::new(
-//             ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_dyn(),
-//         );
-//         let ys = BroadcastTo::new(vec![2, 3]).call(vec![x.clone()]);
-//         assert_eq!(ys[0].shape(), &[2, 3]);
-//         assert_eq!(&*ys[0], &*x);
-
-//         ys[0].backward(false, false);
-//         dbg!(&*x.get_grad().unwrap()); // = [1], are you ok?
-//     }
-
-//     {
-//         let x = Variable::new(
-//             ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_dyn(),
-//         );
-//         let ys = BroadcastTo::new(vec![4, 2, 3]).call(vec![x.clone()]);
-//         // dbg!(&*ys[0]);
-//         assert_eq!(ys[0].shape(), &[4, 2, 3]);
-
-//         ys[0].backward(false, false);
-//         dbg!(&*x.get_grad().unwrap());
-//     }
-// }
+    {
+        let x = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
+        let ys = BroadcastTo::new(vec![4, 2, 3]).call(vec![x.clone()]);
+        // dbg!(&*ys[0]);
+        assert_eq!(ys[0].shape(), &[4, 2, 3]);
+    }
+}

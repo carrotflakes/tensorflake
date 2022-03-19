@@ -42,16 +42,16 @@ impl Function for Sub {
     }
 }
 
-// #[test]
-// fn test_sub() {
-//     use crate::scalar;
+#[test]
+fn test_sub() {
+    use crate::scalar;
 
-//     let a = Variable::new(scalar(5.0));
-//     let b = Variable::new(scalar(3.0));
-//     let ys = Sub.call(vec![a.clone(), b.clone()]);
-//     assert_eq!(*ys[0], scalar(2.0));
+    let a = backprop(scalar(5.0));
+    let b = backprop(scalar(3.0));
+    let ys = Sub.call(vec![a.clone(), b.clone()]);
+    assert_eq!(*ys[0], scalar(2.0));
 
-//     ys[0].backward(false, false);
-//     assert_eq!(*a.get_grad().unwrap(), scalar(1.0));
-//     assert_eq!(*b.get_grad().unwrap(), scalar(-1.0));
-// }
+    let grads = gradients(&ys, &[a.clone(), b.clone()], false);
+    assert_eq!(&*grads[0], scalar(1.0));
+    assert_eq!(&*grads[1], scalar(-1.0));
+}

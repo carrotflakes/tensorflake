@@ -38,12 +38,12 @@ impl Function for Pow {
     }
 }
 
-// #[test]
-// fn test_pow() {
-//     let a = Variable::new(scalar(5.0));
-//     let ys = Pow(2.0).call(vec![a.clone()]);
-//     assert_eq!(*ys[0], scalar(25.0));
+#[test]
+fn test_pow() {
+    let a = backprop(scalar(5.0));
+    let ys = Pow(2.0).call(vec![a.clone()]);
+    assert_eq!(*ys[0], scalar(25.0));
 
-//     ys[0].backward(false, false);
-//     assert_eq!(*a.get_grad().unwrap(), scalar(10.0));
-// }
+    let grads = gradients(&ys, &[a.clone()], false);
+    assert_eq!(*grads[0], scalar(10.0));
+}

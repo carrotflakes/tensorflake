@@ -7,10 +7,7 @@ use super::MatTranspose;
 pub struct Matmul;
 
 impl Function for Matmul {
-    fn forward(
-        &self,
-        xs: &Vec<Variable>,
-    ) -> Vec<Variable> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
         // 行列同士の積に限定する
         // TODO: broadcast
         assert!(xs.len() == 2);
@@ -94,7 +91,9 @@ impl Function for Matmul {
                     .collect::<Vec<_>>(),
                 es,
             )
-            .unwrap().into_tensor().into()]
+            .unwrap()
+            .into_tensor()
+            .into()]
         }
     }
 
@@ -139,41 +138,29 @@ fn broadcast_shape(a: &[usize], b: &[usize]) -> Option<Vec<usize>> {
         .collect()
 }
 
-// #[test]
-// fn test() {
-//     use crate::{Variable, ENABLE_BACKPROP};
+#[test]
+fn test() {
+    {
+        let a = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
+        let b = backprop(ndarray::array![[1., 2.], [3., 4.], [5., 6.]].into_tensor());
+        let ys = Matmul.call(vec![a.clone(), b.clone()]);
+        assert_eq!(&ys[0].shape(), &[2, 2]);
 
-//     {
-//         let a = Variable::new(
-//             ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_dyn(),
-//         );
-//         let b = Variable::new(
-//             ndarray::array![[1., 2.], [3., 4.], [5., 6.]].into_dyn(),
-//         );
-//         let ys = Matmul.call(vec![a.clone(), b.clone()]);
-//         assert_eq!(&ys[0].shape(), &[2, 2]);
+        let _grads = gradients(&ys, &[a.clone(), b.clone()], false);
 
-//         ys[0].backward(false, false);
-//         dbg!(&*a.get_grad().unwrap());
+        let ys = Matmul.call(vec![b.clone(), a.clone()]);
+        assert_eq!(&ys[0].shape(), &[3, 3]);
+    }
 
-//         let ys = Matmul.call(vec![b.clone(), a.clone()]);
-//         assert_eq!(&ys[0].shape(), &[3, 3]);
-//     }
+    {
+        let a = backprop(ndarray::array![[[1., 2., 3.], [4., 5., 6.]]].into_tensor());
+        let b = backprop(ndarray::array![[[1., 2.], [3., 4.], [5., 6.]]].into_tensor());
+        let ys = Matmul.call(vec![a.clone(), b.clone()]);
+        assert_eq!(&ys[0].shape(), &[1, 2, 2]);
 
-//     {
-//         let a = Variable::new(
-//             ndarray::array![[[1., 2., 3.], [4., 5., 6.]]].into_dyn(),
-//         );
-//         let b = Variable::new(
-//             ndarray::array![[[1., 2.], [3., 4.], [5., 6.]]].into_dyn(),
-//         );
-//         let ys = Matmul.call(vec![a.clone(), b.clone()]);
-//         assert_eq!(&ys[0].shape(), &[1, 2, 2]);
+        let _grads = gradients(&ys, &[a.clone(), b.clone()], false);
 
-//         ys[0].backward(false, false);
-//         dbg!(&*a.get_grad().unwrap());
-
-//         let ys = Matmul.call(vec![b.clone(), a.clone()]);
-//         assert_eq!(&ys[0].shape(), &[1, 3, 3]);
-//     }
-// }
+        let ys = Matmul.call(vec![b.clone(), a.clone()]);
+        assert_eq!(&ys[0].shape(), &[1, 3, 3]);
+    }
+}

@@ -3,10 +3,7 @@ use crate::*;
 pub struct MatTranspose;
 
 impl Function for MatTranspose {
-    fn forward(
-        &self,
-        xs: &Vec<Variable>,
-    ) -> Vec<Variable> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
         assert!(xs.len() == 1);
         assert!(xs[0].shape().len() >= 2);
 
@@ -28,17 +25,14 @@ impl Function for MatTranspose {
     }
 }
 
-// #[test]
-// fn test() {
-//     use crate::{call, Variable, ENABLE_BACKPROP};
+#[test]
+fn test() {
+    {
+        let x = backprop(ndarray::Array::zeros([1, 2, 3]).into_tensor());
+        let y = call!(MatTranspose, x);
+        assert_eq!(y.shape(), &[1, 3, 2]);
 
-//     {
-//         let x = Variable::new(ndarray::Array::zeros([1, 2, 3]).into_dyn());
-//         let y = call!(MatTranspose, x);
-//         assert_eq!(y.shape(), &[1, 3, 2]);
-
-//         y.backward(false, false);
-
-//         assert_eq!(x.get_grad().unwrap().shape(), &[1, 2, 3]);
-//     }
-// }
+        let grads = gradients(&[y.clone()], &[x.clone()], false);
+        assert_eq!(grads[0].shape(), &[1, 2, 3]);
+    }
+}

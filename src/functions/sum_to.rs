@@ -65,25 +65,19 @@ pub fn sum_to_axes_to_desire(src_shape: &[usize], dst_shape: &[usize]) -> Vec<us
     axes
 }
 
-// #[test]
-// fn test() {
-//     use crate::ENABLE_BACKPROP;
+#[test]
+fn test() {
+    {
+        let x = Variable::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
+        let ys = SumTo::new(vec![0]).call(vec![x.clone()]);
+        assert_eq!(ys[0].shape(), &[3]);
+        assert_eq!(&*ys[0], &ndarray::array![5., 7., 9.].into_tensor());
+    }
 
-//     {
-//         let x = Variable::new(
-//             ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_dyn(),
-//         );
-//         let ys = SumTo::new(vec![0]).call(vec![x.clone()]);
-//         assert_eq!(ys[0].shape(), &[3]);
-//         assert_eq!(&*ys[0], &ndarray::array![5., 7., 9.].into_dyn());
-//     }
-
-//     {
-//         let x = Variable::new(
-//             ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_dyn(),
-//         );
-//         let ys = SumTo::new(vec![1]).call(vec![x.clone()]);
-//         assert_eq!(ys[0].shape(), &[2]);
-//         assert_eq!(&*ys[0], &ndarray::array![6., 15.].into_dyn());
-//     }
-// }
+    {
+        let x = Variable::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
+        let ys = SumTo::new(vec![1]).call(vec![x.clone()]);
+        assert_eq!(ys[0].shape(), &[2]);
+        assert_eq!(&*ys[0], &ndarray::array![6., 15.].into_tensor());
+    }
+}

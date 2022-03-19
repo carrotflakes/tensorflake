@@ -36,17 +36,14 @@ impl Function for Transpose {
     }
 }
 
-// #[test]
-// fn test() {
-//     use crate::{call, Variable, ENABLE_BACKPROP};
+#[test]
+fn test() {
+    {
+        let x = backprop(ndarray::Array::zeros([1, 2, 3]).into_tensor());
+        let y = call!(Transpose::new(vec![1, 2, 0]), x);
+        assert_eq!(y.shape(), &[2, 3, 1]);
 
-//     {
-//         let x = Variable::new(ndarray::Array::zeros([1, 2, 3]).into_dyn());
-//         let y = call!(Transpose::new(vec![1, 2, 0]), x);
-//         assert_eq!(y.shape(), &[2, 3, 1]);
-
-//         y.backward(false, false);
-
-//         assert_eq!(x.get_grad().unwrap().shape(), &[1, 2, 3]);
-//     }
-// }
+        let grads = gradients(&[y], &[x], false);
+        assert_eq!(grads[0].shape(), &[1, 2, 3]);
+    }
+}

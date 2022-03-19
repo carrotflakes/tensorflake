@@ -15,13 +15,14 @@ impl Reshape {
 }
 
 impl Function for Reshape {
-    fn forward(
-        &self,
-        xs: &Vec<crate::Variable>,
-    ) -> Vec<Variable> {
+    fn forward(&self, xs: &Vec<crate::Variable>) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].to_shape(self.shape.as_slice()).unwrap().into_tensor().into()]
+        vec![xs[0]
+            .to_shape(self.shape.as_slice())
+            .unwrap()
+            .into_tensor()
+            .into()]
     }
 
     fn backward(
@@ -51,20 +52,15 @@ impl Function for Reshape {
     }
 }
 
-// #[test]
-// fn test() {
-//     use crate::ENABLE_BACKPROP;
+#[test]
+fn test() {
+    {
+        let x = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
+        let ys = Reshape::new(vec![3, 2]).call(vec![x.clone()]);
+        dbg!(&*ys[0]);
+        assert_eq!(ys[0].shape(), &[3, 2]);
 
-//     {
-//         let x = Variable::new(
-//             ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_dyn(),
-//         );
-//         let ys = Reshape::new(vec![3, 2]).call(vec![x.clone()]);
-//         dbg!(&*ys[0]);
-//         assert_eq!(ys[0].shape(), &[3, 2]);
-
-//         ys[0].backward(false, false);
-//         dbg!(&*x.get_grad().unwrap());
-//         assert_eq!(x.get_grad().unwrap().shape(), &[2, 3]);
-//     }
-// }
+        let grads = gradients(&ys, &[x.clone()], false);
+        assert_eq!(grads[0].shape(), &[2, 3]);
+    }
+}
