@@ -19,7 +19,7 @@ impl SumTo {
 }
 
 impl Function for SumTo {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
         let mut x = (*xs[0]).to_owned();
@@ -27,7 +27,7 @@ impl Function for SumTo {
             x = x.sum_axis(ndarray::Axis(*axise));
         }
 
-        vec![x.into_tensor()]
+        vec![x.into_tensor().into()]
     }
 
     fn backward(

@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use crate::{Funcall, Tensor, Variable};
+use crate::{Funcall, Variable};
 
 pub trait Function: 'static {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor>;
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable>;
     fn backward(
         &self,
         xs: &Vec<Variable>,
@@ -25,7 +25,6 @@ pub trait Function: 'static {
         Self: Sized + 'static,
     {
         let ys = self.forward(&xs);
-        let ys: Vec<_> = ys.into_iter().map(|y| Variable::new(y)).collect();
         if Self::IS_FORCE_CREATE_GRAPH || xs.iter().any(|x| x.has_creator()) {
             let backward = self.into_backward(&xs);
             let fc = Funcall::new(backward, xs, &ys);
@@ -55,6 +54,10 @@ pub trait Backward {
         } else {
             name
         }
+    }
+
+    fn get_optimizee(&self) -> Option<crate::Optimizee> {
+        None
     }
 }
 

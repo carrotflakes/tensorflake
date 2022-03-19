@@ -1,20 +1,17 @@
-use crate::{call, Function, Tensor, Variable};
+use crate::*;
 
 use super::{sum_to_axes_to_desire, SumTo};
 
 pub struct Add;
 
 impl Function for Add {
-    fn forward(
-        &self,
-        xs: &Vec<Variable>,
-    ) -> Vec<Tensor> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
         assert!(xs.len() >= 1);
         let mut y = (*xs[0]).clone();
         for x in xs.iter().skip(1) {
             y = y + &**x;
         }
-        vec![y]
+        vec![Variable::new(y)]
     }
 
     fn backward(

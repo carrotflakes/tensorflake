@@ -20,13 +20,13 @@ impl Function for BroadcastTo {
     fn forward(
         &self,
         xs: &Vec<Variable>,
-    ) -> Vec<Tensor> {
+    ) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
-        vec![xs[0]
+        vec![Variable::new(xs[0]
             .broadcast(self.shape.as_slice())
             .unwrap_or_else(|| panic!("illegal broadcast: {:?} to {:?}", xs[0].shape(), self.shape))
-            .into_tensor()]
+            .into_tensor())]
     }
 
     fn backward(

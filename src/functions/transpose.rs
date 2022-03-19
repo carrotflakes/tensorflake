@@ -13,10 +13,10 @@ impl Transpose {
 }
 
 impl Function for Transpose {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<crate::Tensor> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].view().permuted_axes(&*self.axes).into_tensor()]
+        vec![xs[0].view().permuted_axes(&*self.axes).into_tensor().into()]
     }
 
     fn backward(

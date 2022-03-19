@@ -11,10 +11,10 @@ impl CreateGraph {
 }
 
 impl Function for CreateGraph {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
         #![allow(unused_variables)]
 
-        vec![self.y.clone()]
+        vec![Variable::new(self.y.clone())]
     }
 
     fn backward(

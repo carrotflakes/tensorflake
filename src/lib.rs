@@ -3,6 +3,8 @@ mod funcall;
 mod function;
 pub mod functions;
 pub mod nn;
+mod optimization;
+mod optimizees;
 mod tensor;
 mod variable;
 
@@ -11,17 +13,13 @@ mod test;
 
 pub use funcall::*;
 pub use function::*;
+pub use optimization::*;
+pub use optimizees::*;
 pub use tensor::*;
 pub use variable::*;
 
 pub fn backprop(x: Tensor) -> Variable {
     functions::CreateGraph::new(x).call(vec![]).pop().unwrap()
-}
-
-pub fn trainable(x: Tensor) -> Variable {
-    let v = functions::CreateGraph::new(x).call(vec![]).pop().unwrap();
-    v.set_trainable(true);
-    v
 }
 
 #[macro_export]

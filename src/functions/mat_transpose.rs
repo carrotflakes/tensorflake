@@ -6,14 +6,14 @@ impl Function for MatTranspose {
     fn forward(
         &self,
         xs: &Vec<Variable>,
-    ) -> Vec<crate::Tensor> {
+    ) -> Vec<Variable> {
         assert!(xs.len() == 1);
         assert!(xs[0].shape().len() >= 2);
 
         let mut axes: Vec<_> = (0..xs[0].shape().len()).collect();
         axes[xs[0].shape().len() - 2..].reverse();
 
-        vec![xs[0].view().permuted_axes(axes).into_tensor()]
+        vec![xs[0].view().permuted_axes(axes).into_tensor().into()]
     }
 
     fn backward(

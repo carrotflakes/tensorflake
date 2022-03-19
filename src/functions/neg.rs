@@ -6,9 +6,9 @@ impl Function for Neg {
     fn forward(
         &self,
         xs: &Vec<Variable>,
-    ) -> Vec<Tensor> {
+    ) -> Vec<Variable> {
         assert!(xs.len() == 1);
-        vec![xs[0].map(|x| -x).into_tensor()]
+        vec![xs[0].map(|x| -x).into_tensor().into()]
     }
 
     fn backward(

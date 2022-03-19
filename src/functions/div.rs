@@ -9,10 +9,10 @@ impl Function for Div {
     fn forward(
         &self,
         xs: &Vec<Variable>,
-    ) -> Vec<Tensor> {
+    ) -> Vec<Variable> {
         assert!(xs.len() == 2);
 
-        vec![(&*xs[0] / &*xs[1]).into_tensor()]
+        vec![(&*xs[0] / &*xs[1]).into_tensor().into()]
     }
 
     fn backward(

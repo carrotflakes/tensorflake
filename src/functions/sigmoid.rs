@@ -6,10 +6,10 @@ use crate::{
 pub struct Sigmoid;
 
 impl Function for Sigmoid {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].map(|x| (x * 0.5).tanh() * 0.5 + 0.5).into_tensor()]
+        vec![xs[0].map(|x| (x * 0.5).tanh() * 0.5 + 0.5).into_tensor().into()]
     }
 
     fn backward(

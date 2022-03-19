@@ -1,4 +1,4 @@
-use crate::{call, Function, Tensor, Variable};
+use crate::*;
 
 use super::{sum_to_axes_to_desire, SumTo};
 
@@ -8,13 +8,13 @@ impl Function for Mul {
     fn forward(
         &self,
         xs: &Vec<Variable>,
-    ) -> Vec<Tensor> {
+    ) -> Vec<Variable> {
         assert!(xs.len() >= 1);
         let mut y = (*xs[0]).clone();
         for x in xs.iter().skip(1) {
             y = y * &**x;
         }
-        vec![y]
+        vec![y.into()]
     }
 
     fn backward(

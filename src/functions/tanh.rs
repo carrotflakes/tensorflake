@@ -6,10 +6,10 @@ use crate::{
 pub struct Tanh;
 
 impl Function for Tanh {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].map(|x| x.tanh()).into_tensor()]
+        vec![xs[0].map(|x| x.tanh()).into_tensor().into()]
     }
 
     fn backward(

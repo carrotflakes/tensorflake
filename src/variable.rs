@@ -7,7 +7,6 @@ use crate::{Funcall, Tensor};
 
 pub(crate) struct VariableAttrs {
     pub name: String,
-    pub trainable: bool,
     pub creator: Option<Arc<Funcall>>,
 }
 
@@ -27,8 +26,6 @@ impl Variable {
                 data,
                 attrs: Mutex::new(VariableAttrs {
                     name: "".to_string(),
-                    trainable: true,
-                    // recorder: None,
                     creator: None,
                 }),
             }),
@@ -46,14 +43,6 @@ impl Variable {
 
     pub fn get_name(&self) -> String {
         self.inner.attrs.lock().unwrap().name.to_owned()
-    }
-
-    pub fn set_trainable(&self, trainable: bool) {
-        self.inner.attrs.lock().unwrap().trainable = trainable;
-    }
-
-    pub fn is_trainable(&self) -> bool {
-        self.inner.attrs.lock().unwrap().trainable
     }
 
     pub fn has_creator(&self) -> bool {
@@ -95,5 +84,11 @@ impl Eq for Variable {}
 impl std::hash::Hash for Variable {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         Arc::as_ptr(&self.inner).hash(state);
+    }
+}
+
+impl Into<Variable> for Tensor {
+    fn into(self) -> Variable {
+        Variable::new(self)
     }
 }

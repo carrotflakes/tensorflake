@@ -18,10 +18,10 @@ impl Function for Reshape {
     fn forward(
         &self,
         xs: &Vec<crate::Variable>,
-    ) -> Vec<crate::Tensor> {
+    ) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].to_shape(self.shape.as_slice()).unwrap().into_tensor()]
+        vec![xs[0].to_shape(self.shape.as_slice()).unwrap().into_tensor().into()]
     }
 
     fn backward(

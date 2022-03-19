@@ -7,10 +7,10 @@ impl Function for Sin {
     fn forward(
         &self,
         xs: &Vec<Variable>,
-    ) -> Vec<Tensor> {
+    ) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].map(|x| x.sin()).into_tensor()]
+        vec![xs[0].map(|x| x.sin()).into_tensor().into()]
     }
 
     fn backward(
@@ -31,10 +31,10 @@ impl Function for Cos {
     fn forward(
         &self,
         xs: &Vec<Variable>,
-    ) -> Vec<Tensor> {
+    ) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].map(|x| x.cos()).into_tensor()]
+        vec![xs[0].map(|x| x.cos()).into_tensor().into()]
     }
 
     fn backward(

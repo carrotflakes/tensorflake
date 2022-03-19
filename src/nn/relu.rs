@@ -3,10 +3,10 @@ use crate::*;
 pub struct Relu;
 
 impl Function for Relu {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor> {
+    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].map(|x| x.max(0.0)).into_tensor()]
+        vec![xs[0].map(|x| x.max(0.0)).into_tensor().into()]
     }
 
     fn backward(

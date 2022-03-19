@@ -82,9 +82,9 @@ pub struct Layer {
 impl Layer {
     pub fn new(input: usize, output: usize) -> Self {
         Self {
-            w: trainable(Array::random((input, output), Uniform::new(0., 0.01)).into_tensor())
+            w: backprop(Array::random((input, output), Uniform::new(0., 0.01)).into_tensor())
                 .named("param w"),
-            b: trainable(Array::zeros(output).into_tensor()).named("param b"),
+            b: backprop(Array::zeros(output).into_tensor()).named("param b"),
         }
     }
 

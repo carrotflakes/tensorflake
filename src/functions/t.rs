@@ -6,10 +6,10 @@ impl Function for T {
     fn forward(
         &self,
         xs: &Vec<Variable>,
-    ) -> Vec<crate::Tensor> {
+    ) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].t().into_tensor()]
+        vec![xs[0].t().into_tensor().into()]
     }
 
     fn backward(

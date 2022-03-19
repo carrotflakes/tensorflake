@@ -10,7 +10,7 @@ impl Function for Matmul {
     fn forward(
         &self,
         xs: &Vec<Variable>,
-    ) -> Vec<crate::Tensor> {
+    ) -> Vec<Variable> {
         // 行列同士の積に限定する
         // TODO: broadcast
         assert!(xs.len() == 2);
@@ -34,7 +34,7 @@ impl Function for Matmul {
             let x0 = (*xs[0]).to_owned().into_dimensionality::<Ix2>().unwrap();
             let x1 = (*xs[1]).to_owned().into_dimensionality::<Ix2>().unwrap();
 
-            vec![x0.dot(&x1).into_dyn().into_tensor()]
+            vec![x0.dot(&x1).into_tensor().into()]
         } else {
             let x0 = x0
                 .broadcast(
@@ -94,7 +94,7 @@ impl Function for Matmul {
                     .collect::<Vec<_>>(),
                 es,
             )
-            .unwrap().into_tensor()]
+            .unwrap().into_tensor().into()]
         }
     }
 
