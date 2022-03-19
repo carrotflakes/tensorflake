@@ -3,7 +3,6 @@ mod funcall;
 mod function;
 pub mod functions;
 pub mod nn;
-// mod recorder;
 mod tensor;
 mod variable;
 
@@ -12,7 +11,6 @@ mod test;
 
 pub use funcall::*;
 pub use function::*;
-// pub use recorder::*;
 pub use tensor::*;
 pub use variable::*;
 

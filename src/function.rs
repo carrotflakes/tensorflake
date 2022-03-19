@@ -1,6 +1,6 @@
 use std::{any::TypeId, sync::Arc};
 
-use crate::{Funcall, Tensor, Variable, functions::CreateGraph};
+use crate::{functions::CreateGraph, Funcall, Tensor, Variable};
 
 pub trait Function: 'static {
     fn forward(&self, xs: &Vec<Variable>) -> Vec<Tensor>;
@@ -20,40 +20,6 @@ pub trait Function: 'static {
         Box::new(self)
     }
 
-    // fn call(self, xs: Vec<Variable>) -> Vec<Variable>
-    // where
-    //     Self: Sized + 'static,
-    // {
-    //     let ys = self.forward(&xs);
-    //     let ys: Vec<_> = ys.into_iter().map(|y| Variable::new(y)).collect();
-
-    //     let recorders = xs
-    //         .iter()
-    //         .flat_map(|x| {
-    //             x.inner
-    //                 .attrs
-    //                 .lock()
-    //                 .unwrap()
-    //                 .recorder
-    //                 .clone()
-    //                 .and_then(|r| if r.is_prevented() { None } else { Some(r) })
-    //         })
-    //         .collect::<Vec<_>>();
-
-    //     if !recorders.is_empty() {
-    //         let recorder = Recorder::merge(recorders);
-    //         let backward = self.into_backward(&xs);
-    //         let fc = Funcall::new(backward, xs, ys.clone());
-    //         recorder.push(fc);
-
-    //         for y in &ys {
-    //             y.set_recorder(recorder.clone());
-    //         }
-    //     }
-
-    //     ys
-    // }
-    
     fn call(self, xs: Vec<Variable>) -> Vec<Variable>
     where
         Self: Sized + 'static,

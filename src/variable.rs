@@ -5,7 +5,6 @@ use crate::{Funcall, Tensor};
 pub(crate) struct VariableAttrs {
     pub name: String,
     pub trainable: bool,
-    // pub recorder: Option<Recorder>, // todo: weak
     pub creator: Option<Arc<Funcall>>,
 }
 
@@ -45,20 +44,6 @@ impl Variable {
     pub fn get_name(&self) -> String {
         self.inner.attrs.lock().unwrap().name.to_owned()
     }
-
-    // pub fn recorded(self) -> Self {
-    //     self.inner
-    //         .attrs
-    //         .lock()
-    //         .unwrap()
-    //         .recorder
-    //         .get_or_insert(Recorder::new());
-    //     self
-    // }
-
-    // pub fn set_recorder(&self, recorder: Recorder) {
-    //     self.inner.attrs.lock().unwrap().recorder = Some(recorder);
-    // }
 
     pub fn has_creator(&self) -> bool {
         self.inner.attrs.lock().unwrap().creator.is_some()
