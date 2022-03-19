@@ -52,7 +52,7 @@ fn mean_squared_error(x0: Variable, x1: Variable) -> Variable {
     let x = call!(Pow::new(2.0), call!(Sub, x0, x1));
     call!(
         Div,
-        call!(SumTo::new((0..x.ndim()).collect()), x),
+        call!(SumTo::new((0..x.ndim()).collect(), false), x),
         Variable::new(scalar(x.shape().iter().product::<usize>() as f32))
     )
 }

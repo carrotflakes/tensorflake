@@ -38,7 +38,7 @@ impl Function for Mul {
 
                 // fit shape
                 if x.shape() != g.shape() {
-                    g = call!(SumTo::new(sum_to_axes_to_desire(g.shape(), x.shape())), g);
+                    g = call!(SumTo::new(sum_to_axes_to_desire(g.shape(), x.shape()), false), g);
                 }
 
                 g

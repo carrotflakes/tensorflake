@@ -58,7 +58,7 @@ fn main() {
     for i in 0..20 {
         let x = Variable::new(array![[i as f32 / 20.0]].into_tensor());
         let h = l1.forward(x);
-        let h = sigmoid_simple(h).named("hidden");
+        let h = naive_sigmoid(h).named("hidden");
         let y_ = l2.forward(h);
         println!("{}", &*y_);
     }
@@ -69,7 +69,7 @@ fn mean_squared_error(x0: Variable, x1: Variable) -> Variable {
     let x = call!(Pow::new(2.0), call!(Sub, x0, x1));
     call!(
         Div,
-        call!(SumTo::new((0..x.ndim()).collect()), x),
+        call!(SumTo::new((0..x.ndim()).collect(), false), x),
         Variable::new(scalar(x.shape().iter().product::<usize>() as f32))
     )
 }

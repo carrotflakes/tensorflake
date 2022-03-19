@@ -2,6 +2,7 @@ pub mod export_dot;
 mod funcall;
 mod function;
 pub mod functions;
+pub mod losses;
 pub mod nn;
 mod optimization;
 mod optimizees;
@@ -13,6 +14,7 @@ mod test;
 
 pub use funcall::*;
 pub use function::*;
+pub use nn::Layer;
 pub use optimization::*;
 pub use optimizees::*;
 pub use tensor::*;

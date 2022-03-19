@@ -38,7 +38,7 @@ impl Function for BroadcastTo {
     ) -> Vec<Variable> {
         #![allow(unused_variables)]
 
-        vec![call!(SumTo::new(self.axes.clone()), &gys[0])]
+        vec![call!(SumTo::new(self.axes.clone(), false), &gys[0])]
     }
 
     fn into_backward(mut self, xs: &Vec<Variable>) -> Box<dyn Backward>

@@ -28,7 +28,10 @@ impl Function for Add {
 
                 // fit shape
                 if x.shape() != gy.shape() {
-                    gy = call!(SumTo::new(sum_to_axes_to_desire(gy.shape(), x.shape())), gy);
+                    gy = call!(
+                        SumTo::new(sum_to_axes_to_desire(gy.shape(), x.shape()), false),
+                        gy
+                    );
                 }
 
                 gy

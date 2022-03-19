@@ -5,18 +5,22 @@ use super::Layer;
 use crate::{functions::*, *};
 
 pub struct Linear {
-    pub w: Variable,
-    pub b: Variable,
+    pub w: Box<dyn Fn() -> Variable>,
+    pub b: Box<dyn Fn() -> Variable>,
 }
 
 impl Linear {
-    pub fn new(input: usize, output: usize, rng: &mut impl Rng) -> Self {
+    pub fn new(
+        input: usize,
+        output: usize,
+        param_gen: &(impl Fn(Tensor) -> Box<dyn Fn() -> Variable> + 'static),
+        rng: &mut impl Rng,
+    ) -> Self {
         Self {
-            w: Variable::new(
+            w: param_gen(
                 Array::random_using((input, output), Uniform::new(0., 0.01), rng).into_tensor(),
-            )
-            .named("w"),
-            b: Variable::new(Array::zeros(output).into_tensor()).named("b"),
+            ),
+            b: param_gen(Array::zeros(output).into_tensor()),
         }
     }
 }
@@ -26,10 +30,10 @@ impl Layer for Linear {
     where
         Self: Sized + 'static,
     {
-        vec![call!(Add, call!(Matmul, xs[0], self.w), self.b)]
+        vec![call!(Add, call!(Matmul, xs[0], (self.w)()), (self.b)())]
     }
 
     fn all_params(&self) -> Vec<Variable> {
-        vec![self.w.clone(), self.b.clone()]
+        vec![(self.w)(), (self.b)()]
     }
 }
