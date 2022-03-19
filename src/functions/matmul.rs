@@ -7,7 +7,7 @@ use super::MatTranspose;
 pub struct Matmul;
 
 impl Function for Matmul {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         // 行列同士の積に限定する
         // TODO: broadcast
         assert!(xs.len() == 2);

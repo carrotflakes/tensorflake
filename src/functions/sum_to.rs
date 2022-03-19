@@ -19,7 +19,7 @@ impl SumTo {
 }
 
 impl Function for SumTo {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
         let mut x = (*xs[0]).to_owned();

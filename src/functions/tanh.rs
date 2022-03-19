@@ -6,7 +6,7 @@ use crate::{
 pub struct Tanh;
 
 impl Function for Tanh {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
         vec![xs[0].map(|x| x.tanh()).into_tensor().into()]

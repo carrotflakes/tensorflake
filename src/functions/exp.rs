@@ -4,10 +4,7 @@ use crate::*;
 pub struct Exp;
 
 impl Function for Exp {
-    fn forward(
-        &self,
-        xs: &Vec<Variable>,
-    ) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
         vec![(xs[0].map(|x| x.exp())).into_tensor().into()]
     }

@@ -1,15 +1,12 @@
 use crate::{
-    *,
     functions::{sum_to_axes_to_desire, Mul, Neg, Pow, SumTo},
+    *,
 };
 
 pub struct Div;
 
 impl Function for Div {
-    fn forward(
-        &self,
-        xs: &Vec<Variable>,
-    ) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 2);
 
         vec![(&*xs[0] / &*xs[1]).into_tensor().into()]

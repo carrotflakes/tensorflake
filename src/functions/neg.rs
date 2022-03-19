@@ -3,10 +3,7 @@ use crate::*;
 pub struct Neg;
 
 impl Function for Neg {
-    fn forward(
-        &self,
-        xs: &Vec<Variable>,
-    ) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
         vec![xs[0].map(|x| -x).into_tensor().into()]
     }

@@ -3,7 +3,7 @@ use crate::*;
 pub struct T;
 
 impl Function for T {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
         vec![xs[0].t().into_tensor().into()]

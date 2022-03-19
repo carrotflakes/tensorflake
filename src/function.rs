@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{Funcall, Variable};
 
 pub trait Function: 'static {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable>;
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable>;
     fn backward(
         &self,
         xs: &Vec<Variable>,

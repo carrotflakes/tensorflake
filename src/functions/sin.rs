@@ -4,10 +4,7 @@ use crate::*;
 pub struct Sin;
 
 impl Function for Sin {
-    fn forward(
-        &self,
-        xs: &Vec<Variable>,
-    ) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
         vec![xs[0].map(|x| x.sin()).into_tensor().into()]
@@ -28,10 +25,7 @@ impl Function for Sin {
 pub struct Cos;
 
 impl Function for Cos {
-    fn forward(
-        &self,
-        xs: &Vec<Variable>,
-    ) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
         vec![xs[0].map(|x| x.cos()).into_tensor().into()]

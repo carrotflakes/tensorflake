@@ -3,7 +3,7 @@ use crate::*;
 pub struct MatTranspose;
 
 impl Function for MatTranspose {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
         assert!(xs[0].shape().len() >= 2);
 

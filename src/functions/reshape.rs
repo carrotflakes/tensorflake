@@ -15,7 +15,7 @@ impl Reshape {
 }
 
 impl Function for Reshape {
-    fn forward(&self, xs: &Vec<crate::Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
         vec![xs[0]

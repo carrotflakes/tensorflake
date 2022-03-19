@@ -10,10 +10,7 @@ impl Pow {
 }
 
 impl Function for Pow {
-    fn forward(
-        &self,
-        xs: &Vec<Variable>,
-    ) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
         vec![xs[0].map(|x| x.powf(self.0)).into_tensor().into()]

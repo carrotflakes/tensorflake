@@ -5,10 +5,7 @@ use super::{sum_to_axes_to_desire, SumTo};
 pub struct Mul;
 
 impl Function for Mul {
-    fn forward(
-        &self,
-        xs: &Vec<Variable>,
-    ) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() >= 1);
         let mut y = (*xs[0]).clone();
         for x in xs.iter().skip(1) {

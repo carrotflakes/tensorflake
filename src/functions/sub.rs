@@ -6,7 +6,7 @@ use crate::{
 pub struct Sub;
 
 impl Function for Sub {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 2);
 
         vec![(&*xs[0] - &*xs[1]).into_tensor().into()]

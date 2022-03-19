@@ -11,7 +11,7 @@ impl CreateGraph {
 }
 
 impl Function for CreateGraph {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         #![allow(unused_variables)]
 
         vec![Variable::new(self.y.clone())]

@@ -13,7 +13,7 @@ impl Transpose {
 }
 
 impl Function for Transpose {
-    fn forward(&self, xs: &Vec<Variable>) -> Vec<Variable> {
+    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
         vec![xs[0].view().permuted_axes(&*self.axes).into_tensor().into()]
