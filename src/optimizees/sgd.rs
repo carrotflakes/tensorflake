@@ -1,4 +1,4 @@
-use std::ops::{AddAssign, Mul};
+use std::ops::Mul;
 
 use crate::*;
 
@@ -17,28 +17,12 @@ impl OptimizeeT for SGDOptimizee {
         &self.tensor
     }
 
-    fn update(&self, grad: &Tensor, lr: f32) {
-        #[allow(mutable_transmutes)]
-        let tensor = unsafe { std::mem::transmute::<_, &mut Tensor>(&self.tensor) };
-        tensor.add_assign(&grad.mul(scalar(-lr)));
+    fn update(&mut self, grad: &Tensor, lr: f32) {
+        self.tensor += &grad.mul(scalar(-lr));
     }
 }
 
 #[test]
 fn test() {
-    let px = SGDOptimizee::new(scalar(0.0));
-
-    let mut last_loss = 1000.0;
-    for _ in 0..10 {
-        let x = px.get();
-        let y = call!(functions::Add, x, x);
-        let loss = call!(
-            functions::Pow::new(2.0),
-            call!(functions::Sub, y, Variable::new(scalar(6.0)))
-        );
-        assert!(loss[[]] < last_loss);
-        last_loss = loss[[]];
-
-        optimize(&loss, 0.01);
-    }
+    super::test_optimizee(SGDOptimizee::new);
 }

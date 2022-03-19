@@ -12,7 +12,7 @@ pub fn naive_sgd(lr: f32, loss: &Variable) {
 
 pub trait OptimizeeT: 'static {
     fn tensor_ref(&self) -> &Tensor;
-    fn update(&self, grad: &Tensor, lr: f32);
+    fn update(&mut self, grad: &Tensor, lr: f32);
 }
 
 pub struct Optimizee {
@@ -42,7 +42,10 @@ impl Optimizee {
     }
 
     pub fn update(&self, grad: &Variable, lr: f32) {
-        self.inner.update(&grad, lr);
+        #[allow(mutable_transmutes)]
+        let optimizee =
+            unsafe { std::mem::transmute::<&dyn OptimizeeT, &mut dyn OptimizeeT>(&*self.inner) };
+        optimizee.update(&grad, lr);
     }
 }
 
