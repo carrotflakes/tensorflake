@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-
-use ndarray::{Array, array};
+use ndarray::{array, Array};
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use ruzero::{functions::*, nn::*, *};
 
@@ -8,10 +6,8 @@ fn main() {
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let n = 100;
 
-    let x = Variable::new(
-        Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_dyn(),
-    )
-    .named("x");
+    let x = Variable::new(Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_dyn())
+        .named("x");
     let y = call!(
         Add,
         call!(Sin, call!(Mul, x, Variable::new(scalar(2.0 * 3.14)))),
@@ -19,8 +15,14 @@ fn main() {
     )
     .named("y");
 
-    let mut l1 = Layer::new(1, 10);
-    let mut l2 = Layer::new(10, 1);
+    let l1 = Layer::new(1, 10);
+    let l2 = Layer::new(10, 1);
+
+    let trainables = l1
+        .all_params()
+        .into_iter()
+        .chain(l2.all_params())
+        .collect::<Vec<_>>();
 
     let start = std::time::Instant::now();
 
@@ -44,26 +46,17 @@ fn main() {
         //     return;
         // }
         // ll = loss[[]];
-        
+
         // graph(&[loss.clone()], format!("loss{}", i));
 
-        let trainables = l1.all_params()
-        .into_iter()
-        .chain(l2.all_params())
-        .collect::<Vec<_>>();
         let gs = gradients(&[loss.clone()], &trainables, false);
-        let gs = HashMap::from_iter(trainables.iter().cloned().zip(gs.into_iter()));
-
-        // dbg!(&*l1.w.get_grad().unwrap());
-        // dbg!(&*l1.b.get_grad().unwrap());
-        let lr = 0.1;
-        l1.update(lr, &gs);
-        l2.update(lr, &gs);
+        let lr = Variable::new(scalar(0.1));
+        for (t, g) in trainables.iter().zip(gs.into_iter()) {
+            unsafe { t.add_assign(&call!(Mul, g, call!(Neg, lr))) };
+        }
     }
     for i in 0..20 {
-        let x = Variable::new(
-            array![[i as f32 / 20.0]].into_dyn()
-        );
+        let x = Variable::new(array![[i as f32 / 20.0]].into_dyn());
         let h = l1.forward(x);
         let h = sigmoid_simple(h).named("hidden");
         let y_ = l2.forward(h);
@@ -97,11 +90,6 @@ impl Layer {
 
     pub fn forward(&self, x: Variable) -> Variable {
         call!(Add, call!(Matmul, x, self.w), self.b).named("return")
-    }
-
-    pub fn update(&mut self, lr: f32, gs: &HashMap<Variable, Variable>) {
-        self.w = backprop(&*self.w - &*gs[&self.w] * lr);
-        self.b = backprop(&*self.b - &*gs[&self.b] * lr);
     }
 
     pub fn all_params(&self) -> Vec<Variable> {

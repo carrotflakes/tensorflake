@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    ops::AddAssign,
+    sync::{Arc, Mutex},
+};
 
 use crate::{Funcall, Tensor};
 
@@ -47,6 +50,13 @@ impl Variable {
 
     pub fn has_creator(&self) -> bool {
         self.inner.attrs.lock().unwrap().creator.is_some()
+    }
+
+    pub unsafe fn add_assign(&self, other: &Variable) {
+        assert_eq!(self.shape(), other.shape());
+        #[allow(mutable_transmutes)]
+        let tensor = std::mem::transmute::<&Tensor, &mut Tensor>(&self.inner.data);
+        tensor.add_assign(&other.inner.data);
     }
 }
 
