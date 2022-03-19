@@ -48,6 +48,14 @@ impl Variable {
         self.inner.attrs.lock().unwrap().name.to_owned()
     }
 
+    pub fn set_trainable(&self, trainable: bool) {
+        self.inner.attrs.lock().unwrap().trainable = trainable;
+    }
+
+    pub fn is_trainable(&self) -> bool {
+        self.inner.attrs.lock().unwrap().trainable
+    }
+
     pub fn has_creator(&self) -> bool {
         self.inner.attrs.lock().unwrap().creator.is_some()
     }
