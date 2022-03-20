@@ -51,6 +51,8 @@ pub trait Backward {
         let name = std::any::type_name::<Self>();
         if name.starts_with("tensorflake::functions::") {
             name.split("::").last().unwrap()
+        } else if name.starts_with("tensorflake::") {
+            &name["tensorflake::".len()..]
         } else {
             name
         }

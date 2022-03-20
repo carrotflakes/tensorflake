@@ -23,6 +23,15 @@ impl Linear {
             b: param_gen(Array::zeros(output).into_tensor()),
         }
     }
+
+    pub fn build(&self) -> Self {
+        let w = (self.w)();
+        let b = (self.b)();
+        Self {
+            w: Box::new(move || w.clone()),
+            b: Box::new(move || b.clone()),
+        }
+    }
 }
 
 impl Layer for Linear {
