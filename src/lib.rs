@@ -2,19 +2,21 @@ pub mod export_dot;
 mod funcall;
 mod function;
 pub mod functions;
+pub mod graph;
 pub mod losses;
 pub mod nn;
 mod optimization;
 mod optimizees;
 mod tensor;
-mod variable;
 pub mod tensor_util;
+mod variable;
 
 #[cfg(test)]
 mod test;
 
 pub use funcall::*;
 pub use function::*;
+pub use graph::gradients;
 pub use nn::Layer;
 pub use optimization::*;
 pub use optimizees::*;

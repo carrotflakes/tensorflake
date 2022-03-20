@@ -1,6 +1,6 @@
 use std::sync::{Arc, Weak};
 
-use crate::{collect_funcalls, Variable};
+use crate::{graph::collect_funcalls, Variable};
 
 pub fn export_dot(vars: &[Variable], file: &str) -> Result<(), std::io::Error> {
     let f = std::fs::File::create(file).unwrap();

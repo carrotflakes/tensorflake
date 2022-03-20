@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::*;
 
 pub fn naive_sgd(lr: f32, loss: &Variable) {
-    let trainables = collect_variables(vec![loss.clone()]);
+    let trainables = graph::collect_variables(vec![loss.clone()]);
     let grads = gradients(&vec![loss.clone()], &trainables, false);
     for (t, g) in trainables.iter().zip(grads.iter()) {
         unsafe { t.add_assign(&call!(functions::Mul, Variable::new(scalar(-lr)), g)) };
@@ -72,7 +72,7 @@ impl Backward for OptimizeeCreator {
 }
 
 pub fn optimize(loss: &Variable, lr: f32) {
-    let funcalles = collect_funcalls(vec![loss.clone()]);
+    let funcalles = graph::collect_funcalls(vec![loss.clone()]);
     let mut optimizees = Vec::new();
     let mut trainables = Vec::new();
     for fc in funcalles {
