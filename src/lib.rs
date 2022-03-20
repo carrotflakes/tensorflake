@@ -8,6 +8,7 @@ mod optimization;
 mod optimizees;
 mod tensor;
 mod variable;
+pub mod tensor_util;
 
 #[cfg(test)]
 mod test;

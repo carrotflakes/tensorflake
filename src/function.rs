@@ -13,7 +13,7 @@ pub trait Function: 'static {
 
     fn into_backward(self, xs: &Vec<Variable>) -> Box<dyn Backward>
     where
-        Self: Sized + 'static,
+        Self: Sized,
     {
         #![allow(unused_variables)]
 
@@ -22,7 +22,7 @@ pub trait Function: 'static {
 
     fn call(self, xs: Vec<Variable>) -> Vec<Variable>
     where
-        Self: Sized + 'static,
+        Self: Sized,
     {
         let ys = self.forward(&xs);
         if Self::IS_FORCE_CREATE_GRAPH || xs.iter().any(|x| x.has_creator()) {

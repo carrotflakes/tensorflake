@@ -1,4 +1,4 @@
-use std::ops::{Sub, Div};
+use std::ops::{DivAssign, Sub};
 
 use ndarray::Axis;
 
@@ -16,8 +16,8 @@ impl Function for Softmax {
             *x.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap()
         });
         let y = x.sub(x_max.insert_axis(Axis(ndim - 1)));
-        let y = y.map(|x| x.exp());
-        let y = (&y).div(&y.sum_axis(Axis(ndim - 1)).insert_axis(Axis(ndim - 1)));
+        let mut y = y.map(|x| x.exp());
+        y.div_assign(&y.sum_axis(Axis(ndim - 1)).insert_axis(Axis(ndim - 1)));
         vec![y.into_tensor().into()]
     }
 
