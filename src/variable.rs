@@ -5,6 +5,7 @@ use std::{
 
 use crate::{Funcall, Tensor};
 
+#[derive(Clone)]
 pub(crate) struct VariableAttrs {
     pub name: String,
     pub creator: Option<Arc<Funcall>>,
@@ -47,6 +48,10 @@ impl Variable {
 
     pub fn has_creator(&self) -> bool {
         self.inner.attrs.lock().unwrap().creator.is_some()
+    }
+
+    pub fn cut_chain(&self) {
+        self.inner.attrs.lock().unwrap().creator = None;
     }
 
     pub unsafe fn add_assign(&self, other: &Variable) {

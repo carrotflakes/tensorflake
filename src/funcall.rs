@@ -78,6 +78,12 @@ pub fn gradients(ys: &[Variable], xs: &[Variable], create_graph: bool) -> Vec<Va
 
         let gxs = fc.backward.backward(&fc.xs, &ys, &gys);
 
+        if !create_graph {
+            for gx in &gxs {
+                gx.cut_chain();
+            }
+        }
+
         for (x, gx) in fc.xs.iter().zip(gxs.iter()) {
             match grads.entry(Arc::as_ptr(&x.inner)) {
                 std::collections::hash_map::Entry::Occupied(mut entry) => {
@@ -97,7 +103,12 @@ pub fn gradients(ys: &[Variable], xs: &[Variable], create_graph: bool) -> Vec<Va
     }
 
     xs.iter()
-        .map(|x| grads.get(&Arc::as_ptr(&x.inner)).unwrap_or_else(|| panic!("grad not found {}",x.get_name())).clone())
+        .map(|x| {
+            grads
+                .get(&Arc::as_ptr(&x.inner))
+                .unwrap_or_else(|| panic!("grad not found {}", x.get_name()))
+                .clone()
+        })
         .collect()
 }
 
