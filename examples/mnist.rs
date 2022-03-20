@@ -1,10 +1,9 @@
 use mnist::{Mnist, MnistBuilder};
-use ndarray::{s, Array2, Array3, Axis};
-use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
+use ndarray::{s, Array2};
+use ndarray_rand::rand::SeedableRng;
 use tensorflake::{
-    functions::*,
     losses::SoftmaxCrossEntropy,
-    nn::{Layer, Softmax, MLP, Relu},
+    nn::{Layer, Relu, MLP},
     *,
 };
 
@@ -14,8 +13,6 @@ fn main() {
         trn_lbl,
         val_img,
         val_lbl,
-        tst_img,
-        tst_lbl,
         ..
     } = MnistBuilder::new()
         .label_format_digit()
@@ -23,6 +20,14 @@ fn main() {
         .validation_set_length(10_000)
         .test_set_length(10_000)
         .finalize();
+
+    let gen_img = |img: &[u8]| {
+        Array2::from_shape_vec(
+            (img.len() / (28 * 28), 28 * 28),
+            img.iter().map(|x| *x as f32 / 255.0).collect(),
+        )
+        .unwrap()
+    };
 
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let mlp = MLP::new(
@@ -41,24 +46,13 @@ fn main() {
 
     for epoch in 0..20 {
         let mut train_loss = 0.0;
-        for i in 0..trn_lbl.len() / batch_size {
-            let x = Array2::from_shape_vec(
-                (batch_size, 28 * 28),
-                trn_img
-                    .iter()
-                    .skip(i * 28 * 28)
-                    .take(batch_size * 28 * 28)
-                    .cloned()
-                    .collect(),
-            )
-            .unwrap()
-            .map(|x| *x as f32 / 256.0);
-            let t = trn_lbl
-                .iter()
-                .skip(i)
-                .take(batch_size)
-                .map(|x| *x as usize)
-                .collect();
+        for (x, t) in {
+            let img = trn_img.chunks(batch_size * 28 * 28).map(gen_img);
+            let lbl = trn_lbl
+                .chunks(batch_size)
+                .map(|x| x.iter().map(|x| *x as usize).collect::<Vec<_>>());
+            img.zip(lbl)
+        } {
             let x = Variable::new(x.into_tensor());
             let y = mlp.call(vec![x.clone()]).pop().unwrap();
             let loss = call!(SoftmaxCrossEntropy::new(t), y);
@@ -69,24 +63,13 @@ fn main() {
 
         let mut validation_loss = 0.0;
         let mut correct_num = 0;
-        for i in 0..val_lbl.len() / batch_size {
-            let x = Array2::from_shape_vec(
-                (batch_size, 28 * 28),
-                val_img
-                    .iter()
-                    .skip(i * 28 * 28)
-                    .take(batch_size * 28 * 28)
-                    .cloned()
-                    .collect(),
-            )
-            .unwrap()
-            .map(|x| *x as f32 / 256.0);
-            let t: Vec<_> = val_lbl
-                .iter()
-                .skip(i)
-                .take(batch_size)
-                .map(|x| *x as usize)
-                .collect();
+        for (x, t) in {
+            let img = val_img.chunks(batch_size * 28 * 28).map(gen_img);
+            let lbl = val_lbl
+                .chunks(batch_size)
+                .map(|x| x.iter().map(|x| *x as usize).collect::<Vec<_>>());
+            img.zip(lbl)
+        } {
             let x = Variable::new(x.into_tensor());
             let y = mlp.call(vec![x.clone()]).pop().unwrap();
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
@@ -108,7 +91,7 @@ fn main() {
         let accuracy = correct_num as f32 / val_lbl.len() as f32;
 
         println!(
-            "epoch: {}, train_loss: {:.4}, validation_loss: {:.4}, accuracy: {:.4}",
+            "epoch: {}, trn_loss: {:.4}, val_loss: {:.4}, val_acc: {:.4}",
             epoch, train_loss, validation_loss, accuracy
         );
     }
