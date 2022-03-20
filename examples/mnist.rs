@@ -1,5 +1,5 @@
 use mnist::{Mnist, MnistBuilder};
-use ndarray::{s, Array2, Array3};
+use ndarray::{s, Array2, Array3, Axis};
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use ruzero::{
     functions::*,
@@ -9,37 +9,22 @@ use ruzero::{
 };
 
 fn main() {
-    let n = 10;
     let Mnist {
         trn_img,
         trn_lbl,
+        val_img,
+        val_lbl,
         tst_img,
         tst_lbl,
         ..
     } = MnistBuilder::new()
         .label_format_digit()
-        // .training_set_length(50_000)
-        .training_set_length(n as u32)
+        .training_set_length(50_000)
         .validation_set_length(10_000)
         .test_set_length(10_000)
         .finalize();
 
-    let train_data = Array2::from_shape_vec((n, 28 * 28), trn_img)
-        .expect("Error converting images to Array3 struct")
-        .map(|x| *x as f32 / 256.0);
-    // println!("{:#.1?}\n", train_data.slice(s![0, .., ..]));
-
-    // Convert the returned Mnist struct to Array2 format
-    let train_labels: Vec<_> = trn_lbl.iter().map(|x| *x as usize).collect();
-    // println!(
-    //     "The first digit is a {:?}",
-    //     train_labels.slice(s![0, ..])
-    // );
-    dbg!(&train_labels);
-
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
-    // let x = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor()).named("x");
-
     let mlp = MLP::new(
         &[28 * 28, 100, 10],
         |xs| Sigmoid.call(xs),
@@ -50,24 +35,83 @@ fn main() {
         &mut rng,
     );
 
-    let x = Variable::new(train_data.into_tensor());
+    let batch_size = 1000;
 
-    let y = mlp.call(vec![x.clone()]);
-    dbg!(&*y[0]);
-    let y = call!(Softmax, y[0]);
-    dbg!(&*y);
+    let start = std::time::Instant::now();
 
-    for i in 0..1000 {
-        let y = mlp.call(vec![x.clone()]).pop().unwrap();
-        let loss = call!(SoftmaxCrossEntropy::new(train_labels.clone()), y);
-        if i % 100 == 0 {
-            println!("{:?}", loss[[]]);
+    for epoch in 0..20 {
+        let mut train_loss = 0.0;
+        for i in 0..trn_lbl.len() / batch_size {
+            let x = Array2::from_shape_vec(
+                (batch_size, 28 * 28),
+                trn_img
+                    .iter()
+                    .skip(i * 28 * 28)
+                    .take(batch_size * 28 * 28)
+                    .cloned()
+                    .collect(),
+            )
+            .unwrap()
+            .map(|x| *x as f32 / 256.0);
+            let t = trn_lbl
+                .iter()
+                .skip(i)
+                .take(batch_size)
+                .map(|x| *x as usize)
+                .collect();
+            let x = Variable::new(x.into_tensor());
+            let y = mlp.call(vec![x.clone()]).pop().unwrap();
+            let loss = call!(SoftmaxCrossEntropy::new(t), y);
+            optimize(&loss, 0.1);
+            train_loss += loss[[]];
         }
-        optimize(&loss, 0.01);
+        train_loss /= trn_lbl.len() as f32 / batch_size as f32;
+
+        let mut validation_loss = 0.0;
+        let mut correct_num = 0;
+        for i in 0..val_lbl.len() / batch_size {
+            let x = Array2::from_shape_vec(
+                (batch_size, 28 * 28),
+                val_img
+                    .iter()
+                    .skip(i * 28 * 28)
+                    .take(batch_size * 28 * 28)
+                    .cloned()
+                    .collect(),
+            )
+            .unwrap()
+            .map(|x| *x as f32 / 256.0);
+            let t: Vec<_> = val_lbl
+                .iter()
+                .skip(i)
+                .take(batch_size)
+                .map(|x| *x as usize)
+                .collect();
+            let x = Variable::new(x.into_tensor());
+            let y = mlp.call(vec![x.clone()]).pop().unwrap();
+            let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
+            validation_loss += loss[[]];
+            for (i, t) in t.iter().cloned().enumerate() {
+                let y = y
+                    .slice(s![i, ..])
+                    .iter()
+                    .enumerate()
+                    .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+                    .unwrap()
+                    .0;
+                if y == t {
+                    correct_num += 1;
+                }
+            }
+        }
+        validation_loss /= val_lbl.len() as f32 / batch_size as f32;
+        let accuracy = correct_num as f32 / val_lbl.len() as f32;
+
+        println!(
+            "epoch: {}, train_loss: {:.4}, validation_loss: {:.4}, accuracy: {:.4}",
+            epoch, train_loss, validation_loss, accuracy
+        );
     }
 
-    let y = mlp.call(vec![x.clone()]);
-    // dbg!(&*y[0]);
-    let y = call!(Softmax, y[0]);
-    dbg!(&*y);
+    println!("time: {:?}", start.elapsed());
 }
