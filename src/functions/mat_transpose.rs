@@ -7,10 +7,7 @@ impl Function for MatTranspose {
         assert!(xs.len() == 1);
         assert!(xs[0].shape().len() >= 2);
 
-        let mut axes: Vec<_> = (0..xs[0].shape().len()).collect();
-        axes[xs[0].shape().len() - 2..].reverse();
-
-        vec![xs[0].view().permuted_axes(axes).into_tensor().into()]
+        vec![forward(&xs[0]).into()]
     }
 
     fn backward(
@@ -23,6 +20,13 @@ impl Function for MatTranspose {
 
         MatTranspose.call(vec![gys[0].clone()])
     }
+}
+
+pub fn forward(x: &Tensor) -> Tensor {
+    let mut axes: Vec<_> = (0..x.shape().len()).collect();
+    axes[x.shape().len() - 2..].reverse();
+
+    x.view().permuted_axes(axes).into_tensor()
 }
 
 #[test]

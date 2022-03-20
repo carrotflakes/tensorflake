@@ -1,100 +1,14 @@
 use ndarray::{Axis, Ix2};
 
+use crate::functions::*;
 use crate::*;
-
-use super::MatTranspose;
 
 pub struct Matmul;
 
 impl Function for Matmul {
     fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
-        // 行列同士の積に限定する
-        // TODO: broadcast
         assert!(xs.len() == 2);
-        let x0 = &xs[0];
-        let x1 = &xs[1];
-        let x0s = x0.shape();
-        let x1s = x1.shape();
-        assert!(2 <= x0s.len());
-        assert!(2 <= x1s.len());
-        assert_eq!(x0s[x0s.len() - 1], x1s[x1s.len() - 2]);
-
-        let outer_shape =
-            broadcast_shape(&x0s[..x0s.len() - 2], &x1s[..x1s.len() - 2]).expect(&format!(
-                "Matmul: shape mismatch: {:?} and {:?}",
-                x0.shape(),
-                x1.shape()
-            ));
-        let mat_shape = [x0s[x0s.len() - 2], x1s[x1s.len() - 1]];
-
-        if outer_shape.is_empty() {
-            let x0 = (*xs[0]).to_owned().into_dimensionality::<Ix2>().unwrap();
-            let x1 = (*xs[1]).to_owned().into_dimensionality::<Ix2>().unwrap();
-
-            vec![x0.dot(&x1).into_tensor().into()]
-        } else {
-            let x0 = x0
-                .broadcast(
-                    outer_shape
-                        .iter()
-                        .chain(&x0s[x0s.len() - 2..])
-                        .cloned()
-                        .collect::<Vec<usize>>(),
-                )
-                .unwrap();
-            let x1 = x1
-                .broadcast(
-                    outer_shape
-                        .iter()
-                        .chain(&x1s[x1s.len() - 2..])
-                        .cloned()
-                        .collect::<Vec<usize>>(),
-                )
-                .unwrap();
-            let outer_size = outer_shape.iter().product();
-            let mut es = Vec::with_capacity(outer_size * mat_shape.iter().product::<usize>());
-            let x0 = x0
-                .to_shape(
-                    [outer_size]
-                        .iter()
-                        .chain(&x0s[x0s.len() - 2..])
-                        .cloned()
-                        .collect::<Vec<_>>(),
-                )
-                .unwrap();
-            let x1 = x1
-                .to_shape(
-                    [outer_size]
-                        .iter()
-                        .chain(&x1s[x1s.len() - 2..])
-                        .cloned()
-                        .collect::<Vec<_>>(),
-                )
-                .unwrap();
-            for i in 0..outer_size {
-                let x0 = x0
-                    .index_axis(Axis(0), i)
-                    .into_dimensionality::<Ix2>()
-                    .unwrap();
-                let x1 = x1
-                    .index_axis(Axis(0), i)
-                    .into_dimensionality::<Ix2>()
-                    .unwrap();
-                es.extend(x0.dot(&x1).into_raw_vec());
-            }
-
-            vec![ndarray::Array::from_shape_vec(
-                outer_shape
-                    .iter()
-                    .chain(mat_shape.iter())
-                    .cloned()
-                    .collect::<Vec<_>>(),
-                es,
-            )
-            .unwrap()
-            .into_tensor()
-            .into()]
-        }
+        vec![forward(&xs[0], &xs[1]).into()]
     }
 
     fn backward(
@@ -119,6 +33,97 @@ impl Function for Matmul {
             .clone();
         vec![gx, gw]
     }
+}
+
+pub fn forward(x0: &Tensor, x1: &Tensor) -> Tensor {
+    // 行列同士の積に限定する
+    let x0s = x0.shape();
+    let x1s = x1.shape();
+    assert!(2 <= x0s.len());
+    assert!(2 <= x1s.len());
+    assert_eq!(x0s[x0s.len() - 1], x1s[x1s.len() - 2]);
+
+    let outer_shape =
+        broadcast_shape(&x0s[..x0s.len() - 2], &x1s[..x1s.len() - 2]).expect(&format!(
+            "Matmul: shape mismatch: {:?} and {:?}",
+            x0.shape(),
+            x1.shape()
+        ));
+    let mat_shape = [x0s[x0s.len() - 2], x1s[x1s.len() - 1]];
+
+    if outer_shape.is_empty() {
+        let x0 = x0.to_owned().into_dimensionality::<Ix2>().unwrap();
+        let x1 = x1.to_owned().into_dimensionality::<Ix2>().unwrap();
+
+        x0.dot(&x1).into_tensor()
+    } else {
+        let x0 = x0
+            .broadcast(
+                outer_shape
+                    .iter()
+                    .chain(&x0s[x0s.len() - 2..])
+                    .cloned()
+                    .collect::<Vec<usize>>(),
+            )
+            .unwrap();
+        let x1 = x1
+            .broadcast(
+                outer_shape
+                    .iter()
+                    .chain(&x1s[x1s.len() - 2..])
+                    .cloned()
+                    .collect::<Vec<usize>>(),
+            )
+            .unwrap();
+        let outer_size = outer_shape.iter().product();
+        let mut es = Vec::with_capacity(outer_size * mat_shape.iter().product::<usize>());
+        let x0 = x0
+            .to_shape(
+                [outer_size]
+                    .iter()
+                    .chain(&x0s[x0s.len() - 2..])
+                    .cloned()
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap();
+        let x1 = x1
+            .to_shape(
+                [outer_size]
+                    .iter()
+                    .chain(&x1s[x1s.len() - 2..])
+                    .cloned()
+                    .collect::<Vec<_>>(),
+            )
+            .unwrap();
+        for i in 0..outer_size {
+            let x0 = x0
+                .index_axis(Axis(0), i)
+                .into_dimensionality::<Ix2>()
+                .unwrap();
+            let x1 = x1
+                .index_axis(Axis(0), i)
+                .into_dimensionality::<Ix2>()
+                .unwrap();
+            es.extend(x0.dot(&x1).into_raw_vec());
+        }
+
+        ndarray::Array::from_shape_vec(
+            outer_shape
+                .iter()
+                .chain(mat_shape.iter())
+                .cloned()
+                .collect::<Vec<_>>(),
+            es,
+        )
+        .unwrap()
+        .into_tensor()
+    }
+}
+
+pub fn backward(x: &Tensor, w: &Tensor, gy: &Tensor) -> (Tensor, Tensor) {
+    let gx = forward(gy, &mat_transpose::forward(w));
+    let gw = forward(&mat_transpose::forward(x), gy);
+    (gx, gw)
 }
 
 fn broadcast_shape(a: &[usize], b: &[usize]) -> Option<Vec<usize>> {
