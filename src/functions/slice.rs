@@ -1,20 +1,18 @@
-use ndarray::{IxDyn, SliceInfoElem};
+use ndarray::{IxDyn, SliceArg};
 
 use crate::*;
 
-pub type SliceInfo<const N: usize> = ndarray::SliceInfo<[SliceInfoElem; N], IxDyn, IxDyn>;
-
-pub struct Slice<const N: usize> {
-    slice_arg: SliceInfo<N>,
+pub struct Slice<I: SliceArg<IxDyn> + Clone + 'static> {
+    slice_arg: I,
 }
 
-impl<const N: usize> Slice<N> {
-    pub fn new(slice_arg: SliceInfo<N>) -> Self {
+impl<I: SliceArg<IxDyn> + Clone + 'static> Slice<I> {
+    pub fn new(slice_arg: I) -> Self {
         Self { slice_arg }
     }
 }
 
-impl<const N: usize> Function for Slice<N> {
+impl<I: SliceArg<IxDyn> + Clone + 'static> Function for Slice<I> {
     fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert_eq!(xs.len(), 1);
         let x = &*xs[0];

@@ -1,5 +1,6 @@
 mod add;
 mod broadcast_to;
+mod concat;
 mod create_graph;
 mod div;
 mod exp;
@@ -20,6 +21,7 @@ mod transpose;
 
 pub use add::*;
 pub use broadcast_to::*;
+pub use concat::*;
 pub use create_graph::*;
 pub use div::*;
 pub use exp::*;
