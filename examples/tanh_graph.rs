@@ -4,7 +4,7 @@ dot tanh_2.dot -T png -o tanh_2.png
 dot tanh_3.dot -T png -o tanh_3.png
  */
 
-use ruzero::{functions::*, *};
+use tensorflake::{functions::*, *};
 
 fn main() {
     let x = backprop(scalar(1.0)).named("x");

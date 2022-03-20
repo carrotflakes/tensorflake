@@ -49,7 +49,7 @@ pub trait Backward {
 
     fn get_function_name(&self) -> &'static str {
         let name = std::any::type_name::<Self>();
-        if name.starts_with("ruzero::functions::") {
+        if name.starts_with("tensorflake::functions::") {
             name.split("::").last().unwrap()
         } else {
             name

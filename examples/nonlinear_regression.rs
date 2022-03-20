@@ -1,6 +1,6 @@
 use ndarray::{array, Array};
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-use ruzero::{functions::*, nn::*, *};
+use tensorflake::{functions::*, nn::*, *};
 
 fn main() {
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
@@ -100,7 +100,7 @@ impl Layer {
 fn graph(vars: &[Variable], name: impl ToString) {
     let f = std::fs::File::create(name.to_string() + ".dot").unwrap();
     let mut w = std::io::BufWriter::new(f);
-    ruzero::export_dot::write_dot(&mut w, vars, &mut |v| {
+    tensorflake::export_dot::write_dot(&mut w, vars, &mut |v| {
         // format!("{} {}", v.get_name(), (*v).to_string())
         // v.get_name().to_string()
         format!("{} {:?}", v.get_name(), v.shape())

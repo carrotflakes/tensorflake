@@ -1,6 +1,6 @@
 use ndarray::Array;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-use ruzero::{functions::*, *};
+use tensorflake::{functions::*, *};
 
 fn main() {
     let n = 10;
@@ -60,7 +60,7 @@ fn mean_squared_error(x0: Variable, x1: Variable) -> Variable {
 fn graph(vars: &[Variable]) {
     let f = std::fs::File::create("graph.dot").unwrap();
     let mut w = std::io::BufWriter::new(f);
-    ruzero::export_dot::write_dot(&mut w, vars, &mut |v| {
+    tensorflake::export_dot::write_dot(&mut w, vars, &mut |v| {
         // format!("{} {}", v.get_name(), (*v).to_string())
         // v.get_name().to_string()
         format!("{} {:?}", v.get_name(), v.shape())

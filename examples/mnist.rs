@@ -1,10 +1,10 @@
 use mnist::{Mnist, MnistBuilder};
 use ndarray::{s, Array2, Array3, Axis};
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-use ruzero::{
+use tensorflake::{
     functions::*,
     losses::SoftmaxCrossEntropy,
-    nn::{Layer, Softmax, MLP},
+    nn::{Layer, Softmax, MLP, Relu},
     *,
 };
 
@@ -27,7 +27,7 @@ fn main() {
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let mlp = MLP::new(
         &[28 * 28, 100, 10],
-        |xs| Sigmoid.call(xs),
+        |xs| Relu.call(xs),
         &|t: Tensor| {
             let o = MomentumSGDOptimizee::new(t, 0.9);
             Box::new(move || o.get())

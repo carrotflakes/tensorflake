@@ -1,13 +1,17 @@
-# ruzero
+# TensorFlake
 
 TBD
 
 ## TODO
 
 - [ ] smallvec
-- [ ] backward without create_graph
+- [x] backward without create_graph
 - [ ] function input length check
 - [ ] Is Backward removable?
+- [ ] Adam
+- [ ] Efficient Linear
+- [ ] Save & load
+- [ ] Dropout
 
 ## Author
 
