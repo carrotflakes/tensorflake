@@ -4,8 +4,10 @@ TBD
 
 ## TODO
 
-- Is clear_grad necessary?
-- Parameters
+- [ ] smallvec
+- [ ] backward without create_graph
+- [ ] function input length check
+- [ ] Is Backward removable?
 
 ## Author
 
