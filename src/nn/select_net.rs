@@ -45,7 +45,7 @@ impl SelectNet {
 
         let mut ys = vec![];
         for i in 0..x.shape()[0] {
-            let mut select = softmax
+            let mut select = (&*softmax)
                 .slice(s![i, ..].to_owned())
                 .into_iter()
                 .enumerate()

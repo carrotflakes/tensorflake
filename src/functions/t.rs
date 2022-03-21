@@ -6,7 +6,7 @@ impl Function for T {
     fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].t().into_tensor().into()]
+        vec![(&*xs[0]).t().into_tensor().into()]
     }
 
     fn backward(

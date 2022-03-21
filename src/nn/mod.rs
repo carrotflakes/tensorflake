@@ -3,6 +3,7 @@ mod linear;
 mod mlp;
 mod relu;
 mod select_net;
+mod sigmoid;
 mod softmax;
 
 pub use layer::*;
@@ -10,6 +11,7 @@ pub use linear::*;
 pub use mlp::*;
 pub use relu::*;
 pub use select_net::*;
+pub use sigmoid::*;
 pub use softmax::*;
 
 use crate::{functions::*, *};
