@@ -1,10 +1,7 @@
 use crate::*;
 
 pub trait Layer {
-    fn call(
-        &self,
-        xs: Vec<Variable>,
-    ) -> Vec<Variable>
+    fn call(&self, xs: Vec<Variable>, train: bool) -> Vec<Variable>
     where
         Self: Sized + 'static;
 

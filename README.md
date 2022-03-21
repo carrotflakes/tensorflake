@@ -15,6 +15,7 @@ TBD
 - [ ] Strong typing
 - [ ] Multi thread
 - [x] Impl ops
+- [ ] Lazy execution
 
 ## Author
 

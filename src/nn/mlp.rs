@@ -29,19 +29,19 @@ impl MLP {
 }
 
 impl Layer for MLP {
-    fn call(&self, xs: Vec<Variable>) -> Vec<Variable>
+    fn call(&self, xs: Vec<Variable>, train: bool) -> Vec<Variable>
     where
         Self: Sized + 'static,
     {
         let mut ys = xs.clone();
         for linear in &self.linears[..self.linears.len() - 1] {
-            ys = linear.call(ys);
+            ys = linear.call(ys, train);
             ys = (self.activation)(ys);
             if let Some(rate) = self.dropout {
-                ys = Dropout::new(rate).call(ys);
+                ys = Dropout::new(rate).call(ys, train);
             }
         }
-        self.linears.last().unwrap().call(ys)
+        self.linears.last().unwrap().call(ys, train)
     }
 
     fn all_params(&self) -> Vec<Variable> {
@@ -70,7 +70,7 @@ fn test() {
 
     let x = Variable::new(array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_tensor());
 
-    let y = call!(mlp, x);
+    let y = mlp.call(vec![x], true).pop().unwrap();
     // dbg!(&*y);
     assert_eq!(y.shape(), &[4, 1]);
 }

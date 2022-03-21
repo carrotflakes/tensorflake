@@ -35,7 +35,7 @@ impl Linear {
 }
 
 impl Layer for Linear {
-    fn call(&self, xs: Vec<Variable>) -> Vec<Variable>
+    fn call(&self, xs: Vec<Variable>, _train: bool) -> Vec<Variable>
     where
         Self: Sized + 'static,
     {

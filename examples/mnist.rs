@@ -32,7 +32,7 @@ fn main() {
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let mlp = MLP::new(
         &[28 * 28, 128, 10],
-        None,
+        Some(0.2),
         |xs| Relu.call(xs),
         &|t: Tensor| {
             // let o = MomentumSGDOptimizee::new(t, 0.9);
@@ -57,7 +57,7 @@ fn main() {
             img.zip(lbl)
         } {
             let x = Variable::new(x.into_tensor());
-            let y = mlp.call(vec![x.clone()]).pop().unwrap();
+            let y = mlp.call(vec![x.clone()], true).pop().unwrap();
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
             train_loss += loss[[]];
@@ -76,7 +76,7 @@ fn main() {
             img.zip(lbl)
         } {
             let x = Variable::new(x.into_tensor());
-            let y = mlp.call(vec![x.clone()]).pop().unwrap();
+            let y = mlp.call(vec![x.clone()], false).pop().unwrap();
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             validation_loss += loss[[]];
             val_correct += count_correction(&y, &t);
