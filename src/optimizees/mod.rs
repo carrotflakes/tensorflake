@@ -1,11 +1,13 @@
+mod adam;
 mod momentum_sgd;
 mod sgd;
 
+pub use adam::*;
 pub use momentum_sgd::*;
 pub use sgd::*;
 
 #[cfg(test)]
-fn test_optimizee(f: impl Fn(crate::Tensor) -> crate::Optimizee) {
+fn test_optimizee(f: impl Fn(crate::Tensor) -> crate::Optimizee, lr: f32) {
     use crate::*;
 
     let px = f(scalar(0.0));
@@ -25,9 +27,10 @@ fn test_optimizee(f: impl Fn(crate::Tensor) -> crate::Optimizee) {
     for _ in 0..100 {
         let loss = loss_fn();
 
-        optimize(&loss, 0.01);
+        optimize(&loss, lr);
     }
 
     let last_loss = loss_fn()[[]];
+    println!("loss: {} -> {}", first_loss, last_loss);
     assert!(last_loss < first_loss * 0.01);
 }

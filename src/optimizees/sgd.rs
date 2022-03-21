@@ -24,5 +24,5 @@ impl OptimizeeT for SGDOptimizee {
 
 #[test]
 fn test() {
-    super::test_optimizee(SGDOptimizee::new);
+    super::test_optimizee(SGDOptimizee::new, 0.01);
 }

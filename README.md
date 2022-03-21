@@ -8,10 +8,11 @@ TBD
 - [x] backward without create_graph
 - [ ] function input length check
 - [x] Is Backward removable? -> currently NO because the Function trait is not object-safe.
-- [ ] Adam
+- [x] Adam
 - [ ] Efficient Linear
 - [ ] Save & load
 - [ ] Dropout
+- [ ] Strong typing
 
 ## Author
 

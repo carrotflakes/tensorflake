@@ -31,10 +31,11 @@ fn main() {
 
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let mlp = MLP::new(
-        &[28 * 28, 100, 10],
+        &[28 * 28, 100, 100, 10],
         |xs| Relu.call(xs),
         &|t: Tensor| {
-            let o = MomentumSGDOptimizee::new(t, 0.9);
+            // let o = MomentumSGDOptimizee::new(t, 0.9);
+            let o = AdamOptimizee::new(t);
             Box::new(move || o.get())
         },
         &mut rng,
@@ -44,7 +45,7 @@ fn main() {
 
     let start = std::time::Instant::now();
 
-    for epoch in 0..20 {
+    for epoch in 0..1000 {
         let mut train_loss = 0.0;
         for (x, t) in {
             let img = trn_img.chunks(batch_size * 28 * 28).map(gen_img);
@@ -56,7 +57,7 @@ fn main() {
             let x = Variable::new(x.into_tensor());
             let y = mlp.call(vec![x.clone()]).pop().unwrap();
             let loss = call!(SoftmaxCrossEntropy::new(t), y);
-            optimize(&loss, 0.1);
+            optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
             train_loss += loss[[]];
         }
         train_loss /= trn_lbl.len() as f32 / batch_size as f32;

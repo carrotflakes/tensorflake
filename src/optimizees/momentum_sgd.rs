@@ -32,5 +32,5 @@ impl OptimizeeT for MomentumSGDOptimizee {
 
 #[test]
 fn test() {
-    super::test_optimizee(|tensor| MomentumSGDOptimizee::new(tensor, 0.9));
+    super::test_optimizee(|tensor| MomentumSGDOptimizee::new(tensor, 0.9), 0.01);
 }
