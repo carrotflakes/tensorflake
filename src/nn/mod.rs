@@ -1,3 +1,4 @@
+mod dropout;
 mod layer;
 mod linear;
 mod mlp;
@@ -6,6 +7,7 @@ mod select_net;
 mod sigmoid;
 mod softmax;
 
+pub use dropout::*;
 pub use layer::*;
 pub use linear::*;
 pub use mlp::*;

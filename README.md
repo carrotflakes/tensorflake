@@ -11,7 +11,7 @@ TBD
 - [x] Adam
 - [ ] Efficient Linear
 - [ ] Save & load
-- [ ] Dropout
+- [x] Dropout
 - [ ] Strong typing
 - [ ] Multi thread
 - [x] Impl ops
