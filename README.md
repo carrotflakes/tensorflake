@@ -13,6 +13,8 @@ TBD
 - [ ] Save & load
 - [ ] Dropout
 - [ ] Strong typing
+- [ ] Multi thread
+- [x] Impl ops
 
 ## Author
 

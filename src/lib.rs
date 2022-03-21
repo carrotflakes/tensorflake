@@ -3,6 +3,7 @@ mod funcall;
 mod function;
 pub mod functions;
 pub mod graph;
+mod impl_ops_for_variable;
 pub mod losses;
 pub mod nn;
 mod optimization;
