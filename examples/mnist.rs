@@ -32,6 +32,7 @@ fn main() {
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let mlp = MLP::new(
         &[28 * 28, 128, 10],
+        None,
         |xs| Relu.call(xs),
         &|t: Tensor| {
             // let o = MomentumSGDOptimizee::new(t, 0.9);

@@ -5,12 +5,14 @@ use crate::*;
 
 pub struct MLP {
     pub linears: Vec<Linear>,
+    pub dropout: Option<f32>,
     pub activation: Box<dyn Fn(Vec<Variable>) -> Vec<Variable>>,
 }
 
 impl MLP {
     pub fn new(
         sizes: &[usize],
+        dropout: Option<f32>,
         activation: impl Fn(Vec<Variable>) -> Vec<Variable> + 'static,
         param_gen: &(impl Fn(Tensor) -> Box<dyn Fn() -> Variable> + 'static),
         rng: &mut impl Rng,
@@ -20,6 +22,7 @@ impl MLP {
                 .windows(2)
                 .map(|w| Linear::new(w[0], w[1], param_gen, rng))
                 .collect(),
+            dropout,
             activation: Box::new(activation),
         }
     }
@@ -34,6 +37,9 @@ impl Layer for MLP {
         for linear in &self.linears[..self.linears.len() - 1] {
             ys = linear.call(ys);
             ys = (self.activation)(ys);
+            if let Some(rate) = self.dropout {
+                ys = Dropout::new(rate).call(ys);
+            }
         }
         self.linears.last().unwrap().call(ys)
     }
@@ -53,6 +59,7 @@ fn test() {
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let mlp = MLP::new(
         &[2, 3, 1],
+        None,
         |xs| Sigmoid.call(xs),
         &|x| {
             let o = crate::optimizees::MomentumSGDOptimizee::new(x, 0.9);
