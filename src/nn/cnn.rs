@@ -59,7 +59,7 @@ impl Layer for Conv2d {
 
 #[test]
 fn test_conv2d() {
-    let x = Variable::new(
+    let x = backprop(
         Array::from_shape_vec((1, 3, 4, 4), (0..16 * 3).map(|x| x as f32).collect())
             .unwrap()
             .into_tensor(),
@@ -81,9 +81,13 @@ fn test_conv2d() {
         w: Box::new(move || w.clone()),
         b: Box::new(move || b.clone()),
     };
-    let y = conv.call(vec![x], false);
-    assert_eq!(y[0].shape(), &[1, 3, 4, 4]);
-    dbg!(&*y[0]);
+    let ys = conv.call(vec![x.clone()], false);
+    assert_eq!(ys[0].shape(), &[1, 3, 4, 4]);
+    dbg!(&*ys[0]);
+    // export_dot::export_dot(&y, "conv2d.dot").unwrap();
+
+    let grads = gradients(&ys, &[x.clone()], true);
+    dbg!(&*grads[0]);
 }
 
 pub struct Im2col {
@@ -151,7 +155,14 @@ impl Col2im {
 impl Function for Col2im {
     fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert_eq!(xs.len(), 1);
-        vec![im2col(&*xs[0], self.kernel_size, self.stride, self.padding).into()]
+        vec![col2im(
+            &*xs[0],
+            self.input_shape,
+            self.kernel_size,
+            self.stride,
+            self.padding,
+        )
+        .into()]
     }
 
     fn backward(
