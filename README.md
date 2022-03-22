@@ -16,6 +16,12 @@ TBD
 - [ ] Multi thread
 - [x] Impl ops
 - [ ] Lazy execution
+- [ ] Regularization
+- [ ] Examples
+  - [ ] CNN
+  - [ ] RNN
+  - [ ] GAN
+  - [ ] VAE
 
 ## Author
 
