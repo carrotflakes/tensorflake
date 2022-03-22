@@ -41,7 +41,7 @@ pub fn forward(x0: &Tensor, x1: &Tensor) -> Tensor {
     let x1s = x1.shape();
     assert!(2 <= x0s.len());
     assert!(2 <= x1s.len());
-    assert_eq!(x0s[x0s.len() - 1], x1s[x1s.len() - 2]);
+    assert_eq!(x0s[x0s.len() - 1], x1s[x1s.len() - 2], "lhs's width must be equal to rhs's height");
 
     let outer_shape =
         broadcast_shape(&x0s[..x0s.len() - 2], &x1s[..x1s.len() - 2]).expect(&format!(
