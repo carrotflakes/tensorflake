@@ -21,14 +21,6 @@ fn main() {
         .test_set_length(0)
         .finalize();
 
-    let gen_img = |img: &[u8]| {
-        Array2::from_shape_vec(
-            (img.len() / (28 * 28), 28 * 28),
-            img.iter().map(|x| *x as f32 / 255.0).collect(),
-        )
-        .unwrap()
-    };
-
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let mlp = MLP::new(
         &[28 * 28, 128, 10],
@@ -49,14 +41,8 @@ fn main() {
     for epoch in 0..1000 {
         let mut train_loss = 0.0;
         let mut trn_correct = 0;
-        for (x, t) in {
-            let img = trn_img.chunks(batch_size * 28 * 28).map(gen_img);
-            let lbl = trn_lbl
-                .chunks(batch_size)
-                .map(|x| x.iter().map(|x| *x as usize).collect::<Vec<_>>());
-            img.zip(lbl)
-        } {
-            let x = Variable::new(x.into_tensor());
+        for (x, t) in mini_batches(&trn_img, &trn_lbl, batch_size) {
+            let x = Variable::new(x);
             let y = mlp.call(vec![x.clone()], true).pop().unwrap();
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
@@ -68,14 +54,8 @@ fn main() {
 
         let mut validation_loss = 0.0;
         let mut val_correct = 0;
-        for (x, t) in {
-            let img = val_img.chunks(batch_size * 28 * 28).map(gen_img);
-            let lbl = val_lbl
-                .chunks(batch_size)
-                .map(|x| x.iter().map(|x| *x as usize).collect::<Vec<_>>());
-            img.zip(lbl)
-        } {
-            let x = Variable::new(x.into_tensor());
+        for (x, t) in mini_batches(&val_img, &val_lbl, batch_size) {
+            let x = Variable::new(x);
             let y = mlp.call(vec![x.clone()], false).pop().unwrap();
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             validation_loss += loss[[]];
@@ -107,4 +87,25 @@ fn count_correction(y: &Variable, t: &[usize]) -> usize {
             y == **t
         })
         .count()
+}
+
+fn gen_img(img: &[u8]) -> Tensor {
+    Array2::from_shape_vec(
+        (img.len() / (28 * 28), 28 * 28),
+        img.iter().map(|x| *x as f32 / 255.0).collect(),
+    )
+    .unwrap()
+    .into_tensor()
+}
+
+fn mini_batches<'a>(
+    img: &'a [u8],
+    lbl: &'a [u8],
+    batch_size: usize,
+) -> impl Iterator<Item = (Tensor, Vec<usize>)> + 'a {
+    let img = img.chunks(batch_size * 28 * 28).map(gen_img);
+    let lbl = lbl
+        .chunks(batch_size)
+        .map(|x| x.iter().map(|x| *x as usize).collect::<Vec<_>>());
+    img.zip(lbl)
 }
