@@ -12,6 +12,24 @@ pub struct Conv2d {
     pub b: Box<dyn Fn() -> Variable>, // [out_ch]
 }
 
+impl Conv2d {
+    pub fn new(
+        kernel_size: [usize; 2],
+        stride: [usize; 2],
+        padding: [usize; 2],
+        w: Box<dyn Fn() -> Variable>,
+        b: Box<dyn Fn() -> Variable>,
+    ) -> Self {
+        Self {
+            kernel_size,
+            stride,
+            padding,
+            w,
+            b,
+        }
+    }
+}
+
 impl Layer for Conv2d {
     fn call(&self, xs: Vec<Variable>, _train: bool) -> Vec<Variable>
     where
@@ -48,7 +66,7 @@ impl Layer for Conv2d {
         let t = call!(Add, call!(Matmul, col, w), b);
         vec![call!(
             Transpose::new(vec![0, 3, 1, 2]),
-            call!(Reshape::new(dbg!(vec![xs[0].shape()[0], oh, ow, oc])), t)
+            call!(Reshape::new(vec![xs[0].shape()[0], oh, ow, oc]), t)
         )]
     }
 
