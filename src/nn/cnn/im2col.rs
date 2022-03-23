@@ -2,93 +2,7 @@ use std::ops::AddAssign;
 
 use ndarray::{s, Array, Array4, Array6};
 
-use crate::{functions::*, *};
-
-pub struct Conv2d {
-    pub kernel_size: [usize; 2],
-    pub stride: [usize; 2],
-    pub padding: [usize; 2],
-    w: Box<dyn Fn() -> Variable>, // [out_ch, in_ch, kh, kw]
-    b: Box<dyn Fn() -> Variable>, // [out_ch]
-}
-
-impl Layer for Conv2d {
-    fn call(&self, xs: Vec<Variable>, _train: bool) -> Vec<Variable>
-    where
-        Self: Sized + 'static,
-    {
-        assert_eq!(xs.len(), 1);
-
-        let oh = get_conv_outsize(
-            xs[0].shape()[2],
-            self.kernel_size[0],
-            self.stride[0],
-            self.padding[0],
-        );
-        let ow = get_conv_outsize(
-            xs[0].shape()[3],
-            self.kernel_size[1],
-            self.stride[1],
-            self.padding[1],
-        );
-        let col = Im2col::new(self.kernel_size, self.stride, self.padding)
-            .call(xs.clone())
-            .pop()
-            .unwrap();
-        let w = (self.w)();
-        let oc = w.shape()[0];
-        let w = call!(
-            T,
-            call!(
-                Reshape::new(vec![w.shape()[0], w.shape().iter().skip(1).product()]),
-                w
-            )
-        );
-        let b = (self.b)();
-        let t = call!(Add, call!(Matmul, col, w), b);
-        vec![call!(
-            Transpose::new(vec![0, 3, 1, 2]),
-            call!(Reshape::new(dbg!(vec![xs[0].shape()[0], oh, ow, oc])), t)
-        )]
-    }
-
-    fn all_params(&self) -> Vec<Variable> {
-        todo!()
-    }
-}
-
-#[test]
-fn test_conv2d() {
-    let x = backprop(
-        Array::from_shape_vec((1, 3, 4, 4), (0..16 * 3).map(|x| x as f32).collect())
-            .unwrap()
-            .into_tensor(),
-    );
-    let w = Variable::new(
-        Array::from_shape_vec((3, 3, 3, 3), (0..3usize.pow(4)).map(|x| x as f32).collect())
-            .unwrap()
-            .into_tensor(),
-    );
-    let b = Variable::new(
-        Array::from_shape_vec((3,), (0..3).map(|x| x as f32).collect())
-            .unwrap()
-            .into_tensor(),
-    );
-    let conv = Conv2d {
-        kernel_size: [3, 3],
-        stride: [1, 1],
-        padding: [1, 1],
-        w: Box::new(move || w.clone()),
-        b: Box::new(move || b.clone()),
-    };
-    let ys = conv.call(vec![x.clone()], false);
-    assert_eq!(ys[0].shape(), &[1, 3, 4, 4]);
-    dbg!(&*ys[0]);
-    // export_dot::export_dot(&y, "conv2d.dot").unwrap();
-
-    let grads = gradients(&ys, &[x.clone()], true);
-    dbg!(&*grads[0]);
-}
+use crate::*;
 
 pub struct Im2col {
     pub kernel_size: [usize; 2],
@@ -177,10 +91,6 @@ impl Function for Col2im {
     }
 }
 
-pub fn get_conv_outsize(input_size: usize, kernel_size: usize, stride: usize, pad: usize) -> usize {
-    (input_size + pad * 2 - kernel_size) / stride + 1
-}
-
 pub fn im2col(
     x: &Tensor,
     [kh, kw]: [usize; 2],
@@ -195,9 +105,9 @@ pub fn im2col(
     let f = |x: &Tensor| {
         let mut cols = Array6::zeros([s[0], s[1], kh, kw, oh, ow]);
         for h in 0..kh {
-            let hlim = h + sh * oh;
+            let hlim = h + sh * (oh - 1) + 1;
             for w in 0..kw {
-                let wlim = w + sw * ow;
+                let wlim = w + sw * (ow - 1) + 1;
                 cols.slice_mut(s![.., .., h, w, .., ..]).assign(&x.slice(s![
                     ..,
                     ..,
@@ -213,7 +123,7 @@ pub fn im2col(
         f(x)
     } else {
         let mut y = Array::zeros([s[0], s[1], s[2] + ph * 2, s[3] + pw * 2]);
-        y.slice_mut(s![.., .., ph..s[2] + ph, pw..s[3] + ph])
+        y.slice_mut(s![.., .., ph..s[2] + ph, pw..s[3] + pw])
             .assign(&x);
         f(&y.into_tensor())
     };
@@ -235,6 +145,15 @@ fn test_im2col() {
     .into_tensor();
     let cols = im2col(&x, [2, 2], [2, 2], [1, 1]);
     dbg!(&cols);
+    assert_eq!(cols.shape(), [4, 8]);
+
+    let cols = im2col(&x, [1, 2], [1, 2], [0, 0]);
+    dbg!(&cols);
+    assert_eq!(cols.shape(), [3, 4]);
+
+    let cols = im2col(&x, [1, 2], [2, 1], [0, 0]);
+    dbg!(&cols);
+    assert_eq!(cols.shape(), [4, 4]);
 }
 
 pub fn col2im(
@@ -256,9 +175,9 @@ pub fn col2im(
 
     let mut img = Array4::zeros([s[0], s[1], s[2] + 2 * ph + sh - 1, s[3] + 2 * pw + sw - 1]);
     for h in 0..kh {
-        let hlim = h + sh * oh;
+        let hlim = h + sh * (oh - 1) + 1;
         for w in 0..kw {
-            let wlim = w + sw * ow;
+            let wlim = w + sw * (ow - 1) + 1;
             img.slice_mut(s![
                 ..,
                 ..,
@@ -274,7 +193,7 @@ pub fn col2im(
 }
 
 #[test]
-fn test_col2im() {
+fn test_im2col_col2im() {
     use ndarray::prelude::*;
     let x = array![
         [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]],
@@ -286,40 +205,23 @@ fn test_col2im() {
 
     let img = col2im(&cols, x.shape().try_into().unwrap(), [2, 2], [2, 2], [1, 1]);
 
-    assert_eq!(img, x);
+    assert_eq!(&img, &x);
+
+    let cols = im2col(&x, [1, 2], [2, 1], [0, 0]);
+    let img = col2im(&cols, x.shape().try_into().unwrap(), [1, 2], [2, 1], [0, 0]);
+    dbg!(&img);
 }
 
-// pub fn im2col(x: &Tensor, (fh, fw): (usize, usize)) -> Tensor {
-//     assert_eq!(x.ndim(), 4);
-//     let s = x.shape();
-//     let oh = s[2] - fh + 1;
-//     let ow = s[3] - fw + 1;
-//     let mut cols = Array6::zeros([s[0], s[1], fh, fw, oh, ow]);
-//     for h in 0..fh {
-//         for w in 0..fw {
-//             cols.slice_mut(s![.., .., h, w, .., ..]).assign(&x.slice(s![
-//                 ..,
-//                 ..,
-//                 h..h + oh,
-//                 w..w + ow
-//             ]));
-//         }
-//     }
-//     cols.permuted_axes([1, 2, 3, 0, 4, 5])
-//         .to_shape([s[1] * fh * fw, s[0] * oh * ow])
-//         .unwrap()
-//         .into_tensor()
-// }
+pub fn get_conv_outsize(input_size: usize, kernel_size: usize, stride: usize, pad: usize) -> usize {
+    (input_size + pad * 2 - kernel_size) / stride + 1
+}
 
-// #[test]
-// fn test_im2col() {
-//     use ndarray::prelude::*;
-//     let x = array![
-//         [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]],
-//         [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
-//     ]
-//     .insert_axis(Axis(0))
-//     .into_tensor();
-//     let cols = im2col(&x, (2, 2));
-//     dbg!(&cols);
-// }
+#[test]
+fn test_get_conv_outsize() {
+    assert_eq!(get_conv_outsize(3, 1, 2, 0), 2);
+    assert_eq!(get_conv_outsize(3, 2, 1, 0), 2);
+    assert_eq!(get_conv_outsize(4, 1, 2, 0), 2);
+    assert_eq!(get_conv_outsize(4, 2, 1, 0), 3);
+    assert_eq!(get_conv_outsize(3, 1, 2, 1), 3);
+    assert_eq!(get_conv_outsize(3, 2, 1, 1), 4);
+}

@@ -9,7 +9,7 @@ pub struct Funcall {
 }
 
 impl Funcall {
-    pub fn new(backward: Box<dyn Backward>, xs: Vec<Variable>, ys: &Vec<Variable>) -> Self {
+    pub fn new(backward: Box<dyn Backward>, xs: Vec<Variable>, ys: &[Variable]) -> Self {
         Self {
             backward,
             xs,

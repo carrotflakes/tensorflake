@@ -73,3 +73,43 @@ impl<T: Function> Backward for T {
         self.backward(xs, ys, gys)
     }
 }
+
+struct FnBackward<F: Fn(&Vec<Variable>, &Vec<Variable>, &Vec<Variable>) -> Vec<Variable> + 'static>
+{
+    f: F,
+    name: &'static str,
+}
+
+impl<F: Fn(&Vec<Variable>, &Vec<Variable>, &Vec<Variable>) -> Vec<Variable> + 'static> Backward
+    for FnBackward<F>
+{
+    fn backward(
+        &self,
+        xs: &Vec<Variable>,
+        ys: &Vec<Variable>,
+        gys: &Vec<Variable>,
+    ) -> Vec<Variable> {
+        (self.f)(xs, ys, gys)
+    }
+
+    fn get_function_name(&self) -> &'static str {
+        self.name
+    }
+}
+
+pub fn chain(
+    xs: &[Variable],
+    ys: &[Variable],
+    force_create_graph: bool,
+    name: &'static str,
+    backward: impl Fn(&Vec<Variable>, &Vec<Variable>, &Vec<Variable>) -> Vec<Variable> + 'static,
+) {
+    if force_create_graph || xs.iter().any(|x| x.has_creator()) {
+        let backward = Box::new(FnBackward { f: backward, name });
+        let fc = Funcall::new(backward, xs.to_vec(), &ys);
+        let fc = Arc::new(fc);
+        for y in ys {
+            y.inner.attrs.lock().unwrap().creator = Some(fc.clone());
+        }
+    }
+}
