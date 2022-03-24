@@ -1,6 +1,3 @@
-use ndarray::Array;
-use ndarray_rand::{rand::Rng, rand_distr::Uniform, RandomExt};
-
 use super::Layer;
 use crate::{functions::*, *};
 
@@ -13,14 +10,12 @@ impl Linear {
     pub fn new(
         input: usize,
         output: usize,
-        param_gen: &(impl Fn(Tensor) -> Box<dyn Fn() -> Variable> + 'static),
-        rng: &mut impl Rng,
+        w: &mut impl FnMut(&[usize]) -> Box<dyn Fn() -> Variable>,
+        b: &mut impl FnMut(&[usize]) -> Box<dyn Fn() -> Variable>,
     ) -> Self {
         Self {
-            w: param_gen(
-                Array::random_using((input, output), Uniform::new(0., 0.01), rng).into_tensor(),
-            ),
-            b: param_gen(Array::zeros(output).into_tensor()),
+            w: w(&[input, output]),
+            b: b(&[output]),
         }
     }
 

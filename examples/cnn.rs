@@ -1,9 +1,9 @@
 use mnist::{Mnist, MnistBuilder};
-use ndarray::{s, Array, Array2, Array4};
+use ndarray::prelude::*;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use tensorflake::{
     losses::SoftmaxCrossEntropy,
-    nn::{Conv2d, Layer, Linear, Relu, MLP},
+    nn::{Conv2d, Layer, Linear, Relu},
     *,
 };
 
@@ -21,14 +21,16 @@ fn main() {
         .test_set_length(0)
         .finalize();
 
-    let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
-
-    let mut optimizee = {
-        let mut rng = rng.clone();
-        move |shape: &[usize]| {
-            let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
-            let o = AdamOptimizee::new(t);
-            Box::new(move || o.get())
+    let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
+    let param_gen = {
+        let rng = rng.clone();
+        move || {
+            let mut rng = rng.clone();
+            move |shape: &[usize]| -> Box<dyn Fn() -> Variable> {
+                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
+                let o = AdamOptimizee::new(t);
+                Box::new(move || o.get())
+            }
         }
     };
 
@@ -36,25 +38,17 @@ fn main() {
         [3, 3],
         [2, 2],
         [1, 1],
-        optimizee(&[10, 1, 3, 3]),
-        optimizee(&[10]),
+        param_gen()(&[10, 1, 3, 3]),
+        param_gen()(&[10]),
     );
     let conv2 = Conv2d::new(
         [3, 3],
         [2, 2],
         [1, 1],
-        optimizee(&[10, 10, 3, 3]),
-        optimizee(&[10]),
+        param_gen()(&[10, 10, 3, 3]),
+        param_gen()(&[10]),
     );
-    let linear = Linear::new(
-        10 * 7 * 7,
-        10,
-        &|t: Tensor| {
-            let o = AdamOptimizee::new(t);
-            Box::new(move || o.get())
-        },
-        &mut rng,
-    );
+    let linear = Linear::new(10 * 7 * 7, 10, &mut param_gen(), &mut param_gen());
     // let (x, t) = mini_batches(&trn_img, &trn_lbl, 10).next().unwrap();
     // let y =conv.call(vec![Variable::new(x)], true).pop().unwrap();
     // let y = call!(Relu, y);

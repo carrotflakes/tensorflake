@@ -1,6 +1,6 @@
 use mnist::{Mnist, MnistBuilder};
-use ndarray::{s, Array2};
-use ndarray_rand::rand::SeedableRng;
+use ndarray::prelude::*;
+use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use tensorflake::{
     losses::SoftmaxCrossEntropy,
     nn::{Layer, Relu, MLP},
@@ -21,17 +21,25 @@ fn main() {
         .test_set_length(0)
         .finalize();
 
-    let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
+    let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
+    let param_gen = {
+        let rng = rng.clone();
+        move || {
+            let mut rng = rng.clone();
+            move |shape: &[usize]| -> Box<dyn Fn() -> Variable> {
+                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
+                let o = AdamOptimizee::new(t);
+                Box::new(move || o.get())
+            }
+        }
+    };
+
     let mlp = MLP::new(
         &[28 * 28, 128, 10],
         Some(0.2),
         |xs| Relu.call(xs),
-        &|t: Tensor| {
-            // let o = MomentumSGDOptimizee::new(t, 0.9);
-            let o = AdamOptimizee::new(t);
-            Box::new(move || o.get())
-        },
-        &mut rng,
+        &mut param_gen(),
+        &mut param_gen(),
     );
 
     let batch_size = 1000;

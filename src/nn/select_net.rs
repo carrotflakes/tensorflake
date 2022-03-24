@@ -1,7 +1,6 @@
 use crate::{functions::*, tensor_util::as_2d, *};
 
 use ndarray::s;
-use ndarray_rand::rand::Rng;
 
 use super::{Linear, Softmax};
 
@@ -16,14 +15,14 @@ impl SelectNet {
         input: usize,
         output: usize,
         n: usize,
-        param_gen: &(impl Fn(Tensor) -> Box<dyn Fn() -> Variable> + 'static),
-        rng: &mut impl Rng,
+        w: &mut impl FnMut(&[usize]) -> Box<dyn Fn() -> Variable>,
+        b: &mut impl FnMut(&[usize]) -> Box<dyn Fn() -> Variable>,
     ) -> Self {
         Self {
             output_size: output,
-            select_layer: Linear::new(input, n, param_gen, rng),
+            select_layer: Linear::new(input, n, w, b),
             layers: (0..n)
-                .map(|_| Linear::new(input, output, param_gen, rng))
+                .map(move |_| Linear::new(input, output, w, b))
                 .collect(),
         }
     }
@@ -90,20 +89,23 @@ impl SelectNet {
 
 #[test]
 fn test() {
-    use ndarray::array;
-    use ndarray_rand::rand::SeedableRng;
-    let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
+    use ndarray::prelude::*;
+    use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
+    let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
 
-    let select_net = SelectNet::new(
-        2,
-        3,
-        10,
-        &|x| {
-            let o = crate::optimizees::MomentumSGDOptimizee::new(x, 0.9);
-            Box::new(move || o.get())
-        },
-        &mut rng,
-    );
+    let param_gen = {
+        let rng = rng.clone();
+        move || {
+            let mut rng = rng.clone();
+            move |shape: &[usize]| -> Box<dyn Fn() -> Variable> {
+                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
+                let o = AdamOptimizee::new(t);
+                Box::new(move || o.get())
+            }
+        }
+    };
+
+    let select_net = SelectNet::new(2, 3, 10, &mut param_gen(), &mut param_gen());
 
     let x = backprop(array![[0.1, 0.2], [0.0, 0.0], [0.0, 100.0]].into_tensor());
     let y = select_net.build().call(vec![x.clone()], true);

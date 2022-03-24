@@ -1,5 +1,3 @@
-use ndarray_rand::rand::Rng;
-
 use super::*;
 use crate::*;
 
@@ -14,13 +12,13 @@ impl MLP {
         sizes: &[usize],
         dropout: Option<f32>,
         activation: impl Fn(Vec<Variable>) -> Vec<Variable> + 'static,
-        param_gen: &(impl Fn(Tensor) -> Box<dyn Fn() -> Variable> + 'static),
-        rng: &mut impl Rng,
+        w: &mut impl FnMut(&[usize]) -> Box<dyn Fn() -> Variable>,
+        b: &mut impl FnMut(&[usize]) -> Box<dyn Fn() -> Variable>,
     ) -> Self {
         Self {
             linears: sizes
                 .windows(2)
-                .map(|w| Linear::new(w[0], w[1], param_gen, rng))
+                .map(|x| Linear::new(x[0], x[1], w, b))
                 .collect(),
             dropout,
             activation: Box::new(activation),
@@ -54,18 +52,28 @@ impl Layer for MLP {
 
 #[test]
 fn test() {
-    use ndarray::array;
-    use ndarray_rand::rand::SeedableRng;
-    let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
+    use ndarray::prelude::*;
+    use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
+    let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
+
+    let param_gen = {
+        let rng = rng.clone();
+        move || {
+            let mut rng = rng.clone();
+            move |shape: &[usize]| -> Box<dyn Fn() -> Variable> {
+                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
+                let o = AdamOptimizee::new(t);
+                Box::new(move || o.get())
+            }
+        }
+    };
+
     let mlp = MLP::new(
         &[2, 3, 1],
         None,
         |xs| Sigmoid.call(xs),
-        &|x| {
-            let o = crate::optimizees::MomentumSGDOptimizee::new(x, 0.9);
-            Box::new(move || o.get())
-        },
-        &mut rng,
+        &mut param_gen(),
+        &mut param_gen(),
     );
 
     let x = Variable::new(array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_tensor());
