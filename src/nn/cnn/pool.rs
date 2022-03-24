@@ -25,13 +25,16 @@ pub fn naive_max_pooling(
 fn test_naive_max_pooling() {
     use ndarray::prelude::*;
     let x = backprop(
-        Array::from_shape_vec((1, 3, 4, 4), (0..16 * 3).map(|x| x as f32).collect())
+        Array::from_shape_vec((1, 3, 4, 4), (0..16 * 3).map(|x| (x % 7) as f32).collect())
             .unwrap()
             .into_tensor(),
     );
 
     let y = naive_max_pooling(&x, [2, 2], [2, 2], [0, 0]);
     dbg!(&*y);
+
+    let grads = gradients(&[y.clone()], &[x.clone()], true);
+    dbg!(&*grads[0]);
 }
 
 pub fn naive_sum_pooling(
