@@ -1,4 +1,5 @@
-use mnist::{Mnist, MnistBuilder};
+mod mnist;
+
 use ndarray::prelude::*;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use tensorflake::{
@@ -8,18 +9,7 @@ use tensorflake::{
 };
 
 fn main() {
-    let Mnist {
-        trn_img,
-        trn_lbl,
-        val_img,
-        val_lbl,
-        ..
-    } = MnistBuilder::new()
-        .label_format_digit()
-        .training_set_length(60_000)
-        .validation_set_length(10_000)
-        .test_set_length(0)
-        .finalize();
+    let mnist = mnist::Mnist::load("./data");
 
     let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let param_gen = {
@@ -65,7 +55,7 @@ fn main() {
     for epoch in 0..1000 {
         let mut train_loss = 0.0;
         let mut trn_correct = 0;
-        for (x, t) in mini_batches(&trn_img, &trn_lbl, batch_size) {
+        for (x, t) in mini_batches(&mnist.train_images, &mnist.train_labels, batch_size) {
             let y = conv.call(vec![Variable::new(x)], true).pop().unwrap();
             let y = call!(Relu, y);
             let y = conv2.call(vec![y], true).pop().unwrap();
@@ -79,12 +69,12 @@ fn main() {
             train_loss += loss[[]];
             trn_correct += count_correction(&y, &t);
         }
-        train_loss /= trn_lbl.len() as f32 / batch_size as f32;
-        let trn_acc = trn_correct as f32 / trn_lbl.len() as f32;
+        train_loss /= mnist.train_labels.len() as f32 / batch_size as f32;
+        let trn_acc = trn_correct as f32 / mnist.train_labels.len() as f32;
 
         let mut validation_loss = 0.0;
         let mut val_correct = 0;
-        for (x, t) in mini_batches(&val_img, &val_lbl, batch_size) {
+        for (x, t) in mini_batches(&mnist.test_images, &mnist.test_labels, batch_size) {
             let y = conv.call(vec![Variable::new(x)], false).pop().unwrap();
             let y = call!(Relu, y);
             let y = conv2.call(vec![y], false).pop().unwrap();
@@ -97,8 +87,8 @@ fn main() {
             validation_loss += loss[[]];
             val_correct += count_correction(&y, &t);
         }
-        validation_loss /= val_lbl.len() as f32 / batch_size as f32;
-        let val_acc = val_correct as f32 / val_lbl.len() as f32;
+        validation_loss /= mnist.test_labels.len() as f32 / batch_size as f32;
+        let val_acc = val_correct as f32 / mnist.test_labels.len() as f32;
 
         println!(
             "epoch: {}, trn_loss: {:.4}, trn_acc: {:.4}, val_loss: {:.4}, val_acc: {:.4}",
