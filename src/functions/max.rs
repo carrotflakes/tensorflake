@@ -28,7 +28,7 @@ pub fn max(axis: usize, x: &Variable) -> Variable {
                         .unwrap(),
                 )
                 .for_each(|m, y| *m = if *m == *y { 1.0 } else { 0.0 });
-            vec![&gys[0] * &Variable::new(mask.into_tensor())]
+            vec![&Variable::new(mask.into_tensor()) * &gys[0].reshape(shape.clone())]
         },
     );
     y
