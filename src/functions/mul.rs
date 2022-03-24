@@ -1,6 +1,6 @@
 use crate::*;
 
-use super::{sum_to_axes_to_desire, SumTo};
+use super::{sum_axes_to_desire, Sum};
 
 pub struct Mul;
 
@@ -38,7 +38,7 @@ impl Function for Mul {
 
                 // fit shape
                 if x.shape() != g.shape() {
-                    g = call!(SumTo::new(sum_to_axes_to_desire(g.shape(), x.shape()), false), g);
+                    g = call!(Sum::new(sum_axes_to_desire(g.shape(), x.shape()), false), g);
                 }
 
                 g

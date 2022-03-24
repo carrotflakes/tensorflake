@@ -1,13 +1,13 @@
 use crate::*;
 
-use super::SumTo;
+use super::Sum;
 
-pub struct BroadcastTo {
+pub struct Broadcast {
     pub shape: Vec<usize>,
     axes: Vec<usize>,
 }
 
-impl BroadcastTo {
+impl Broadcast {
     pub fn new(shape: Vec<usize>) -> Self {
         Self {
             shape,
@@ -16,12 +16,12 @@ impl BroadcastTo {
     }
 }
 
-impl Function for BroadcastTo {
+impl Function for Broadcast {
     fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
         assert!(xs.len() == 1);
 
         vec![Variable::new(
-            xs[0]
+            (*xs[0])
                 .broadcast(self.shape.as_slice())
                 .unwrap_or_else(|| {
                     panic!("illegal broadcast: {:?} to {:?}", xs[0].shape(), self.shape)
@@ -38,7 +38,7 @@ impl Function for BroadcastTo {
     ) -> Vec<Variable> {
         #![allow(unused_variables)]
 
-        vec![call!(SumTo::new(self.axes.clone(), false), &gys[0])]
+        vec![call!(Sum::new(self.axes.clone(), false), &gys[0])]
     }
 
     fn into_backward(mut self, xs: &Vec<Variable>) -> Box<dyn Backward>
@@ -65,14 +65,14 @@ impl Function for BroadcastTo {
 fn test() {
     {
         let x = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
-        let ys = BroadcastTo::new(vec![2, 3]).call(vec![x.clone()]);
+        let ys = Broadcast::new(vec![2, 3]).call(vec![x.clone()]);
         assert_eq!(ys[0].shape(), &[2, 3]);
         assert_eq!(&*ys[0], &*x);
     }
 
     {
         let x = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
-        let ys = BroadcastTo::new(vec![4, 2, 3]).call(vec![x.clone()]);
+        let ys = Broadcast::new(vec![4, 2, 3]).call(vec![x.clone()]);
         // dbg!(&*ys[0]);
         assert_eq!(ys[0].shape(), &[4, 2, 3]);
     }

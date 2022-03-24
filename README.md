@@ -17,6 +17,7 @@ TBD
 - [x] Impl ops
 - [ ] Lazy execution
 - [ ] Regularization
+- [ ] Batch normalization
 - [ ] Examples
   - [ ] CNN
   - [ ] RNN

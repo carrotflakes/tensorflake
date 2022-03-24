@@ -24,7 +24,7 @@ fn main() {
     let predict = |w: Variable, b: Variable, x: Variable| {
         call!(
             Add,
-            call!(Matmul, x, call!(BroadcastTo::new(vec![n, 1, 1]), w)),
+            call!(Matmul, x, call!(Broadcast::new(vec![n, 1, 1]), w)),
             b
         )
     };
@@ -52,7 +52,7 @@ fn mean_squared_error(x0: Variable, x1: Variable) -> Variable {
     let x = call!(Pow::new(2.0), call!(Sub, x0, x1));
     call!(
         Div,
-        call!(SumTo::new((0..x.ndim()).collect(), false), x),
+        call!(Sum::new((0..x.ndim()).collect(), false), x),
         Variable::new(scalar(x.shape().iter().product::<usize>() as f32))
     )
 }

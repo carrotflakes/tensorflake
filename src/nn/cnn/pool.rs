@@ -47,7 +47,7 @@ pub fn naive_sum_pooling(
 
     let col = call!(Im2col::new(kernel_size, stride, pad), x);
     let col = col.reshape([col.shape().iter().product::<usize>() / (kh * kw), kh * kw]);
-    let y = call!(SumTo::new(vec![1], false), col);
+    let y = call!(Sum::new(vec![1], false), col);
     call!(
         Transpose::new(vec![0, 3, 1, 2]),
         call!(Reshape::new(vec![x_shape[0], oh, ow, x_shape[1]]), y)

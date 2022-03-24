@@ -28,7 +28,7 @@ impl Function for Softmax {
         gys: &Vec<Variable>,
     ) -> Vec<Variable> {
         let gx = call!(Mul, ys[0], gys[0]);
-        let sum_dx = call!(SumTo::new(vec![xs[0].ndim() - 1], true), gx);
+        let sum_dx = call!(Sum::new(vec![xs[0].ndim() - 1], true), gx);
         vec![call!(Sub, gx, call!(Mul, ys[0], sum_dx))]
     }
 }

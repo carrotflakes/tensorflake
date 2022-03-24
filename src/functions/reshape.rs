@@ -34,7 +34,7 @@ impl Function for Reshape {
         #![allow(unused_variables)]
 
         vec![Variable::new(
-            gys[0]
+            (*gys[0])
                 .broadcast(self.shape.as_slice())
                 .unwrap()
                 .to_shape(self.original_shape.as_slice())

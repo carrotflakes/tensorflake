@@ -1,5 +1,5 @@
 use crate::{
-    functions::{sum_to_axes_to_desire, Mul, Neg, Pow, SumTo},
+    functions::{sum_axes_to_desire, Mul, Neg, Pow, Sum},
     *,
 };
 
@@ -38,14 +38,14 @@ impl Function for Div {
         // fit shape
         if xs[0].shape() != gx0.shape() {
             gx0 = call!(
-                SumTo::new(sum_to_axes_to_desire(gx0.shape(), xs[0].shape()), false),
+                Sum::new(sum_axes_to_desire(gx0.shape(), xs[0].shape()), false),
                 gx0
             );
         }
 
         if xs[1].shape() != gx1.shape() {
             gx1 = call!(
-                SumTo::new(sum_to_axes_to_desire(gx1.shape(), xs[0].shape()), false),
+                Sum::new(sum_axes_to_desire(gx1.shape(), xs[0].shape()), false),
                 gx1
             );
         }

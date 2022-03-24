@@ -42,8 +42,8 @@ impl std::ops::Neg for Variable {
 }
 
 impl Variable {
-    pub fn broadcast_to(&self, shape: impl Into<Vec<usize>>) -> Variable {
-        call!(functions::BroadcastTo::new(shape.into()), self.clone())
+    pub fn broadcast(&self, shape: impl Into<Vec<usize>>) -> Variable {
+        call!(functions::Broadcast::new(shape.into()), self.clone())
     }
 
     pub fn exp(&self) -> Variable {
@@ -81,8 +81,8 @@ impl Variable {
         call!(functions::Slice::new(slice_arg), self.clone())
     }
 
-    pub fn sum_to(&self, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Variable {
-        call!(functions::SumTo::new(axes.into(), keep_dim), self.clone())
+    pub fn sum(&self, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Variable {
+        call!(functions::Sum::new(axes.into(), keep_dim), self.clone())
     }
 
     pub fn t(&self) -> Variable {

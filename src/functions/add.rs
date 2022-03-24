@@ -1,6 +1,6 @@
 use crate::*;
 
-use super::{sum_to_axes_to_desire, SumTo};
+use super::{sum_axes_to_desire, Sum};
 
 pub struct Add;
 
@@ -29,7 +29,7 @@ impl Function for Add {
                 // fit shape
                 if x.shape() != gy.shape() {
                     gy = call!(
-                        SumTo::new(sum_to_axes_to_desire(gy.shape(), x.shape()), false),
+                        Sum::new(sum_axes_to_desire(gy.shape(), x.shape()), false),
                         gy
                     );
                 }
