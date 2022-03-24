@@ -4,7 +4,7 @@ use ndarray::prelude::*;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use tensorflake::{
     losses::SoftmaxCrossEntropy,
-    nn::{Conv2d, Layer, Linear, Relu},
+    nn::{Conv2d, Layer, Linear, Relu, naive_max_pooling},
     *,
 };
 
@@ -26,6 +26,7 @@ fn main() {
 
     let conv = Conv2d::new(
         [3, 3],
+        // [1, 1],
         [2, 2],
         [1, 1],
         param_gen()(&[10, 1, 3, 3]),
@@ -57,6 +58,7 @@ fn main() {
         let mut trn_correct = 0;
         for (x, t) in mini_batches(&mnist.train_images, &mnist.train_labels, batch_size) {
             let y = conv.call(vec![Variable::new(x)], true).pop().unwrap();
+            // let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
             let y = call!(Relu, y);
             let y = conv2.call(vec![y], true).pop().unwrap();
             let y = call!(Relu, y);
@@ -76,6 +78,7 @@ fn main() {
         let mut val_correct = 0;
         for (x, t) in mini_batches(&mnist.test_images, &mnist.test_labels, batch_size) {
             let y = conv.call(vec![Variable::new(x)], false).pop().unwrap();
+            // let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
             let y = call!(Relu, y);
             let y = conv2.call(vec![y], false).pop().unwrap();
             let y = call!(Relu, y);
