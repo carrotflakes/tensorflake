@@ -21,10 +21,8 @@ impl Optimizee {
     pub fn get(&self) -> Variable {
         let v = Variable::new(self.inner.lock().unwrap().tensor_ref().clone());
         let creator = Funcall {
-            backward: Box::new(OptimizeeCreator {
-                optimizee: Optimizee {
-                    inner: self.inner.clone(),
-                },
+            backward: Box::new(Optimizee {
+                inner: self.inner.clone(),
             }),
             xs: vec![],
             ys: vec![std::sync::Arc::downgrade(&v.inner)],
@@ -39,11 +37,7 @@ impl Optimizee {
     }
 }
 
-struct OptimizeeCreator {
-    optimizee: Optimizee,
-}
-
-impl Backward for OptimizeeCreator {
+impl Backward for Optimizee {
     fn backward(
         &self,
         xs: &Vec<Variable>,
@@ -56,7 +50,7 @@ impl Backward for OptimizeeCreator {
 
     fn get_optimizee(&self) -> Option<Optimizee> {
         Some(Optimizee {
-            inner: self.optimizee.inner.clone(),
+            inner: self.inner.clone(),
         })
     }
 }
