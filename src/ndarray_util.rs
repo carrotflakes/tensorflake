@@ -1,4 +1,4 @@
-use ndarray::{ArrayBase, CowRepr, Dim, Dimension, OwnedRepr, ViewRepr};
+use ndarray::{Array, ArrayBase, CowRepr, Dim, Dimension, OwnedRepr, ViewRepr};
 
 pub type NDArray = ArrayBase<ndarray::OwnedArcRepr<f32>, ndarray::IxDyn>;
 
@@ -37,4 +37,17 @@ pub fn as_2d(tensor: &NDArray) -> ArrayBase<ndarray::ViewRepr<&f32>, Dim<[usize;
             *shape.last().unwrap(),
         ])
         .unwrap()
+}
+
+pub fn onehot<D: ndarray::Dimension>(t: &Array<usize, D>, size: usize) -> NDArray {
+    let mut v = vec![0.0; t.shape().iter().product::<usize>() * size];
+    for (i, n) in t.iter().copied().enumerate() {
+        v[i * size + n] = 1.0;
+    }
+    ndarray::Array::from_shape_vec(
+        t.shape().iter().cloned().chain([size]).collect::<Vec<_>>(),
+        v,
+    )
+    .unwrap()
+    .into_ndarray()
 }

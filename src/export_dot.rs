@@ -1,6 +1,6 @@
 use std::sync::{Arc, Weak};
 
-use crate::{graph::collect_funcalls, Tensor};
+use crate::{graph::collect_funcalls, Funcall, Tensor};
 
 pub fn export_dot(vars: &[Tensor], file: &str) -> Result<(), std::io::Error> {
     let f = std::fs::File::create(file).unwrap();
@@ -36,7 +36,7 @@ pub fn write_dot(
     }
 
     for fc in fcs.iter() {
-        let fc_id = Arc::as_ptr(fc) as usize;
+        let fc_id = funcall_id(&fc);
         let fc_name = fc.backward.get_function_name();
         writeln!(
             w,
@@ -57,6 +57,16 @@ pub fn write_dot(
     writeln!(w, "}}")?;
 
     Ok(())
+}
+
+fn funcall_id(fc: &Arc<Funcall>) -> u64 {
+    if let Some(p) = fc.backward.get_param() {
+        use std::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        p.hash(&mut h);
+        return h.finish();
+    }
+    Arc::as_ptr(fc) as u64
 }
 
 pub fn default_var_printer(var: &Tensor) -> String {

@@ -6,13 +6,12 @@ TBD
 
 - [ ] smallvec
 - [x] backward without create_graph
-- [ ] function input length check
 - [x] Is Backward removable? -> currently NO because the Function trait is not object-safe.
 - [x] Adam
 - [ ] Efficient Linear
-- [ ] Save & load
+- [ ] Save & load -> param_bin.rs
 - [x] Dropout
-- [ ] Strong typing
+- [x] Strong typing -> Functional API (tensorflake::function::chain)
 - [ ] Multi thread
 - [x] Impl ops
 - [ ] Lazy execution

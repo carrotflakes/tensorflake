@@ -58,6 +58,20 @@ impl Clone for Param {
     }
 }
 
+impl PartialEq for Param {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.inner, &other.inner)
+    }
+}
+
+impl Eq for Param {}
+
+impl std::hash::Hash for Param {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        Arc::as_ptr(&self.inner).hash(state);
+    }
+}
+
 impl Backward for Param {
     fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
@@ -68,6 +82,10 @@ impl Backward for Param {
         Some(Param {
             inner: self.inner.clone(),
         })
+    }
+
+    fn get_function_name(&self) -> &'static str {
+        "Param"
     }
 }
 
@@ -84,5 +102,42 @@ pub fn optimize(loss: &Tensor, lr: f32) {
     let grads = gradients(&vec![loss.clone()], &trainables, false);
     for (param, grad) in params.iter().zip(grads.iter()) {
         param.update(grad, lr);
+    }
+}
+
+#[derive(Default)]
+pub struct GradientsAccumulator {
+    pub table: std::collections::HashMap<Param, Tensor>,
+}
+
+impl GradientsAccumulator {
+    pub fn compute(&mut self, loss: &Tensor) {
+        let funcalles = graph::collect_funcalls(vec![loss.clone()]);
+        let mut params = Vec::new();
+        let mut trainables = Vec::new();
+        for fc in funcalles {
+            if let Some(o) = fc.backward.get_param() {
+                params.push(o);
+                trainables.push(fc.get_ys()[0].clone());
+            }
+        }
+        let grads = gradients(&vec![loss.clone()], &trainables, false);
+        for (param, grad) in params.iter().zip(grads.iter()) {
+            match self.table.entry(param.clone()) {
+                std::collections::hash_map::Entry::Occupied(mut e) => {
+                    *e.get_mut() = e.get() + grad;
+                }
+                std::collections::hash_map::Entry::Vacant(e) => {
+                    e.insert(grad.clone());
+                }
+            }
+        }
+    }
+
+    pub fn optimize(&mut self, lr: f32) {
+        for (param, grad) in &self.table {
+            param.update(grad, lr);
+        }
+        self.table.clear();
     }
 }

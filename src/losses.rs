@@ -1,8 +1,9 @@
 use std::ops::Sub;
 
-use ndarray::Axis;
+use ndarray::{Array1, Axis};
 
 use crate::functions::*;
+use crate::ndarray_util::onehot;
 use crate::nn::Softmax;
 use crate::*;
 
@@ -40,19 +41,14 @@ impl Function for SoftmaxCrossEntropy {
         vec![Tensor::new(scalar(y / n as f32))]
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         let n: usize = xs[0].shape().iter().take(xs[0].ndim() - 1).product();
         let class_num = xs[0].shape()[xs[0].ndim() - 1];
         let gy = call!(Mul, gys[0], Tensor::new(scalar(1.0 / n as f32)));
         let y = call!(Softmax, xs[0]);
-        let t_onehot = Tensor::new(onehot(&self.t, class_num));
+        let t_onehot = Tensor::new(onehot(&Array1::from(self.t.clone()), class_num));
         vec![call!(Mul, call!(Sub, y, t_onehot), gy)]
     }
 }
@@ -93,12 +89,4 @@ fn test_log_sum_exp() {
             .abs()
             < 1e-6
     );
-}
-
-pub fn onehot(t: &[usize], size: usize) -> NDArray {
-    let mut y = ndarray::Array::zeros([t.len(), size]);
-    for i in 0..t.len() {
-        y[[i, t[i]]] = 1.0;
-    }
-    y.into_ndarray()
 }
