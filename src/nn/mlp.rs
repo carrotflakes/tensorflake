@@ -4,16 +4,16 @@ use crate::*;
 pub struct MLP {
     pub linears: Vec<Linear>,
     pub dropout: Option<f32>,
-    pub activation: Box<dyn Fn(Vec<Variable>) -> Vec<Variable>>,
+    pub activation: Box<dyn Fn(Vec<Tensor>) -> Vec<Tensor>>,
 }
 
 impl MLP {
     pub fn new(
         sizes: &[usize],
         dropout: Option<f32>,
-        activation: impl Fn(Vec<Variable>) -> Vec<Variable> + 'static,
-        w: &mut impl FnMut(&[usize]) -> Box<dyn Fn() -> Variable>,
-        b: &mut impl FnMut(&[usize]) -> Box<dyn Fn() -> Variable>,
+        activation: impl Fn(Vec<Tensor>) -> Vec<Tensor> + 'static,
+        w: &mut impl FnMut(&[usize]) -> Optimizee,
+        b: &mut impl FnMut(&[usize]) -> Optimizee,
     ) -> Self {
         Self {
             linears: sizes
@@ -27,7 +27,7 @@ impl MLP {
 }
 
 impl Layer for MLP {
-    fn call(&self, xs: Vec<Variable>, train: bool) -> Vec<Variable>
+    fn call(&self, xs: Vec<Tensor>, train: bool) -> Vec<Tensor>
     where
         Self: Sized + 'static,
     {
@@ -42,10 +42,10 @@ impl Layer for MLP {
         self.linears.last().unwrap().call(ys, train)
     }
 
-    fn all_params(&self) -> Vec<Variable> {
+    fn all_optimizees(&self) -> Vec<Optimizee> {
         self.linears
             .iter()
-            .flat_map(|linear| linear.all_params())
+            .flat_map(|linear| linear.all_optimizees())
             .collect()
     }
 }
@@ -60,10 +60,9 @@ fn test() {
         let rng = rng.clone();
         move || {
             let mut rng = rng.clone();
-            move |shape: &[usize]| -> Box<dyn Fn() -> Variable> {
-                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
-                let o = AdamOptimizee::new(t);
-                Box::new(move || o.get())
+            move |shape: &[usize]| -> Optimizee {
+                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
+                AdamOptimizee::new(t)
             }
         }
     };
@@ -76,7 +75,7 @@ fn test() {
         &mut param_gen(),
     );
 
-    let x = Variable::new(array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_tensor());
+    let x = Tensor::new(array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_ndarray());
 
     let y = mlp.call(vec![x], true).pop().unwrap();
     // dbg!(&*y);

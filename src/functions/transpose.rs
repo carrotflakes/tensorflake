@@ -13,18 +13,18 @@ impl Transpose {
 }
 
 impl Function for Transpose {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
-        vec![xs[0].view().permuted_axes(&*self.axes).into_tensor().into()]
+        vec![xs[0].view().permuted_axes(&*self.axes).into_ndarray().into()]
     }
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         Transpose::new(
@@ -39,7 +39,7 @@ impl Function for Transpose {
 #[test]
 fn test() {
     {
-        let x = backprop(ndarray::Array::zeros([1, 2, 3]).into_tensor());
+        let x = backprop(ndarray::Array::zeros([1, 2, 3]).into_ndarray());
         let y = call!(Transpose::new(vec![1, 2, 0]), x);
         assert_eq!(y.shape(), &[2, 3, 1]);
 

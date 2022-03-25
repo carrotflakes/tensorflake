@@ -2,16 +2,16 @@ use super::Layer;
 use crate::{functions::*, *};
 
 pub struct Linear {
-    pub w: Box<dyn Fn() -> Variable>,
-    pub b: Box<dyn Fn() -> Variable>,
+    pub w: Optimizee,
+    pub b: Optimizee,
 }
 
 impl Linear {
     pub fn new(
         input: usize,
         output: usize,
-        w: &mut impl FnMut(&[usize]) -> Box<dyn Fn() -> Variable>,
-        b: &mut impl FnMut(&[usize]) -> Box<dyn Fn() -> Variable>,
+        w: &mut impl FnMut(&[usize]) -> Optimizee,
+        b: &mut impl FnMut(&[usize]) -> Optimizee,
     ) -> Self {
         Self {
             w: w(&[input, output]),
@@ -20,24 +20,22 @@ impl Linear {
     }
 
     pub fn build(&self) -> Self {
-        let w = (self.w)();
-        let b = (self.b)();
         Self {
-            w: Box::new(move || w.clone()),
-            b: Box::new(move || b.clone()),
+            w: Fixed::new((*self.w.get()).clone()),
+            b: Fixed::new((*self.b.get()).clone()),
         }
     }
 }
 
 impl Layer for Linear {
-    fn call(&self, xs: Vec<Variable>, _train: bool) -> Vec<Variable>
+    fn call(&self, xs: Vec<Tensor>, _train: bool) -> Vec<Tensor>
     where
         Self: Sized + 'static,
     {
-        vec![call!(Add, call!(Matmul, xs[0], (self.w)()), (self.b)())]
+        vec![call!(Add, call!(Matmul, xs[0], self.w.get()), self.b.get())]
     }
 
-    fn all_params(&self) -> Vec<Variable> {
-        vec![(self.w)(), (self.b)()]
+    fn all_optimizees(&self) -> Vec<Optimizee> {
+        vec![self.w.clone(), self.b.clone()]
     }
 }

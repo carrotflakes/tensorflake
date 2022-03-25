@@ -15,7 +15,7 @@ impl UpSampling2d {
 }
 
 impl Function for UpSampling2d {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert_eq!(xs.len(), 1);
         let x = &*xs[0];
         let s = x.shape();
@@ -28,15 +28,15 @@ impl Function for UpSampling2d {
             }
         }
 
-        vec![y.into_tensor().into()]
+        vec![y.into_ndarray().into()]
     }
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         drop(xs);
         drop(ys);
         let gy = naive_sum_pooling(&gys[0], self.size, self.size, [0, 0]);
@@ -49,7 +49,7 @@ fn test() {
     let x = backprop(
         Array4::from_shape_vec([1, 2, 2, 2], vec![1., 2., 3., 4., 5., 6., 7., 8.])
             .unwrap()
-            .into_tensor(),
+            .into_ndarray(),
     );
     let y = UpSampling2d::new([2, 2]).call(vec![x.clone()]);
     assert_eq!(y[0].shape(), &[1, 2, 4, 4]);

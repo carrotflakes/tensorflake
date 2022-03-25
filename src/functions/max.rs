@@ -2,12 +2,12 @@ use ndarray::{prelude::*, Zip};
 
 use crate::*;
 
-pub fn max(axis: usize, x: &Variable) -> Variable {
-    let y: Variable = x
+pub fn max(axis: usize, x: &Tensor) -> Tensor {
+    let y: Tensor = x
         .map_axis(Axis(axis), |x| {
             x.iter().fold(f32::NEG_INFINITY, |a, b| a.max(*b))
         })
-        .into_tensor()
+        .into_ndarray()
         .into();
 
     chain(
@@ -28,13 +28,13 @@ pub fn max(axis: usize, x: &Variable) -> Variable {
                         .unwrap(),
                 )
                 .for_each(|m, y| *m = if *m == *y { 1.0 } else { 0.0 });
-            vec![&Variable::new(mask.into_tensor()) * &gys[0].reshape(shape.clone())]
+            vec![&Tensor::new(mask.into_ndarray()) * &gys[0].reshape(shape.clone())]
         },
     );
     y
 }
 
-fn max_backward_shape(x: &Tensor, axes: &[usize]) -> Vec<usize> {
+fn max_backward_shape(x: &NDArray, axes: &[usize]) -> Vec<usize> {
     x.shape()
         .iter()
         .enumerate()
@@ -44,16 +44,16 @@ fn max_backward_shape(x: &Tensor, axes: &[usize]) -> Vec<usize> {
 
 #[test]
 fn test() {
-    let x = backprop(array![[1., 2.], [3., 4.]].into_tensor());
+    let x = backprop(array![[1., 2.], [3., 4.]].into_ndarray());
     let y = max(0, &x);
-    assert_eq!(&*y, &array![3., 4.].into_tensor());
+    assert_eq!(&*y, &array![3., 4.].into_ndarray());
 
     let grads = gradients(&[y], &[x.clone()], false);
-    assert_eq!(&*grads[0], &array![[0., 0.], [1., 1.]].into_tensor());
+    assert_eq!(&*grads[0], &array![[0., 0.], [1., 1.]].into_ndarray());
 
     let y = max(1, &x);
-    assert_eq!(&*y, &array![2., 4.].into_tensor());
+    assert_eq!(&*y, &array![2., 4.].into_ndarray());
 
     let grads = gradients(&[y], &[x.clone()], false);
-    assert_eq!(&*grads[0], &array![[0., 1.], [0., 1.]].into_tensor());
+    assert_eq!(&*grads[0], &array![[0., 1.], [0., 1.]].into_ndarray());
 }

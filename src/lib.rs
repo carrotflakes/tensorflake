@@ -8,9 +8,9 @@ pub mod losses;
 pub mod nn;
 mod optimization;
 mod optimizees;
+// pub mod param_bin;
+pub mod ndarray_util;
 mod tensor;
-pub mod tensor_util;
-mod variable;
 
 #[cfg(test)]
 mod test;
@@ -18,13 +18,13 @@ mod test;
 pub use funcall::*;
 pub use function::*;
 pub use graph::gradients;
+pub use ndarray_util::{scalar, IntoNDArray, NDArray};
 pub use nn::Layer;
 pub use optimization::*;
 pub use optimizees::*;
 pub use tensor::*;
-pub use variable::*;
 
-pub fn backprop(x: Tensor) -> Variable {
+pub fn backprop(x: NDArray) -> Tensor {
     functions::CreateGraph::new(x).call(vec![]).pop().unwrap()
 }
 
@@ -35,6 +35,6 @@ macro_rules! call {
     };
 }
 
-pub fn call<const N: usize>(func: impl Function, xs: [Variable; N]) -> Variable {
+pub fn call<const N: usize>(func: impl Function, xs: [Tensor; N]) -> Tensor {
     func.call(xs.to_vec()).pop().unwrap()
 }

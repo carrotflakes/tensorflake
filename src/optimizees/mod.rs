@@ -1,13 +1,15 @@
 mod adam;
+mod fixed;
 mod momentum_sgd;
 mod sgd;
 
 pub use adam::*;
+pub use fixed::*;
 pub use momentum_sgd::*;
 pub use sgd::*;
 
 #[cfg(test)]
-fn test_optimizee(f: impl Fn(crate::Tensor) -> crate::Optimizee, lr: f32) {
+fn test_optimizee(f: impl Fn(crate::NDArray) -> crate::Optimizee, lr: f32) {
     use crate::*;
 
     let px = f(scalar(0.0));
@@ -17,7 +19,7 @@ fn test_optimizee(f: impl Fn(crate::Tensor) -> crate::Optimizee, lr: f32) {
         let y = call!(functions::Add, x, x);
         let loss = call!(
             functions::Pow::new(2.0),
-            call!(functions::Sub, y, Variable::new(scalar(6.0)))
+            call!(functions::Sub, y, Tensor::new(scalar(6.0)))
         );
         loss
     };

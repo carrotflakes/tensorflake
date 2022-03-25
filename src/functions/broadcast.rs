@@ -17,31 +17,31 @@ impl Broadcast {
 }
 
 impl Function for Broadcast {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
-        vec![Variable::new(
+        vec![Tensor::new(
             (*xs[0])
                 .broadcast(self.shape.as_slice())
                 .unwrap_or_else(|| {
                     panic!("illegal broadcast: {:?} to {:?}", xs[0].shape(), self.shape)
                 })
-                .into_tensor(),
+                .into_ndarray(),
         )]
     }
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         vec![call!(Sum::new(self.axes.clone(), false), &gys[0])]
     }
 
-    fn into_backward(mut self, xs: &Vec<Variable>) -> Box<dyn Backward>
+    fn into_backward(mut self, xs: &Vec<Tensor>) -> Box<dyn Backward>
     where
         Self: Sized + 'static,
     {
@@ -64,14 +64,14 @@ impl Function for Broadcast {
 #[test]
 fn test() {
     {
-        let x = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
+        let x = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
         let ys = Broadcast::new(vec![2, 3]).call(vec![x.clone()]);
         assert_eq!(ys[0].shape(), &[2, 3]);
         assert_eq!(&*ys[0], &*x);
     }
 
     {
-        let x = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
+        let x = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
         let ys = Broadcast::new(vec![4, 2, 3]).call(vec![x.clone()]);
         // dbg!(&*ys[0]);
         assert_eq!(ys[0].shape(), &[4, 2, 3]);

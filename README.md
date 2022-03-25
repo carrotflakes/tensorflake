@@ -23,6 +23,7 @@ TBD
   - [ ] RNN
   - [ ] GAN
   - [ ] VAE
+- [ ] wasm
 
 ## Author
 

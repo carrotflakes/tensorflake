@@ -1,4 +1,4 @@
-use crate::{functions::*, tensor_util::as_2d, *};
+use crate::{functions::*, ndarray_util::as_2d, *};
 
 use ndarray::s;
 
@@ -15,8 +15,8 @@ impl SelectNet {
         input: usize,
         output: usize,
         n: usize,
-        w: &mut impl FnMut(&[usize]) -> Box<dyn Fn() -> Variable>,
-        b: &mut impl FnMut(&[usize]) -> Box<dyn Fn() -> Variable>,
+        w: &mut impl FnMut(&[usize]) -> Optimizee,
+        b: &mut impl FnMut(&[usize]) -> Optimizee,
     ) -> Self {
         Self {
             output_size: output,
@@ -37,7 +37,7 @@ impl SelectNet {
         }
     }
 
-    pub fn call(&self, xs: Vec<Variable>, train: bool) -> Vec<Variable> {
+    pub fn call(&self, xs: Vec<Tensor>, train: bool) -> Vec<Tensor> {
         let select = self.select_layer.call(xs.to_vec(), train).pop().unwrap();
         let x = as_2d(&xs[0]);
         let softmax = call!(Softmax, select);
@@ -57,7 +57,7 @@ impl SelectNet {
                 let layer = &self.layers[*j];
                 let ly = layer
                     .call(
-                        vec![Variable::new(x.slice(s![i..=i, ..]).into_tensor())],
+                        vec![Tensor::new(x.slice(s![i..=i, ..]).into_ndarray())],
                         train,
                     )
                     .pop()
@@ -97,22 +97,21 @@ fn test() {
         let rng = rng.clone();
         move || {
             let mut rng = rng.clone();
-            move |shape: &[usize]| -> Box<dyn Fn() -> Variable> {
-                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
-                let o = AdamOptimizee::new(t);
-                Box::new(move || o.get())
+            move |shape: &[usize]| -> Optimizee {
+                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
+                AdamOptimizee::new(t)
             }
         }
     };
 
     let select_net = SelectNet::new(2, 3, 10, &mut param_gen(), &mut param_gen());
 
-    let x = backprop(array![[0.1, 0.2], [0.0, 0.0], [0.0, 100.0]].into_tensor());
+    let x = backprop(array![[0.1, 0.2], [0.0, 0.0], [0.0, 100.0]].into_ndarray());
     let y = select_net.build().call(vec![x.clone()], true);
     dbg!(&*y[0]);
     // dbg!(&*y[1]);
     let t = array![[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
-        .into_tensor()
+        .into_ndarray()
         .into();
     let loss = losses::naive_mean_squared_error(y[0].clone(), t);
     dbg!(loss[[]]);

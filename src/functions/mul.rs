@@ -5,7 +5,7 @@ use super::{sum_axes_to_desire, Sum};
 pub struct Mul;
 
 impl Function for Mul {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert!(xs.len() >= 1);
         if broadcasted_shape(&xs).is_none() {
             panic!(
@@ -20,15 +20,15 @@ impl Function for Mul {
         for x in xs.iter().skip(1) {
             y = y * &**x;
         }
-        vec![y.into_tensor().into()]
+        vec![y.into_ndarray().into()]
     }
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         xs.iter()
@@ -56,7 +56,7 @@ impl Function for Mul {
     }
 }
 
-pub fn broadcasted_shape(xs: &[impl std::ops::Deref<Target = Tensor>]) -> Option<Vec<usize>> {
+pub fn broadcasted_shape(xs: &[impl std::ops::Deref<Target = NDArray>]) -> Option<Vec<usize>> {
     let mut shape = xs[0].shape().to_vec();
     for x in xs.iter().skip(1) {
         let x_shape = x.shape();
@@ -89,16 +89,16 @@ pub fn broadcasted_shape(xs: &[impl std::ops::Deref<Target = Tensor>]) -> Option
 #[test]
 fn test() {
     let s = broadcasted_shape(&[
-        &ndarray::Array::zeros([1, 1, 1]).into_tensor(),
-        &ndarray::Array::zeros([1, 1, 2]).into_tensor(),
-        &ndarray::Array::zeros([3, 1, 1]).into_tensor(),
+        &ndarray::Array::zeros([1, 1, 1]).into_ndarray(),
+        &ndarray::Array::zeros([1, 1, 2]).into_ndarray(),
+        &ndarray::Array::zeros([3, 1, 1]).into_ndarray(),
     ]);
     assert_eq!(s, Some(vec![3, 1, 2]));
 
     let s = broadcasted_shape(&[
-        &ndarray::Array::zeros([1, 4, 1]).into_tensor(),
-        &ndarray::Array::zeros([3, 4, 2]).into_tensor(),
-        &ndarray::Array::zeros([1, 4, 2]).into_tensor(),
+        &ndarray::Array::zeros([1, 4, 1]).into_ndarray(),
+        &ndarray::Array::zeros([3, 4, 2]).into_ndarray(),
+        &ndarray::Array::zeros([1, 4, 2]).into_ndarray(),
     ]);
     assert_eq!(s, Some(vec![3, 4, 2]));
 }

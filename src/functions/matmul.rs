@@ -6,17 +6,17 @@ use crate::*;
 pub struct Matmul;
 
 impl Function for Matmul {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert!(xs.len() == 2);
         vec![forward(&xs[0], &xs[1]).into()]
     }
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         let x = xs[0].clone();
@@ -35,7 +35,7 @@ impl Function for Matmul {
     }
 }
 
-pub fn forward(x0: &Tensor, x1: &Tensor) -> Tensor {
+pub fn forward(x0: &NDArray, x1: &NDArray) -> NDArray {
     // 行列同士の積に限定する
     let x0s = x0.shape();
     let x1s = x1.shape();
@@ -55,7 +55,7 @@ pub fn forward(x0: &Tensor, x1: &Tensor) -> Tensor {
         let x0 = x0.to_owned().into_dimensionality::<Ix2>().unwrap();
         let x1 = x1.to_owned().into_dimensionality::<Ix2>().unwrap();
 
-        x0.dot(&x1).into_tensor()
+        x0.dot(&x1).into_ndarray()
     } else {
         let x0 = x0
             .broadcast(
@@ -116,11 +116,11 @@ pub fn forward(x0: &Tensor, x1: &Tensor) -> Tensor {
             es,
         )
         .unwrap()
-        .into_tensor()
+        .into_ndarray()
     }
 }
 
-pub fn backward(x: &Tensor, w: &Tensor, gy: &Tensor) -> (Tensor, Tensor) {
+pub fn backward(x: &NDArray, w: &NDArray, gy: &NDArray) -> (NDArray, NDArray) {
     let gx = forward(gy, &mat_transpose::forward(w));
     let gw = forward(&mat_transpose::forward(x), gy);
     (gx, gw)
@@ -146,8 +146,8 @@ fn broadcast_shape(a: &[usize], b: &[usize]) -> Option<Vec<usize>> {
 #[test]
 fn test() {
     {
-        let a = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
-        let b = backprop(ndarray::array![[1., 2.], [3., 4.], [5., 6.]].into_tensor());
+        let a = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
+        let b = backprop(ndarray::array![[1., 2.], [3., 4.], [5., 6.]].into_ndarray());
         let ys = Matmul.call(vec![a.clone(), b.clone()]);
         assert_eq!(&ys[0].shape(), &[2, 2]);
 
@@ -158,8 +158,8 @@ fn test() {
     }
 
     {
-        let a = backprop(ndarray::array![[[1., 2., 3.], [4., 5., 6.]]].into_tensor());
-        let b = backprop(ndarray::array![[[1., 2.], [3., 4.], [5., 6.]]].into_tensor());
+        let a = backprop(ndarray::array![[[1., 2., 3.], [4., 5., 6.]]].into_ndarray());
+        let b = backprop(ndarray::array![[[1., 2.], [3., 4.], [5., 6.]]].into_ndarray());
         let ys = Matmul.call(vec![a.clone(), b.clone()]);
         assert_eq!(&ys[0].shape(), &[1, 2, 2]);
 

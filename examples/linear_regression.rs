@@ -8,20 +8,20 @@ fn main() {
 
     // make dataset
     let x =
-        Variable::new(Array::random_using((n, 1, 1), Uniform::new(0., 1.), &mut rng).into_tensor());
+        Tensor::new(Array::random_using((n, 1, 1), Uniform::new(0., 1.), &mut rng).into_ndarray());
     let y = call!(
         Add,
-        call!(Mul, x, Variable::new(scalar(2.0))),
-        Variable::new(Array::zeros((n, 1, 1)).into_tensor())
+        call!(Mul, x, Tensor::new(scalar(2.0))),
+        Tensor::new(Array::zeros((n, 1, 1)).into_ndarray())
     );
 
     // dbg!(&*x);
     // dbg!(&*y);
 
-    let mut w = backprop(ndarray::array![[[0.0]]].into_tensor()).named("w");
-    let mut b = backprop(ndarray::array![0.0].into_tensor()).named("b");
+    let mut w = backprop(ndarray::array![[[0.0]]].into_ndarray()).named("w");
+    let mut b = backprop(ndarray::array![0.0].into_ndarray()).named("b");
 
-    let predict = |w: Variable, b: Variable, x: Variable| {
+    let predict = |w: Tensor, b: Tensor, x: Tensor| {
         call!(
             Add,
             call!(Matmul, x, call!(Broadcast::new(vec![n, 1, 1]), w)),
@@ -43,21 +43,21 @@ fn main() {
         let gs = gradients(&[loss.clone()], &[w.clone(), b.clone()], false);
 
         let lr = 0.01;
-        w = backprop((&*w - &*gs[0] * lr).into_tensor());
-        b = backprop((&*b - &*gs[1] * lr).into_tensor());
+        w = backprop((&*w - &*gs[0] * lr).into_ndarray());
+        b = backprop((&*b - &*gs[1] * lr).into_ndarray());
     }
 }
 
-fn mean_squared_error(x0: Variable, x1: Variable) -> Variable {
+fn mean_squared_error(x0: Tensor, x1: Tensor) -> Tensor {
     let x = call!(Pow::new(2.0), call!(Sub, x0, x1));
     call!(
         Div,
         call!(Sum::new((0..x.ndim()).collect(), false), x),
-        Variable::new(scalar(x.shape().iter().product::<usize>() as f32))
+        Tensor::new(scalar(x.shape().iter().product::<usize>() as f32))
     )
 }
 
-fn graph(vars: &[Variable]) {
+fn graph(vars: &[Tensor]) {
     let f = std::fs::File::create("graph.dot").unwrap();
     let mut w = std::io::BufWriter::new(f);
     tensorflake::export_dot::write_dot(&mut w, vars, &mut |v| {

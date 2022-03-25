@@ -23,7 +23,7 @@ impl Sum {
 }
 
 impl Function for Sum {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
         let mut x = (*xs[0]).to_owned();
@@ -34,21 +34,21 @@ impl Function for Sum {
             }
         }
 
-        vec![x.into_tensor().into()]
+        vec![x.into_ndarray().into()]
     }
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         Broadcast::new(self.original_shape.clone()).call(vec![gys[0].clone()])
     }
 
-    fn into_backward(mut self, xs: &Vec<Variable>) -> Box<dyn Backward>
+    fn into_backward(mut self, xs: &Vec<Tensor>) -> Box<dyn Backward>
     where
         Self: Sized + 'static,
     {
@@ -75,16 +75,16 @@ pub fn sum_axes_to_desire(src_shape: &[usize], dst_shape: &[usize]) -> Vec<usize
 #[test]
 fn test() {
     {
-        let x = Variable::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
+        let x = Tensor::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
         let ys = Sum::new(vec![0], false).call(vec![x.clone()]);
         assert_eq!(ys[0].shape(), &[3]);
-        assert_eq!(&*ys[0], &ndarray::array![5., 7., 9.].into_tensor());
+        assert_eq!(&*ys[0], &ndarray::array![5., 7., 9.].into_ndarray());
     }
 
     {
-        let x = Variable::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_tensor());
+        let x = Tensor::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
         let ys = Sum::new(vec![1], false).call(vec![x.clone()]);
         assert_eq!(ys[0].shape(), &[2]);
-        assert_eq!(&*ys[0], &ndarray::array![6., 15.].into_tensor());
+        assert_eq!(&*ys[0], &ndarray::array![6., 15.].into_ndarray());
     }
 }

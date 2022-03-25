@@ -16,10 +16,9 @@ fn main() {
         let rng = rng.clone();
         move || {
             let mut rng = rng.clone();
-            move |shape: &[usize]| -> Box<dyn Fn() -> Variable> {
-                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
-                let o = AdamOptimizee::new(t);
-                Box::new(move || o.get())
+            move |shape: &[usize]| -> Optimizee {
+                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
+                AdamOptimizee::new(t)
             }
         }
     };
@@ -40,7 +39,7 @@ fn main() {
         let mut train_loss = 0.0;
         let mut trn_correct = 0;
         for (x, t) in mini_batches(&mnist.train_images, &mnist.train_labels, batch_size) {
-            let x = Variable::new(x);
+            let x = Tensor::new(x);
             let y = mlp.call(vec![x.clone()], true).pop().unwrap();
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
@@ -53,7 +52,7 @@ fn main() {
         let mut validation_loss = 0.0;
         let mut val_correct = 0;
         for (x, t) in mini_batches(&mnist.test_images, &mnist.test_labels, batch_size) {
-            let x = Variable::new(x);
+            let x = Tensor::new(x);
             let y = mlp.call(vec![x.clone()], false).pop().unwrap();
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             validation_loss += loss[[]];
@@ -71,7 +70,7 @@ fn main() {
     println!("time: {:?}", start.elapsed());
 }
 
-fn count_correction(y: &Variable, t: &[usize]) -> usize {
+fn count_correction(y: &Tensor, t: &[usize]) -> usize {
     t.iter()
         .enumerate()
         .filter(|(i, t)| {
@@ -87,20 +86,20 @@ fn count_correction(y: &Variable, t: &[usize]) -> usize {
         .count()
 }
 
-fn gen_img(img: &[u8]) -> Tensor {
+fn gen_img(img: &[u8]) -> NDArray {
     Array2::from_shape_vec(
         (img.len() / (28 * 28), 28 * 28),
         img.iter().map(|x| *x as f32 / 255.0).collect(),
     )
     .unwrap()
-    .into_tensor()
+    .into_ndarray()
 }
 
 fn mini_batches<'a>(
     img: &'a [u8],
     lbl: &'a [u8],
     batch_size: usize,
-) -> impl Iterator<Item = (Tensor, Vec<usize>)> + 'a {
+) -> impl Iterator<Item = (NDArray, Vec<usize>)> + 'a {
     let img = img.chunks(batch_size * 28 * 28).map(gen_img);
     let lbl = lbl
         .chunks(batch_size)

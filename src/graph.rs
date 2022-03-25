@@ -1,17 +1,17 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{backprop, call, functions::Add, Funcall, Function, Tensor, Variable};
+use crate::{backprop, call, functions::Add, Funcall, Function, NDArray, Tensor};
 
-pub fn gradients(ys: &[Variable], xs: &[Variable], create_graph: bool) -> Vec<Variable> {
+pub fn gradients(ys: &[Tensor], xs: &[Tensor], create_graph: bool) -> Vec<Tensor> {
     let mut grads = HashMap::new();
 
     for y in ys.iter() {
         grads.insert(
             Arc::as_ptr(&y.inner),
             if create_graph {
-                backprop(Tensor::ones(y.shape()))
+                backprop(NDArray::ones(y.shape()))
             } else {
-                Variable::new(Tensor::ones(y.shape()))
+                Tensor::new(NDArray::ones(y.shape()))
             },
         );
     }
@@ -60,7 +60,7 @@ pub fn gradients(ys: &[Variable], xs: &[Variable], create_graph: bool) -> Vec<Va
         .collect()
 }
 
-pub fn collect_variables(vars: Vec<Variable>) -> Vec<Variable> {
+pub fn collect_variables(vars: Vec<Tensor>) -> Vec<Tensor> {
     let fcs = collect_funcalls(vars);
     let mut vars: Vec<_> = fcs.iter().flat_map(|fc| fc.xs.iter()).cloned().collect();
     vars.dedup();
@@ -91,7 +91,7 @@ pub(crate) fn sort_for_backward(mut fcs: Vec<Arc<Funcall>>) -> Vec<Arc<Funcall>>
     sorted
 }
 
-pub(crate) fn collect_funcalls(mut vars: Vec<Variable>) -> Vec<Arc<Funcall>> {
+pub(crate) fn collect_funcalls(mut vars: Vec<Tensor>) -> Vec<Arc<Funcall>> {
     let mut funcall_vec = Vec::new();
     let mut closed_vars = Vec::new();
     while let Some(var) = vars.pop() {
@@ -113,8 +113,8 @@ pub(crate) fn collect_funcalls(mut vars: Vec<Variable>) -> Vec<Arc<Funcall>> {
 fn test_collect_funcalls() {
     use crate::{backprop, functions, scalar, Function};
     let x = backprop(scalar(1.0));
-    let y = Variable::new(scalar(2.0));
-    let z = Variable::new(scalar(3.0));
+    let y = Tensor::new(scalar(2.0));
+    let z = Tensor::new(scalar(3.0));
     let f = functions::Add.call(vec![x.clone(), y.clone()]);
     let g = functions::Add.call([f.clone(), vec![z.clone()]].concat());
     let f = functions::Add.call([g.clone(), vec![x.clone()]].concat());

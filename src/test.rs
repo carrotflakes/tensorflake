@@ -43,7 +43,7 @@ fn test_matyas() {
 
     let ys = Sub.call(vec![
         Mul.call(vec![
-            Variable::new(scalar(0.26)),
+            Tensor::new(scalar(0.26)),
             Add.call(vec![
                 Pow::new(2.0).call(vec![x.clone()]).pop().unwrap(),
                 Pow::new(2.0).call(vec![y.clone()]).pop().unwrap(),
@@ -53,7 +53,7 @@ fn test_matyas() {
         ])
         .pop()
         .unwrap(),
-        Mul.call(vec![Variable::new(scalar(0.48)), x.clone(), y.clone()])
+        Mul.call(vec![Tensor::new(scalar(0.48)), x.clone(), y.clone()])
             .pop()
             .unwrap(),
     ]);
@@ -63,10 +63,10 @@ fn test_matyas() {
     assert!((&*grads[1] - 0.04).iter().next().unwrap().abs() < 1e-6);
 }
 
-fn rosenbrock(a: Variable, b: Variable) -> Variable {
+fn rosenbrock(a: Tensor, b: Tensor) -> Tensor {
     Add.call(vec![
         Mul.call(vec![
-            Variable::new(scalar(100.0)),
+            Tensor::new(scalar(100.0)),
             Pow::new(2.0)
                 .call(vec![Sub
                     .call(vec![
@@ -82,7 +82,7 @@ fn rosenbrock(a: Variable, b: Variable) -> Variable {
         .unwrap(),
         Pow::new(2.0)
             .call(vec![Sub
-                .call(vec![a.clone(), Variable::new(scalar(1.0))])
+                .call(vec![a.clone(), Tensor::new(scalar(1.0))])
                 .pop()
                 .unwrap()])
             .pop()
@@ -115,8 +115,8 @@ fn test_rosenbrock_sgd() {
         let y = rosenbrock(a.clone(), b.clone());
 
         let grads = gradients(&vec![y], &vec![a.clone(), b.clone()], false);
-        a = backprop((&*a - &*grads[0] * lr).into_tensor());
-        b = backprop((&*b - &*grads[1] * lr).into_tensor());
+        a = backprop((&*a - &*grads[0] * lr).into_ndarray());
+        b = backprop((&*b - &*grads[1] * lr).into_ndarray());
     }
 
     assert!((&*a - 1.0).iter().next().unwrap().abs() < 1e-3);
@@ -130,7 +130,7 @@ fn second_order_differentia() {
     let y = call!(
         Sub,
         call!(Pow::new(4.0), x),
-        call!(Mul, Variable::new(scalar(2.0)), call!(Pow::new(2.0), x))
+        call!(Mul, Tensor::new(scalar(2.0)), call!(Pow::new(2.0), x))
     );
     assert_eq!(*y, scalar(8.0));
 

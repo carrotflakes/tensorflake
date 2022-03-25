@@ -21,17 +21,17 @@ impl Im2col {
 }
 
 impl Function for Im2col {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert_eq!(xs.len(), 1);
         vec![im2col(&*xs[0], self.kernel_size, self.stride, self.padding).into()]
     }
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         drop(ys);
         Col2im::new(
             xs[0].shape().try_into().unwrap(),
@@ -67,7 +67,7 @@ impl Col2im {
 }
 
 impl Function for Col2im {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert_eq!(xs.len(), 1);
         vec![col2im(
             &*xs[0],
@@ -81,10 +81,10 @@ impl Function for Col2im {
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         drop(xs);
         drop(ys);
         Im2col::new(self.kernel_size, self.stride, self.padding).call(gys.clone())
@@ -92,17 +92,17 @@ impl Function for Col2im {
 }
 
 pub fn im2col(
-    x: &Tensor,
+    x: &NDArray,
     [kh, kw]: [usize; 2],
     [sh, sw]: [usize; 2],
     [ph, pw]: [usize; 2],
-) -> Tensor {
+) -> NDArray {
     assert_eq!(x.ndim(), 4);
     let s = x.shape();
     let oh = get_conv_outsize(s[2], kh, sh, ph);
     let ow = get_conv_outsize(s[3], kw, sw, pw);
 
-    let f = |x: &Tensor| {
+    let f = |x: &NDArray| {
         let mut cols = Array6::zeros([s[0], s[1], kh, kw, oh, ow]);
         for h in 0..kh {
             let hlim = h + sh * (oh - 1) + 1;
@@ -125,13 +125,13 @@ pub fn im2col(
         let mut y = Array::zeros([s[0], s[1], s[2] + ph * 2, s[3] + pw * 2]);
         y.slice_mut(s![.., .., ph..s[2] + ph, pw..s[3] + pw])
             .assign(&x);
-        f(&y.into_tensor())
+        f(&y.into_ndarray())
     };
 
     cols.permuted_axes([0, 4, 5, 1, 2, 3])
         .to_shape([s[0] * oh * ow, s[1] * kh * kw])
         .unwrap()
-        .into_tensor()
+        .into_ndarray()
 }
 
 #[test]
@@ -142,7 +142,7 @@ fn test_im2col() {
         [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
     ]
     .insert_axis(Axis(0))
-    .into_tensor();
+    .into_ndarray();
     let cols = im2col(&x, [2, 2], [2, 2], [1, 1]);
     dbg!(&cols);
     assert_eq!(cols.shape(), [4, 8]);
@@ -157,12 +157,12 @@ fn test_im2col() {
 }
 
 pub fn col2im(
-    x: &Tensor,
+    x: &NDArray,
     img_shape: [usize; 4],
     [kh, kw]: [usize; 2],
     [sh, sw]: [usize; 2],
     [ph, pw]: [usize; 2],
-) -> Tensor {
+) -> NDArray {
     assert_eq!(x.ndim(), 2);
     let s = img_shape;
     let oh = get_conv_outsize(s[2], kh, sh, ph);
@@ -189,7 +189,7 @@ pub fn col2im(
     }
 
     img.slice(s![.., .., ph..s[2] + ph, pw..s[3] + pw])
-        .into_tensor()
+        .into_ndarray()
 }
 
 #[test]
@@ -200,7 +200,7 @@ fn test_im2col_col2im() {
         [[1., 2., 3.], [4., 5., 6.], [7., 8., 9.]]
     ]
     .insert_axis(Axis(0))
-    .into_tensor();
+    .into_ndarray();
     let cols = im2col(&x, [2, 2], [2, 2], [1, 1]);
 
     let img = col2im(&cols, x.shape().try_into().unwrap(), [2, 2], [2, 2], [1, 1]);

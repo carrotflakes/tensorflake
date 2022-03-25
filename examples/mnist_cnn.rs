@@ -50,7 +50,7 @@ fn main() {
     println!("time: {:?}", start.elapsed());
 }
 
-fn count_correction(y: &Variable, t: &[usize]) -> usize {
+fn count_correction(y: &Tensor, t: &[usize]) -> usize {
     t.iter()
         .enumerate()
         .filter(|(i, t)| {
@@ -66,20 +66,20 @@ fn count_correction(y: &Variable, t: &[usize]) -> usize {
         .count()
 }
 
-fn gen_img(img: &[u8]) -> Tensor {
+fn gen_img(img: &[u8]) -> NDArray {
     Array4::from_shape_vec(
         (img.len() / (28 * 28), 1, 28, 28),
         img.iter().map(|x| *x as f32 / 255.0).collect(),
     )
     .unwrap()
-    .into_tensor()
+    .into_ndarray()
 }
 
 fn mini_batches<'a>(
     img: &'a [u8],
     lbl: &'a [u8],
     batch_size: usize,
-) -> impl Iterator<Item = (Tensor, Vec<usize>)> + 'a {
+) -> impl Iterator<Item = (NDArray, Vec<usize>)> + 'a {
     let img = img.chunks(batch_size * 28 * 28).map(gen_img);
     let lbl = lbl
         .chunks(batch_size)
@@ -100,11 +100,10 @@ impl Model {
             let rng = rng.clone();
             move || {
                 let mut rng = rng.clone();
-                move |shape: &[usize]| -> Box<dyn Fn() -> Variable> {
+                move |shape: &[usize]| -> Optimizee {
                     let t =
-                        Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
-                    let o = AdamOptimizee::new(t);
-                    Box::new(move || o.get())
+                        Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
+                    AdamOptimizee::new(t)
                 }
             }
         };
@@ -128,12 +127,8 @@ impl Model {
         }
     }
 
-    pub fn call(&self, x: Tensor, train: bool) -> Variable {
-        let y = self
-            .conv1
-            .call(vec![Variable::new(x)], train)
-            .pop()
-            .unwrap();
+    pub fn call(&self, x: NDArray, train: bool) -> Tensor {
+        let y = self.conv1.call(vec![Tensor::new(x)], train).pop().unwrap();
         // let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
         let y = call!(Relu, y);
         let y = self.conv2.call(vec![y], train).pop().unwrap();
@@ -157,11 +152,10 @@ impl BigModel {
             let rng = rng.clone();
             move || {
                 let mut rng = rng.clone();
-                move |shape: &[usize]| -> Box<dyn Fn() -> Variable> {
+                move |shape: &[usize]| -> Optimizee {
                     let t =
-                        Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
-                    let o = AdamOptimizee::new(t);
-                    Box::new(move || o.get())
+                        Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
+                    AdamOptimizee::new(t)
                 }
             }
         };
@@ -185,8 +179,8 @@ impl BigModel {
         }
     }
 
-    pub fn call(&self, x: Tensor, train: bool) -> Variable {
-        let x = Variable::new(x);
+    pub fn call(&self, x: NDArray, train: bool) -> Tensor {
+        let x = Tensor::new(x);
         let y = self.conv1.call(vec![x], train).pop().unwrap();
         let y = call!(Relu, y);
         let y = self.conv2.call(vec![y], train).pop().unwrap();
@@ -198,5 +192,15 @@ impl BigModel {
         let y = Dropout::new(0.5).call(vec![y], train).pop().unwrap();
         let y = self.linear2.call(vec![y], train).pop().unwrap();
         y
+    }
+
+    pub fn all_optimizees(&self) -> Vec<Optimizee> {
+        self.conv1
+            .all_optimizees()
+            .into_iter()
+            .chain(self.conv2.all_optimizees())
+            .chain(self.linear1.all_optimizees())
+            .chain(self.linear2.all_optimizees())
+            .collect()
     }
 }

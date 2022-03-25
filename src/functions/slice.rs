@@ -13,25 +13,25 @@ impl<I: SliceArg<IxDyn> + Clone + 'static> Slice<I> {
 }
 
 impl<I: SliceArg<IxDyn> + Clone + 'static> Function for Slice<I> {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert_eq!(xs.len(), 1);
         let x = &*xs[0];
         let y = x.slice(self.slice_arg.clone());
-        vec![y.into_tensor().into()]
+        vec![y.into_ndarray().into()]
     }
 
     // NOTE: backward cuts the graph.
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         #![allow(unused_variables)]
         let x = &*xs[0];
-        let mut gx = Tensor::zeros(x.shape()); // TODO: Too large tensor!
+        let mut gx = NDArray::zeros(x.shape()); // TODO: Too large tensor!
         gx.slice_mut(self.slice_arg.clone()).assign(&*gys[0]);
-        vec![Variable::new(gx)]
+        vec![Tensor::new(gx)]
     }
 }
 

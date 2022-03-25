@@ -8,8 +8,8 @@ pub struct Conv2d {
     pub kernel_size: [usize; 2],
     pub stride: [usize; 2],
     pub padding: [usize; 2],
-    pub w: Box<dyn Fn() -> Variable>, // [out_ch, in_ch, kh, kw]
-    pub b: Box<dyn Fn() -> Variable>, // [out_ch]
+    pub w: Optimizee, // [out_ch, in_ch, kh, kw]
+    pub b: Optimizee, // [out_ch]
 }
 
 impl Conv2d {
@@ -17,8 +17,8 @@ impl Conv2d {
         kernel_size: [usize; 2],
         stride: [usize; 2],
         padding: [usize; 2],
-        w: Box<dyn Fn() -> Variable>,
-        b: Box<dyn Fn() -> Variable>,
+        w: Optimizee,
+        b: Optimizee,
     ) -> Self {
         Self {
             kernel_size,
@@ -31,7 +31,7 @@ impl Conv2d {
 }
 
 impl Layer for Conv2d {
-    fn call(&self, xs: Vec<Variable>, _train: bool) -> Vec<Variable>
+    fn call(&self, xs: Vec<Tensor>, _train: bool) -> Vec<Tensor>
     where
         Self: Sized + 'static,
     {
@@ -53,7 +53,7 @@ impl Layer for Conv2d {
             .call(xs.clone())
             .pop()
             .unwrap();
-        let w = (self.w)();
+        let w = self.w.get();
         let oc = w.shape()[0];
         let w = call!(
             T,
@@ -62,7 +62,7 @@ impl Layer for Conv2d {
                 w
             )
         );
-        let b = (self.b)();
+        let b = self.b.get();
         let t = call!(Add, call!(Matmul, col, w), b);
         vec![call!(
             Transpose::new(vec![0, 3, 1, 2]),
@@ -70,8 +70,8 @@ impl Layer for Conv2d {
         )]
     }
 
-    fn all_params(&self) -> Vec<Variable> {
-        todo!()
+    fn all_optimizees(&self) -> Vec<Optimizee> {
+        vec![self.w.clone(), self.b.clone()]
     }
 }
 
@@ -81,24 +81,20 @@ fn test_conv2d() {
     let x = backprop(
         Array::from_shape_vec((1, 3, 4, 4), (0..16 * 3).map(|x| x as f32).collect())
             .unwrap()
-            .into_tensor(),
+            .into_ndarray(),
     );
-    let w = Variable::new(
-        Array::from_shape_vec((3, 3, 3, 3), (0..3usize.pow(4)).map(|x| x as f32).collect())
-            .unwrap()
-            .into_tensor(),
-    );
-    let b = Variable::new(
-        Array::from_shape_vec((3,), (0..3).map(|x| x as f32).collect())
-            .unwrap()
-            .into_tensor(),
-    );
+    let w = Array::from_shape_vec((3, 3, 3, 3), (0..3usize.pow(4)).map(|x| x as f32).collect())
+        .unwrap()
+        .into_ndarray();
+    let b = Array::from_shape_vec((3,), (0..3).map(|x| x as f32).collect())
+        .unwrap()
+        .into_ndarray();
     let conv = Conv2d {
         kernel_size: [3, 3],
         stride: [1, 1],
         padding: [1, 1],
-        w: Box::new(move || w.clone()),
-        b: Box::new(move || b.clone()),
+        w: Fixed::new(w),
+        b: Fixed::new(b),
     };
     let ys = conv.call(vec![x.clone()], false);
     assert_eq!(ys[0].shape(), &[1, 3, 4, 4]);

@@ -8,7 +8,7 @@ use crate::*;
 pub struct Softmax;
 
 impl Function for Softmax {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert_eq!(xs.len(), 1);
         let x = &*xs[0];
         let ndim = x.ndim();
@@ -18,15 +18,15 @@ impl Function for Softmax {
         let y = x.sub(x_max.insert_axis(Axis(ndim - 1)));
         let mut y = y.map(|x| x.exp());
         y.div_assign(&y.sum_axis(Axis(ndim - 1)).insert_axis(Axis(ndim - 1)));
-        vec![y.into_tensor().into()]
+        vec![y.into_ndarray().into()]
     }
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         let gx = call!(Mul, ys[0], gys[0]);
         let sum_dx = call!(Sum::new(vec![xs[0].ndim() - 1], true), gx);
         vec![call!(Sub, gx, call!(Mul, ys[0], sum_dx))]
@@ -35,7 +35,7 @@ impl Function for Softmax {
 
 #[test]
 fn test() {
-    let x = backprop(ndarray::array![[0.1, 0.2, 0.3], [0.0, 0.0, 100.0]].into_tensor());
+    let x = backprop(ndarray::array![[0.1, 0.2, 0.3], [0.0, 0.0, 100.0]].into_ndarray());
     let y = call!(Softmax, x.clone());
     dbg!(&*y);
 

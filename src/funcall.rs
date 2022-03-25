@@ -1,15 +1,15 @@
 use std::sync::{Arc, Weak};
 
-use crate::{Backward, Variable, VariableInner};
+use crate::{Backward, Tensor, TensorInner};
 
 pub struct Funcall {
     pub(crate) backward: Box<dyn Backward>,
-    pub(crate) xs: Vec<Variable>,
-    pub(crate) ys: Vec<Weak<VariableInner>>,
+    pub(crate) xs: Vec<Tensor>,
+    pub(crate) ys: Vec<Weak<TensorInner>>,
 }
 
 impl Funcall {
-    pub fn new(backward: Box<dyn Backward>, xs: Vec<Variable>, ys: &[Variable]) -> Self {
+    pub fn new(backward: Box<dyn Backward>, xs: Vec<Tensor>, ys: &[Tensor]) -> Self {
         Self {
             backward,
             xs,
@@ -17,10 +17,10 @@ impl Funcall {
         }
     }
 
-    pub fn get_ys(&self) -> Vec<Variable> {
+    pub fn get_ys(&self) -> Vec<Tensor> {
         self.ys
             .iter()
-            .map(|y| Variable {
+            .map(|y| Tensor {
                 inner: y.upgrade().unwrap(),
             })
             .collect()

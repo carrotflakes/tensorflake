@@ -14,21 +14,21 @@ impl Concat {
 }
 
 impl Function for Concat {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         let concated = ndarray::concatenate(
             Axis(self.axis),
             &xs.iter().map(|x| x.view()).collect::<Vec<_>>(),
         )
         .unwrap();
-        vec![concated.into_tensor().into()]
+        vec![concated.into_ndarray().into()]
     }
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         drop(ys);
 
         let gy = &gys[0];
@@ -66,8 +66,8 @@ impl Function for Concat {
 #[test]
 fn test() {
     use ndarray::{array, Array};
-    let a = backprop(Array::zeros([2, 3]).into_tensor());
-    let b = backprop(Array::ones([2, 3]).into_tensor());
+    let a = backprop(Array::zeros([2, 3]).into_ndarray());
+    let b = backprop(Array::ones([2, 3]).into_ndarray());
     let y = call!(Concat::new(0), a, b);
     let y = call!(
         Mul,
@@ -79,7 +79,7 @@ fn test() {
                 [3.0, 3.0, 3.0],
                 [4.0, 4.0, 4.0]
             ]
-            .into_tensor()
+            .into_ndarray()
         )
     );
     assert_eq!(y.shape(), [4, 3]);

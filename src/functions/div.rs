@@ -6,18 +6,18 @@ use crate::{
 pub struct Div;
 
 impl Function for Div {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert!(xs.len() == 2);
 
-        vec![(&*xs[0] / &*xs[1]).into_tensor().into()]
+        vec![(&*xs[0] / &*xs[1]).into_ndarray().into()]
     }
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         let mut gx0 = Div.call(vec![gys[0].clone(), xs[0].clone()]).pop().unwrap();

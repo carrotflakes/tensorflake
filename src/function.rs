@@ -1,17 +1,17 @@
 use std::sync::Arc;
 
-use crate::{Funcall, Variable};
+use crate::{Funcall, Tensor};
 
 pub trait Function: 'static {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable>;
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor>;
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable>;
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor>;
 
-    fn into_backward(self, xs: &Vec<Variable>) -> Box<dyn Backward>
+    fn into_backward(self, xs: &Vec<Tensor>) -> Box<dyn Backward>
     where
         Self: Sized,
     {
@@ -20,7 +20,7 @@ pub trait Function: 'static {
         Box::new(self)
     }
 
-    fn call(self, xs: Vec<Variable>) -> Vec<Variable>
+    fn call(self, xs: Vec<Tensor>) -> Vec<Tensor>
     where
         Self: Sized,
     {
@@ -42,10 +42,10 @@ pub trait Function: 'static {
 pub trait Backward {
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable>;
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor>;
 
     fn get_function_name(&self) -> &'static str {
         let name = std::any::type_name::<Self>();
@@ -66,29 +66,29 @@ pub trait Backward {
 impl<T: Function> Backward for T {
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         self.backward(xs, ys, gys)
     }
 }
 
-struct FnBackward<F: Fn(&Vec<Variable>, &Vec<Variable>, &Vec<Variable>) -> Vec<Variable> + 'static>
+struct FnBackward<F: Fn(&Vec<Tensor>, &Vec<Tensor>, &Vec<Tensor>) -> Vec<Tensor> + 'static>
 {
     f: F,
     name: &'static str,
 }
 
-impl<F: Fn(&Vec<Variable>, &Vec<Variable>, &Vec<Variable>) -> Vec<Variable> + 'static> Backward
+impl<F: Fn(&Vec<Tensor>, &Vec<Tensor>, &Vec<Tensor>) -> Vec<Tensor> + 'static> Backward
     for FnBackward<F>
 {
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         (self.f)(xs, ys, gys)
     }
 
@@ -98,11 +98,11 @@ impl<F: Fn(&Vec<Variable>, &Vec<Variable>, &Vec<Variable>) -> Vec<Variable> + 's
 }
 
 pub fn chain(
-    xs: &[Variable],
-    ys: &[Variable],
+    xs: &[Tensor],
+    ys: &[Tensor],
     force_create_graph: bool,
     name: &'static str,
-    backward: impl Fn(&Vec<Variable>, &Vec<Variable>, &Vec<Variable>) -> Vec<Variable> + 'static,
+    backward: impl Fn(&Vec<Tensor>, &Vec<Tensor>, &Vec<Tensor>) -> Vec<Tensor> + 'static,
 ) {
     if force_create_graph || xs.iter().any(|x| x.has_creator()) {
         let backward = Box::new(FnBackward { f: backward, name });

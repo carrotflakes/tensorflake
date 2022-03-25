@@ -5,21 +5,21 @@ use super::{sum_axes_to_desire, Sum};
 pub struct Add;
 
 impl Function for Add {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert!(xs.len() >= 1);
         let mut y = (*xs[0]).clone();
         for x in xs.iter().skip(1) {
             y = y + &**x;
         }
-        vec![Variable::new(y)]
+        vec![Tensor::new(y)]
     }
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         xs.iter()

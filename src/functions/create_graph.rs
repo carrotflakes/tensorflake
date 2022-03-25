@@ -1,28 +1,28 @@
 use crate::*;
 
 pub struct CreateGraph {
-    y: Tensor,
+    y: NDArray,
 }
 
 impl CreateGraph {
-    pub fn new(y: Tensor) -> Self {
+    pub fn new(y: NDArray) -> Self {
         Self { y }
     }
 }
 
 impl Function for CreateGraph {
-    fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
-        vec![Variable::new(self.y.clone())]
+        vec![Tensor::new(self.y.clone())]
     }
 
     fn backward(
         &self,
-        xs: &Vec<Variable>,
-        ys: &Vec<Variable>,
-        gys: &Vec<Variable>,
-    ) -> Vec<Variable> {
+        xs: &Vec<Tensor>,
+        ys: &Vec<Tensor>,
+        gys: &Vec<Tensor>,
+    ) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         vec![]
