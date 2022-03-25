@@ -4,50 +4,14 @@ use ndarray::prelude::*;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use tensorflake::{
     losses::SoftmaxCrossEntropy,
-    nn::{Conv2d, Layer, Linear, Relu, naive_max_pooling},
+    nn::{naive_max_pooling, Conv2d, Dropout, Layer, Linear, Relu},
     *,
 };
 
 fn main() {
     let mnist = mnist::Mnist::load("./data");
 
-    let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
-    let param_gen = {
-        let rng = rng.clone();
-        move || {
-            let mut rng = rng.clone();
-            move |shape: &[usize]| -> Box<dyn Fn() -> Variable> {
-                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
-                let o = AdamOptimizee::new(t);
-                Box::new(move || o.get())
-            }
-        }
-    };
-
-    let conv = Conv2d::new(
-        [3, 3],
-        // [1, 1],
-        [2, 2],
-        [1, 1],
-        param_gen()(&[10, 1, 3, 3]),
-        param_gen()(&[10]),
-    );
-    let conv2 = Conv2d::new(
-        [3, 3],
-        [2, 2],
-        [1, 1],
-        param_gen()(&[10, 10, 3, 3]),
-        param_gen()(&[10]),
-    );
-    let linear = Linear::new(10 * 7 * 7, 10, &mut param_gen(), &mut param_gen());
-    // let (x, t) = mini_batches(&trn_img, &trn_lbl, 10).next().unwrap();
-    // let y =conv.call(vec![Variable::new(x)], true).pop().unwrap();
-    // let y = call!(Relu, y);
-    // let y =conv2.call(vec![y], true).pop().unwrap();
-    // let y = call!(Relu, y);
-    // let y = linear.call(vec![y.reshape([10, 10*7*7])], false).pop().unwrap();
-    // dbg!(&*y);
-    // return;
+    let model = BigModel::new();
 
     let batch_size = 1000;
 
@@ -57,15 +21,7 @@ fn main() {
         let mut train_loss = 0.0;
         let mut trn_correct = 0;
         for (x, t) in mini_batches(&mnist.train_images, &mnist.train_labels, batch_size) {
-            let y = conv.call(vec![Variable::new(x)], true).pop().unwrap();
-            // let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
-            let y = call!(Relu, y);
-            let y = conv2.call(vec![y], true).pop().unwrap();
-            let y = call!(Relu, y);
-            let y = linear
-                .call(vec![y.reshape([batch_size, 10 * 7 * 7])], true)
-                .pop()
-                .unwrap();
+            let y = model.call(x, true);
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
             train_loss += loss[[]];
@@ -77,15 +33,7 @@ fn main() {
         let mut validation_loss = 0.0;
         let mut val_correct = 0;
         for (x, t) in mini_batches(&mnist.test_images, &mnist.test_labels, batch_size) {
-            let y = conv.call(vec![Variable::new(x)], false).pop().unwrap();
-            // let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
-            let y = call!(Relu, y);
-            let y = conv2.call(vec![y], false).pop().unwrap();
-            let y = call!(Relu, y);
-            let y = linear
-                .call(vec![y.reshape([batch_size, 10 * 7 * 7])], false)
-                .pop()
-                .unwrap();
+            let y = model.call(x, false);
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             validation_loss += loss[[]];
             val_correct += count_correction(&y, &t);
@@ -137,4 +85,118 @@ fn mini_batches<'a>(
         .chunks(batch_size)
         .map(|x| x.iter().map(|x| *x as usize).collect::<Vec<_>>());
     img.zip(lbl)
+}
+
+pub struct Model {
+    pub conv1: Conv2d,
+    pub conv2: Conv2d,
+    pub linear: Linear,
+}
+
+impl Model {
+    pub fn new() -> Self {
+        let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
+        let param_gen = {
+            let rng = rng.clone();
+            move || {
+                let mut rng = rng.clone();
+                move |shape: &[usize]| -> Box<dyn Fn() -> Variable> {
+                    let t =
+                        Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
+                    let o = AdamOptimizee::new(t);
+                    Box::new(move || o.get())
+                }
+            }
+        };
+        Self {
+            conv1: Conv2d::new(
+                [3, 3],
+                // [1, 1],
+                [2, 2],
+                [1, 1],
+                param_gen()(&[10, 1, 3, 3]),
+                param_gen()(&[10]),
+            ),
+            conv2: Conv2d::new(
+                [3, 3],
+                [2, 2],
+                [1, 1],
+                param_gen()(&[10, 10, 3, 3]),
+                param_gen()(&[10]),
+            ),
+            linear: Linear::new(10 * 7 * 7, 10, &mut param_gen(), &mut param_gen()),
+        }
+    }
+
+    pub fn call(&self, x: Tensor, train: bool) -> Variable {
+        let y = self
+            .conv1
+            .call(vec![Variable::new(x)], train)
+            .pop()
+            .unwrap();
+        // let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
+        let y = call!(Relu, y);
+        let y = self.conv2.call(vec![y], train).pop().unwrap();
+        let y = call!(Relu, y);
+        let y = y.reshape([y.shape()[0], 10 * 7 * 7]);
+        let y = self.linear.call(vec![y], train).pop().unwrap();
+        y
+    }
+}
+pub struct BigModel {
+    pub conv1: Conv2d,
+    pub conv2: Conv2d,
+    pub linear1: Linear,
+    pub linear2: Linear,
+}
+
+impl BigModel {
+    pub fn new() -> Self {
+        let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
+        let param_gen = {
+            let rng = rng.clone();
+            move || {
+                let mut rng = rng.clone();
+                move |shape: &[usize]| -> Box<dyn Fn() -> Variable> {
+                    let t =
+                        Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_tensor();
+                    let o = AdamOptimizee::new(t);
+                    Box::new(move || o.get())
+                }
+            }
+        };
+        Self {
+            conv1: Conv2d::new(
+                [3, 3],
+                [1, 1],
+                [0, 0],
+                param_gen()(&[32, 1, 3, 3]),
+                param_gen()(&[32]),
+            ),
+            conv2: Conv2d::new(
+                [3, 3],
+                [1, 1],
+                [0, 0],
+                param_gen()(&[64, 32, 3, 3]),
+                param_gen()(&[64]),
+            ),
+            linear1: Linear::new(64 * 12 * 12, 128, &mut param_gen(), &mut param_gen()),
+            linear2: Linear::new(128, 10, &mut param_gen(), &mut param_gen()),
+        }
+    }
+
+    pub fn call(&self, x: Tensor, train: bool) -> Variable {
+        let x = Variable::new(x);
+        let y = self.conv1.call(vec![x], train).pop().unwrap();
+        let y = call!(Relu, y);
+        let y = self.conv2.call(vec![y], train).pop().unwrap();
+        let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
+        let y = y.reshape([y.shape()[0], 64 * 12 * 12]);
+        let y = call!(Relu, y);
+        let y = self.linear1.call(vec![y], train).pop().unwrap();
+        let y = call!(Relu, y);
+        let y = Dropout::new(0.5).call(vec![y], train).pop().unwrap();
+        let y = self.linear2.call(vec![y], train).pop().unwrap();
+        y
+    }
 }
