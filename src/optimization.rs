@@ -1,14 +1,6 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::*;
-
-pub fn naive_sgd(lr: f32, loss: &Variable) {
-    let trainables = graph::collect_variables(vec![loss.clone()]);
-    let grads = gradients(&vec![loss.clone()], &trainables, false);
-    for (t, g) in trainables.iter().zip(grads.iter()) {
-        unsafe { t.add_assign(&call!(functions::Mul, Variable::new(scalar(-lr)), g)) };
-    }
-}
 
 pub trait OptimizeeT: 'static {
     fn tensor_ref(&self) -> &Tensor;
@@ -16,18 +8,18 @@ pub trait OptimizeeT: 'static {
 }
 
 pub struct Optimizee {
-    inner: Arc<dyn OptimizeeT>,
+    inner: Arc<Mutex<dyn OptimizeeT>>,
 }
 
 impl Optimizee {
     pub fn new(inner: impl OptimizeeT) -> Optimizee {
         Optimizee {
-            inner: Arc::new(inner),
+            inner: Arc::new(Mutex::new(inner)),
         }
     }
 
     pub fn get(&self) -> Variable {
-        let v = Variable::new(self.inner.tensor_ref().clone());
+        let v = Variable::new(self.inner.lock().unwrap().tensor_ref().clone());
         let creator = Funcall {
             backward: Box::new(OptimizeeCreator {
                 optimizee: Optimizee {
@@ -42,10 +34,8 @@ impl Optimizee {
     }
 
     pub fn update(&self, grad: &Variable, lr: f32) {
-        #[allow(mutable_transmutes)]
-        let optimizee =
-            unsafe { std::mem::transmute::<&dyn OptimizeeT, &mut dyn OptimizeeT>(&*self.inner) };
-        optimizee.update(&grad, lr);
+        let mut inner = self.inner.lock().unwrap();
+        inner.update(&grad, lr);
     }
 }
 
