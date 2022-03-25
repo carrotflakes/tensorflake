@@ -15,7 +15,7 @@ fn test_optimizee(f: impl Fn(crate::NDArray) -> crate::Optimizee, lr: f32) {
     let px = f(scalar(0.0));
 
     let loss_fn = || {
-        let x = px.get();
+        let x = px.get_tensor();
         let y = call!(functions::Add, x, x);
         let loss = call!(
             functions::Pow::new(2.0),

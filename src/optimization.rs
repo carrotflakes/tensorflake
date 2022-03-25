@@ -6,7 +6,7 @@ pub trait OptimizeeT: 'static {
     fn tensor_ref(&self) -> &NDArray;
     fn set(&mut self, tensor: NDArray);
     fn update(&mut self, grad: &NDArray, lr: f32);
-    
+
     fn create_graph(&self) -> bool {
         true
     }
@@ -23,7 +23,7 @@ impl Optimizee {
         }
     }
 
-    pub fn get(&self) -> Tensor {
+    pub fn get_tensor(&self) -> Tensor {
         let inner = self.inner.lock().unwrap();
         let v = Tensor::new(inner.tensor_ref().clone());
         if inner.create_graph() {
@@ -37,6 +37,11 @@ impl Optimizee {
             v.inner.attrs.lock().unwrap().creator = Some(std::sync::Arc::new(creator));
         }
         v
+    }
+
+    pub fn set(&mut self, ndarray: NDArray) {
+        let mut inner = self.inner.lock().unwrap();
+        inner.set(ndarray);
     }
 
     pub fn update(&self, grad: &Tensor, lr: f32) {
@@ -54,12 +59,7 @@ impl Clone for Optimizee {
 }
 
 impl Backward for Optimizee {
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
         vec![]
     }

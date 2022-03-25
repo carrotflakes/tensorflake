@@ -5,11 +5,11 @@ pub mod functions;
 pub mod graph;
 mod impl_ops_for_variable;
 pub mod losses;
+pub mod ndarray_util;
 pub mod nn;
 mod optimization;
 mod optimizees;
-// pub mod param_bin;
-pub mod ndarray_util;
+pub mod param_bin;
 mod tensor;
 
 #[cfg(test)]

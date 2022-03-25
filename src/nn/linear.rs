@@ -21,8 +21,8 @@ impl Linear {
 
     pub fn build(&self) -> Self {
         Self {
-            w: Fixed::new((*self.w.get()).clone()),
-            b: Fixed::new((*self.b.get()).clone()),
+            w: Fixed::new((*self.w.get_tensor()).clone()),
+            b: Fixed::new((*self.b.get_tensor()).clone()),
         }
     }
 }
@@ -32,7 +32,7 @@ impl Layer for Linear {
     where
         Self: Sized + 'static,
     {
-        vec![call!(Add, call!(Matmul, xs[0], self.w.get()), self.b.get())]
+        vec![call!(Add, call!(Matmul, xs[0], self.w.get_tensor()), self.b.get_tensor())]
     }
 
     fn all_optimizees(&self) -> Vec<Optimizee> {

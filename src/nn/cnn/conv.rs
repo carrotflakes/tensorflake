@@ -53,7 +53,7 @@ impl Layer for Conv2d {
             .call(xs.clone())
             .pop()
             .unwrap();
-        let w = self.w.get();
+        let w = self.w.get_tensor();
         let oc = w.shape()[0];
         let w = call!(
             T,
@@ -62,7 +62,7 @@ impl Layer for Conv2d {
                 w
             )
         );
-        let b = self.b.get();
+        let b = self.b.get_tensor();
         let t = call!(Add, call!(Matmul, col, w), b);
         vec![call!(
             Transpose::new(vec![0, 3, 1, 2]),
