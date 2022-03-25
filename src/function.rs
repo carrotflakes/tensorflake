@@ -58,7 +58,7 @@ pub trait Backward {
         }
     }
 
-    fn get_optimizee(&self) -> Option<crate::Optimizee> {
+    fn get_param(&self) -> Option<crate::Param> {
         None
     }
 }

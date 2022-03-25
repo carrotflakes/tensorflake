@@ -100,7 +100,7 @@ impl Model {
             let rng = rng.clone();
             move || {
                 let mut rng = rng.clone();
-                move |shape: &[usize]| -> Optimizee {
+                move |shape: &[usize]| -> Param {
                     let t =
                         Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
                     AdamOptimizee::new(t)
@@ -152,7 +152,7 @@ impl BigModel {
             let rng = rng.clone();
             move || {
                 let mut rng = rng.clone();
-                move |shape: &[usize]| -> Optimizee {
+                move |shape: &[usize]| -> Param {
                     let t =
                         Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
                     AdamOptimizee::new(t)
@@ -194,13 +194,13 @@ impl BigModel {
         y
     }
 
-    pub fn all_optimizees(&self) -> Vec<Optimizee> {
+    pub fn all_params(&self) -> Vec<Param> {
         self.conv1
-            .all_optimizees()
+            .all_params()
             .into_iter()
-            .chain(self.conv2.all_optimizees())
-            .chain(self.linear1.all_optimizees())
-            .chain(self.linear2.all_optimizees())
+            .chain(self.conv2.all_params())
+            .chain(self.linear1.all_params())
+            .chain(self.linear2.all_params())
             .collect()
     }
 }

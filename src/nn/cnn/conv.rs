@@ -8,8 +8,8 @@ pub struct Conv2d {
     pub kernel_size: [usize; 2],
     pub stride: [usize; 2],
     pub padding: [usize; 2],
-    pub w: Optimizee, // [out_ch, in_ch, kh, kw]
-    pub b: Optimizee, // [out_ch]
+    pub w: Param, // [out_ch, in_ch, kh, kw]
+    pub b: Param, // [out_ch]
 }
 
 impl Conv2d {
@@ -17,8 +17,8 @@ impl Conv2d {
         kernel_size: [usize; 2],
         stride: [usize; 2],
         padding: [usize; 2],
-        w: Optimizee,
-        b: Optimizee,
+        w: Param,
+        b: Param,
     ) -> Self {
         Self {
             kernel_size,
@@ -70,7 +70,7 @@ impl Layer for Conv2d {
         )]
     }
 
-    fn all_optimizees(&self) -> Vec<Optimizee> {
+    fn all_params(&self) -> Vec<Param> {
         vec![self.w.clone(), self.b.clone()]
     }
 }

@@ -15,8 +15,8 @@ impl SelectNet {
         input: usize,
         output: usize,
         n: usize,
-        w: &mut impl FnMut(&[usize]) -> Optimizee,
-        b: &mut impl FnMut(&[usize]) -> Optimizee,
+        w: &mut impl FnMut(&[usize]) -> Param,
+        b: &mut impl FnMut(&[usize]) -> Param,
     ) -> Self {
         Self {
             output_size: output,
@@ -97,7 +97,7 @@ fn test() {
         let rng = rng.clone();
         move || {
             let mut rng = rng.clone();
-            move |shape: &[usize]| -> Optimizee {
+            move |shape: &[usize]| -> Param {
                 let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
                 AdamOptimizee::new(t)
             }

@@ -16,7 +16,7 @@ fn main() {
         let rng = rng.clone();
         move || {
             let mut rng = rng.clone();
-            move |shape: &[usize]| -> Optimizee {
+            move |shape: &[usize]| -> Param {
                 let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
                 AdamOptimizee::new(t)
             }

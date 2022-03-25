@@ -5,5 +5,5 @@ pub trait Layer {
     where
         Self: Sized + 'static;
 
-    fn all_optimizees(&self) -> Vec<Optimizee>;
+    fn all_params(&self) -> Vec<Param>;
 }

@@ -2,7 +2,7 @@ use std::io::{Read, Write};
 
 use crate::*;
 
-pub fn export_to_file(params: &[Optimizee], path: &str) {
+pub fn export_to_file(params: &[Param], path: &str) {
     let f = std::fs::File::create(path).unwrap();
     let mut writer = std::io::BufWriter::new(f);
     for param in params {
@@ -19,7 +19,7 @@ pub fn export_to_file(params: &[Optimizee], path: &str) {
     }
 }
 
-pub fn import_from_file(params: &mut [Optimizee], path: &str) {
+pub fn import_from_file(params: &mut [Param], path: &str) {
     let f = std::fs::File::open(path).unwrap();
     let mut reader = std::io::BufReader::new(f);
     let mut buf = [0u8; 4];

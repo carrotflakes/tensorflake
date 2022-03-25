@@ -11,8 +11,8 @@ pub struct AdamOptimizee {
 }
 
 impl AdamOptimizee {
-    pub fn new(tensor: NDArray) -> Optimizee {
-        Optimizee::new(AdamOptimizee {
+    pub fn new(tensor: NDArray) -> Param {
+        Param::new(AdamOptimizee {
             mom: NDArray::zeros(tensor.shape()),
             vel: NDArray::zeros(tensor.shape()),
             tensor,
@@ -21,8 +21,8 @@ impl AdamOptimizee {
         })
     }
 
-    pub fn new_with_params(tensor: NDArray, beta1: f32, beta2: f32) -> Optimizee {
-        Optimizee::new(AdamOptimizee {
+    pub fn new_with_params(tensor: NDArray, beta1: f32, beta2: f32) -> Param {
+        Param::new(AdamOptimizee {
             mom: NDArray::zeros(tensor.shape()),
             vel: NDArray::zeros(tensor.shape()),
             tensor,

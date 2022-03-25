@@ -12,13 +12,13 @@ pub trait OptimizeeT: 'static {
     }
 }
 
-pub struct Optimizee {
+pub struct Param {
     inner: Arc<Mutex<dyn OptimizeeT>>,
 }
 
-impl Optimizee {
-    pub fn new(inner: impl OptimizeeT) -> Optimizee {
-        Optimizee {
+impl Param {
+    pub fn new(inner: impl OptimizeeT) -> Param {
+        Param {
             inner: Arc::new(Mutex::new(inner)),
         }
     }
@@ -28,7 +28,7 @@ impl Optimizee {
         let v = Tensor::new(inner.tensor_ref().clone());
         if inner.create_graph() {
             let creator = Funcall {
-                backward: Box::new(Optimizee {
+                backward: Box::new(Param {
                     inner: self.inner.clone(),
                 }),
                 xs: vec![],
@@ -50,22 +50,22 @@ impl Optimizee {
     }
 }
 
-impl Clone for Optimizee {
-    fn clone(&self) -> Optimizee {
-        Optimizee {
+impl Clone for Param {
+    fn clone(&self) -> Param {
+        Param {
             inner: self.inner.clone(),
         }
     }
 }
 
-impl Backward for Optimizee {
+impl Backward for Param {
     fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
         vec![]
     }
 
-    fn get_optimizee(&self) -> Option<Optimizee> {
-        Some(Optimizee {
+    fn get_param(&self) -> Option<Param> {
+        Some(Param {
             inner: self.inner.clone(),
         })
     }
@@ -73,16 +73,16 @@ impl Backward for Optimizee {
 
 pub fn optimize(loss: &Tensor, lr: f32) {
     let funcalles = graph::collect_funcalls(vec![loss.clone()]);
-    let mut optimizees = Vec::new();
+    let mut params = Vec::new();
     let mut trainables = Vec::new();
     for fc in funcalles {
-        if let Some(o) = fc.backward.get_optimizee() {
-            optimizees.push(o);
+        if let Some(o) = fc.backward.get_param() {
+            params.push(o);
             trainables.push(fc.get_ys()[0].clone());
         }
     }
     let grads = gradients(&vec![loss.clone()], &trainables, false);
-    for (optimizee, grad) in optimizees.iter().zip(grads.iter()) {
-        optimizee.update(grad, lr);
+    for (param, grad) in params.iter().zip(grads.iter()) {
+        param.update(grad, lr);
     }
 }

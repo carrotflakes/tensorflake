@@ -2,16 +2,16 @@ use super::Layer;
 use crate::{functions::*, *};
 
 pub struct Linear {
-    pub w: Optimizee,
-    pub b: Optimizee,
+    pub w: Param,
+    pub b: Param,
 }
 
 impl Linear {
     pub fn new(
         input: usize,
         output: usize,
-        w: &mut impl FnMut(&[usize]) -> Optimizee,
-        b: &mut impl FnMut(&[usize]) -> Optimizee,
+        w: &mut impl FnMut(&[usize]) -> Param,
+        b: &mut impl FnMut(&[usize]) -> Param,
     ) -> Self {
         Self {
             w: w(&[input, output]),
@@ -35,7 +35,7 @@ impl Layer for Linear {
         vec![call!(Add, call!(Matmul, xs[0], self.w.get_tensor()), self.b.get_tensor())]
     }
 
-    fn all_optimizees(&self) -> Vec<Optimizee> {
+    fn all_params(&self) -> Vec<Param> {
         vec![self.w.clone(), self.b.clone()]
     }
 }

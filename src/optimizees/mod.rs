@@ -9,7 +9,7 @@ pub use momentum_sgd::*;
 pub use sgd::*;
 
 #[cfg(test)]
-fn test_optimizee(f: impl Fn(crate::NDArray) -> crate::Optimizee, lr: f32) {
+fn test_optimizee(f: impl Fn(crate::NDArray) -> crate::Param, lr: f32) {
     use crate::*;
 
     let px = f(scalar(0.0));

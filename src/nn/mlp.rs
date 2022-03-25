@@ -12,8 +12,8 @@ impl MLP {
         sizes: &[usize],
         dropout: Option<f32>,
         activation: impl Fn(Vec<Tensor>) -> Vec<Tensor> + 'static,
-        w: &mut impl FnMut(&[usize]) -> Optimizee,
-        b: &mut impl FnMut(&[usize]) -> Optimizee,
+        w: &mut impl FnMut(&[usize]) -> Param,
+        b: &mut impl FnMut(&[usize]) -> Param,
     ) -> Self {
         Self {
             linears: sizes
@@ -42,10 +42,10 @@ impl Layer for MLP {
         self.linears.last().unwrap().call(ys, train)
     }
 
-    fn all_optimizees(&self) -> Vec<Optimizee> {
+    fn all_params(&self) -> Vec<Param> {
         self.linears
             .iter()
-            .flat_map(|linear| linear.all_optimizees())
+            .flat_map(|linear| linear.all_params())
             .collect()
     }
 }
@@ -60,7 +60,7 @@ fn test() {
         let rng = rng.clone();
         move || {
             let mut rng = rng.clone();
-            move |shape: &[usize]| -> Optimizee {
+            move |shape: &[usize]| -> Param {
                 let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
                 AdamOptimizee::new(t)
             }

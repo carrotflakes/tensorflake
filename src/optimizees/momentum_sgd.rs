@@ -9,8 +9,8 @@ pub struct MomentumSGDOptimizee {
 }
 
 impl MomentumSGDOptimizee {
-    pub fn new(tensor: NDArray, momentum: f32) -> Optimizee {
-        Optimizee::new(MomentumSGDOptimizee {
+    pub fn new(tensor: NDArray, momentum: f32) -> Param {
+        Param::new(MomentumSGDOptimizee {
             velocity: NDArray::zeros(tensor.shape()),
             tensor,
             momentum,

@@ -7,8 +7,8 @@ pub struct SGDOptimizee {
 }
 
 impl SGDOptimizee {
-    pub fn new(tensor: NDArray) -> Optimizee {
-        Optimizee::new(SGDOptimizee { tensor })
+    pub fn new(tensor: NDArray) -> Param {
+        Param::new(SGDOptimizee { tensor })
     }
 }
 

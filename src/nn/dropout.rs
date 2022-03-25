@@ -40,7 +40,7 @@ impl Layer for Dropout {
         vec![call!(functions::Mul, x, fuctor)]
     }
 
-    fn all_optimizees(&self) -> Vec<Optimizee> {
+    fn all_params(&self) -> Vec<Param> {
         vec![]
     }
 }

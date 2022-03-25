@@ -7,8 +7,8 @@ pub struct Fixed {
 }
 
 impl Fixed {
-    pub fn new(tensor: NDArray) -> Optimizee {
-        Optimizee::new(Fixed { tensor })
+    pub fn new(tensor: NDArray) -> Param {
+        Param::new(Fixed { tensor })
     }
 }
 
