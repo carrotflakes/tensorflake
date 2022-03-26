@@ -7,10 +7,11 @@ mod impl_ops_for_variable;
 pub mod losses;
 pub mod ndarray_util;
 pub mod nn;
-mod optimization;
+mod param;
 mod optimizees;
 pub mod param_bin;
 mod tensor;
+mod train;
 
 #[cfg(test)]
 mod test;
@@ -20,9 +21,10 @@ pub use function::*;
 pub use graph::gradients;
 pub use ndarray_util::{scalar, IntoNDArray, NDArray};
 pub use nn::Layer;
-pub use optimization::*;
+pub use param::*;
 pub use optimizees::*;
 pub use tensor::*;
+pub use train::*;
 
 pub fn backprop(x: NDArray) -> Tensor {
     functions::CreateGraph::new(x).call(vec![]).pop().unwrap()
