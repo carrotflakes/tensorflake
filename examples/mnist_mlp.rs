@@ -43,10 +43,10 @@ fn main() {
             let y = mlp.call(vec![x.clone()], true).pop().unwrap();
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
-            train_loss += loss[[]];
+            train_loss += loss[[]] * t.len() as f32;
             trn_correct += count_correction(&y, &t);
         }
-        train_loss /= mnist.train_labels.len() as f32 / batch_size as f32;
+        train_loss /= mnist.train_labels.len() as f32;
         let trn_acc = trn_correct as f32 / mnist.train_labels.len() as f32;
 
         let mut validation_loss = 0.0;
@@ -55,10 +55,10 @@ fn main() {
             let x = Tensor::new(x);
             let y = mlp.call(vec![x.clone()], false).pop().unwrap();
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
-            validation_loss += loss[[]];
+            validation_loss += loss[[]] * t.len() as f32;
             val_correct += count_correction(&y, &t);
         }
-        validation_loss /= mnist.test_labels.len() as f32 / batch_size as f32;
+        validation_loss /= mnist.test_labels.len() as f32;
         let val_acc = val_correct as f32 / mnist.test_labels.len() as f32;
 
         println!(
