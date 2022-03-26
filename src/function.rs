@@ -74,13 +74,13 @@ impl<T: Function> Backward for T {
     }
 }
 
-struct FnBackward<F: Fn(&Vec<Tensor>, &Vec<Tensor>, &Vec<Tensor>) -> Vec<Tensor> + 'static>
+struct FnBackward<F: Fn(&Vec<Tensor>, &Vec<Tensor>, &Vec<Tensor>) -> Vec<Tensor> + Sync + Send + 'static>
 {
     f: F,
     name: &'static str,
 }
 
-impl<F: Fn(&Vec<Tensor>, &Vec<Tensor>, &Vec<Tensor>) -> Vec<Tensor> + 'static> Backward
+impl<F: Fn(&Vec<Tensor>, &Vec<Tensor>, &Vec<Tensor>) -> Vec<Tensor> + Sync + Send + 'static> Backward
     for FnBackward<F>
 {
     fn backward(
@@ -102,7 +102,7 @@ pub fn chain(
     ys: &[Tensor],
     force_create_graph: bool,
     name: &'static str,
-    backward: impl Fn(&Vec<Tensor>, &Vec<Tensor>, &Vec<Tensor>) -> Vec<Tensor> + 'static,
+    backward: impl Fn(&Vec<Tensor>, &Vec<Tensor>, &Vec<Tensor>) -> Vec<Tensor> + Sync + Send + 'static,
 ) {
     if force_create_graph || xs.iter().any(|x| x.has_creator()) {
         let backward = Box::new(FnBackward { f: backward, name });

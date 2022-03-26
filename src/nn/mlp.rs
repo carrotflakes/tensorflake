@@ -4,14 +4,14 @@ use crate::*;
 pub struct MLP {
     pub linears: Vec<Linear>,
     pub dropout: Option<f32>,
-    pub activation: Box<dyn Fn(Vec<Tensor>) -> Vec<Tensor>>,
+    pub activation: Box<dyn Fn(Vec<Tensor>) -> Vec<Tensor> + Sync + Send>,
 }
 
 impl MLP {
     pub fn new(
         sizes: &[usize],
         dropout: Option<f32>,
-        activation: impl Fn(Vec<Tensor>) -> Vec<Tensor> + 'static,
+        activation: impl Fn(Vec<Tensor>) -> Vec<Tensor> + Sync + Send + 'static,
         w: &mut impl FnMut(&[usize]) -> Param,
         b: &mut impl FnMut(&[usize]) -> Param,
     ) -> Self {
