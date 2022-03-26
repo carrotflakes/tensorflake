@@ -4,7 +4,7 @@ use ndarray_rand::{rand_distr::Uniform, RandomExt};
 use crate::*;
 
 pub struct Dropout {
-    pub rate_fn: Box<dyn Fn() -> f32>,
+    pub rate_fn: Box<dyn Fn() -> f32 + Send + Sync>,
 }
 
 impl Dropout {
@@ -15,21 +15,19 @@ impl Dropout {
         }
     }
 
-    pub fn from_rate_fn(rate_fn: Box<dyn Fn() -> f32>) -> Self {
+    pub fn from_rate_fn(rate_fn: Box<dyn Fn() -> f32 + Send + Sync>) -> Self {
         Self { rate_fn }
     }
 }
 
 impl Layer for Dropout {
-    fn call(&self, xs: Vec<Tensor>, train: bool) -> Vec<Tensor>
-    where
-        Self: Sized + 'static,
-    {
+    type Input = Tensor;
+    type Output = Tensor;
+
+    fn call(&self, x: Self::Input, train: bool) -> Self::Output {
         if !train {
-            return xs;
+            return x;
         }
-        assert_eq!(xs.len(), 1);
-        let x = xs[0].clone();
         let rate = (self.rate_fn)();
         // TODO: use seed
         let fuctor = Tensor::new(
@@ -37,7 +35,7 @@ impl Layer for Dropout {
                 .map(|x| if *x > rate { 1.0 / (1.0 - rate) } else { 0.0 })
                 .into_ndarray(),
         );
-        vec![call!(functions::Mul, x, fuctor)]
+        call!(functions::Mul, x, fuctor)
     }
 
     fn all_params(&self) -> Vec<Param> {
@@ -48,7 +46,7 @@ impl Layer for Dropout {
 #[test]
 fn test() {
     let x = Tensor::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
-    let ys = Dropout::new(0.8).call(vec![x.clone()], true);
-    assert_eq!(&ys[0].shape(), &[2, 3]);
-    dbg!(&*ys[0]);
+    let y = Dropout::new(0.8).call(x.clone(), true);
+    assert_eq!(&y.shape(), &[2, 3]);
+    dbg!(&*y);
 }

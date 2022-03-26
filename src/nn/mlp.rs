@@ -4,14 +4,14 @@ use crate::*;
 pub struct MLP {
     pub linears: Vec<Linear>,
     pub dropout: Option<f32>,
-    pub activation: Box<dyn Fn(Vec<Tensor>) -> Vec<Tensor> + Sync + Send>,
+    pub activation: Box<dyn Fn(Tensor) -> Tensor + Sync + Send>,
 }
 
 impl MLP {
     pub fn new(
         sizes: &[usize],
         dropout: Option<f32>,
-        activation: impl Fn(Vec<Tensor>) -> Vec<Tensor> + Sync + Send + 'static,
+        activation: impl Fn(Tensor) -> Tensor + Sync + Send + 'static,
         w: &mut impl FnMut(&[usize]) -> Param,
         b: &mut impl FnMut(&[usize]) -> Param,
     ) -> Self {
@@ -27,19 +27,19 @@ impl MLP {
 }
 
 impl Layer for MLP {
-    fn call(&self, xs: Vec<Tensor>, train: bool) -> Vec<Tensor>
-    where
-        Self: Sized + 'static,
-    {
-        let mut ys = xs.clone();
+    type Input = Tensor;
+    type Output = Tensor;
+
+    fn call(&self, x: Self::Input, train: bool) -> Self::Output {
+        let mut y = x.clone();
         for linear in &self.linears[..self.linears.len() - 1] {
-            ys = linear.call(ys, train);
-            ys = (self.activation)(ys);
+            y = linear.call(y, train);
+            y = (self.activation)(y);
             if let Some(rate) = self.dropout {
-                ys = Dropout::new(rate).call(ys, train);
+                y = Dropout::new(rate).call(y, train);
             }
         }
-        self.linears.last().unwrap().call(ys, train)
+        self.linears.last().unwrap().call(y, train)
     }
 
     fn all_params(&self) -> Vec<Param> {
@@ -70,14 +70,14 @@ fn test() {
     let mlp = MLP::new(
         &[2, 3, 1],
         None,
-        |xs| Sigmoid.call(xs),
+        |x| call!(Sigmoid, x),
         &mut param_gen(),
         &mut param_gen(),
     );
 
     let x = Tensor::new(array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_ndarray());
 
-    let y = mlp.call(vec![x], true).pop().unwrap();
+    let y = mlp.call(x, true);
     // dbg!(&*y);
     assert_eq!(y.shape(), &[4, 1]);
 }

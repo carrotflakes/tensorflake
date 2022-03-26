@@ -28,11 +28,15 @@ impl Linear {
 }
 
 impl Layer for Linear {
-    fn call(&self, xs: Vec<Tensor>, _train: bool) -> Vec<Tensor>
-    where
-        Self: Sized + 'static,
-    {
-        vec![call!(Add, call!(Matmul, xs[0], self.w.get_tensor()), self.b.get_tensor())]
+    type Input = Tensor;
+    type Output = Tensor;
+
+    fn call(&self, x: Self::Input, _train: bool) -> Self::Output {
+        call!(
+            Add,
+            call!(Matmul, x, self.w.get_tensor()),
+            self.b.get_tensor()
+        )
     }
 
     fn all_params(&self) -> Vec<Param> {

@@ -37,9 +37,9 @@ impl SelectNet {
         }
     }
 
-    pub fn call(&self, xs: Vec<Tensor>, train: bool) -> Vec<Tensor> {
-        let select = self.select_layer.call(xs.to_vec(), train).pop().unwrap();
-        let x = as_2d(&xs[0]);
+    pub fn call(&self, x: Tensor, train: bool) -> (Tensor, Tensor) {
+        let select = self.select_layer.call(x.clone(), train);
+        let x = as_2d(&x);
         let softmax = call!(Softmax, select);
 
         let mut ys = vec![];
@@ -55,13 +55,7 @@ impl SelectNet {
             let mut lys = Vec::new();
             for (j, _) in &select {
                 let layer = &self.layers[*j];
-                let ly = layer
-                    .call(
-                        vec![Tensor::new(x.slice(s![i..=i, ..]).into_ndarray())],
-                        train,
-                    )
-                    .pop()
-                    .unwrap();
+                let ly = layer.call(Tensor::new(x.slice(s![i..=i, ..]).into_ndarray()), train);
                 lys.push(call!(Mul, ly, call!(Slice::new(s![i, *j]), softmax)));
             }
             let lys = Add.call(lys).pop().unwrap();
@@ -72,10 +66,9 @@ impl SelectNet {
         // reshape to original shape
         let y = call!(
             Reshape::new(
-                xs[0]
-                    .shape()
+                x.shape()
                     .iter()
-                    .take(xs[0].ndim() - 1)
+                    .take(x.ndim() - 1)
                     .chain([self.output_size].iter())
                     .copied()
                     .collect::<Vec<_>>()
@@ -83,7 +76,7 @@ impl SelectNet {
             y
         );
 
-        vec![y, softmax]
+        (y, softmax)
     }
 }
 
@@ -107,17 +100,17 @@ fn test() {
     let select_net = SelectNet::new(2, 3, 10, &mut param_gen(), &mut param_gen());
 
     let x = backprop(array![[0.1, 0.2], [0.0, 0.0], [0.0, 100.0]].into_ndarray());
-    let y = select_net.build().call(vec![x.clone()], true);
-    dbg!(&*y[0]);
+    let y = select_net.build().call(x.clone(), true);
+    dbg!(&*y.0);
     // dbg!(&*y[1]);
     let t = array![[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
         .into_ndarray()
         .into();
-    let loss = losses::naive_mean_squared_error(y[0].clone(), t);
+    let loss = losses::naive_mean_squared_error(y.0.clone(), t);
     dbg!(loss[[]]);
     // export_dot::export_dot(&[loss.clone()], &format!("select_net.dot")).unwrap();
     optimize(&loss, 0.1);
 
-    let y = select_net.build().call(vec![x.clone()], true);
-    dbg!(&*y[0]);
+    let y = select_net.build().call(x.clone(), true);
+    dbg!(&*y.0);
 }

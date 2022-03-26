@@ -125,23 +125,12 @@ impl Model {
         for x in x {
             let enb = self
                 .enb
-                .call(
-                    vec![onehot(&ndarray::arr1(&[x]), self.vocab_size).into()],
-                    train,
-                )
-                .pop()
-                .unwrap();
+                .call(onehot(&ndarray::arr1(&[x]), self.vocab_size).into(), train);
             // let concated = call!(Concat::new(1), enb, state);
             let concated = &enb + &state;
-            state = self.linear.call(vec![concated], train).pop().unwrap();
+            state = self.linear.call(concated, train);
             state = call!(Tanh, state);
-            outputs.push(
-                self.output
-                    .call(vec![state.clone()], train)
-                    .pop()
-                    .unwrap()
-                    .named("output"),
-            );
+            outputs.push(self.output.call(state.clone(), train).named("output"));
         }
         outputs
     }

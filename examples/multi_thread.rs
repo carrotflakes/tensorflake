@@ -38,7 +38,7 @@ fn main() {
     let mlp = MLP::new(
         &[1, 20, 20, 1],
         None,
-        |xs| Tanh.call(xs),
+        |x| Tanh.call(vec![x]).pop().unwrap(),
         &mut param_gen(),
         &mut param_gen(),
     );
@@ -59,7 +59,7 @@ fn main() {
                 )
                 .unwrap()
                 .into_ndarray();
-                let ys = mlp.call(vec![xs.into()], true).pop().unwrap();
+                let ys = mlp.call(xs.into(), true);
                 let loss = naive_mean_squared_error(ys.into(), ts.into());
                 optimize(&loss, 0.01 * 0.95f32.powi(e));
                 loss[[]] * data.len() as f32
@@ -75,7 +75,7 @@ fn main() {
         let xs = Array2::from_shape_vec([1, 1], vec![i as f32 / 10.0])
             .unwrap()
             .into_ndarray();
-        let ys = mlp.call(vec![xs.into()], false).pop().unwrap();
+        let ys = mlp.call(xs.into(), false);
         println!("{:?}", &*ys);
     }
 }

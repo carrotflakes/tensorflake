@@ -26,12 +26,12 @@ fn main() {
     let mlp = MLP::new(
         &[28 * 28, 128, 10],
         Some(0.2),
-        |xs| Relu.call(xs),
+        |x| Relu.call(vec![x]).pop().unwrap(),
         &mut param_gen(),
         &mut param_gen(),
     );
 
-    let batch_size = 1000;
+    let batch_size = 100;
 
     let start = std::time::Instant::now();
 
@@ -40,7 +40,7 @@ fn main() {
         let mut trn_correct = 0;
         for (x, t) in mini_batches(&mnist.train_images, &mnist.train_labels, batch_size) {
             let x = Tensor::new(x);
-            let y = mlp.call(vec![x.clone()], true).pop().unwrap();
+            let y = mlp.call(x.clone(), true);
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
             train_loss += loss[[]] * t.len() as f32;
@@ -53,7 +53,7 @@ fn main() {
         let mut val_correct = 0;
         for (x, t) in mini_batches(&mnist.test_images, &mnist.test_labels, batch_size) {
             let x = Tensor::new(x);
-            let y = mlp.call(vec![x.clone()], false).pop().unwrap();
+            let y = mlp.call(x.clone(), false);
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             validation_loss += loss[[]] * t.len() as f32;
             val_correct += count_correction(&y, &t);

@@ -2,6 +2,7 @@ mod mnist;
 
 use ndarray::prelude::*;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
+use rayon::prelude::*;
 use tensorflake::{
     losses::SoftmaxCrossEntropy,
     nn::{naive_max_pooling, Conv2d, Dropout, Layer, Linear, Relu},
@@ -13,20 +14,22 @@ fn main() {
 
     let model = BigModel::new();
 
-    let batch_size = 1000;
+    let batch_size = 10;
 
     let start = std::time::Instant::now();
 
     for epoch in 0..1000 {
-        let mut train_loss = 0.0;
-        let mut trn_correct = 0;
-        for (x, t) in mini_batches(&mnist.train_images, &mnist.train_labels, batch_size) {
-            let y = model.call(x, true);
-            let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
-            optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
-            train_loss += loss[[]] * t.len() as f32;
-            trn_correct += count_correction(&y, &t);
-        }
+        let batches: Vec<_> =
+            mini_batches(&mnist.train_images, &mnist.train_labels, batch_size).collect();
+        let (mut train_loss, trn_correct) = batches
+            .par_iter()
+            .map(|(x, t)| {
+                let y = model.call(x.clone(), true);
+                let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
+                optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
+                (loss[[]] * t.len() as f32, count_correction(&y, &t))
+            })
+            .reduce(|| (0.0, 0), |a, b| (a.0 + b.0, a.1 + b.1));
         train_loss /= mnist.train_labels.len() as f32;
         let trn_acc = trn_correct as f32 / mnist.train_labels.len() as f32;
 
@@ -128,13 +131,13 @@ impl Model {
     }
 
     pub fn call(&self, x: NDArray, train: bool) -> Tensor {
-        let y = self.conv1.call(vec![Tensor::new(x)], train).pop().unwrap();
+        let y = self.conv1.call(Tensor::new(x), train);
         // let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
         let y = call!(Relu, y);
-        let y = self.conv2.call(vec![y], train).pop().unwrap();
+        let y = self.conv2.call(y, train);
         let y = call!(Relu, y);
         let y = y.reshape([y.shape()[0], 10 * 7 * 7]);
-        let y = self.linear.call(vec![y], train).pop().unwrap();
+        let y = self.linear.call(y, train);
         y
     }
 }
@@ -181,16 +184,16 @@ impl BigModel {
 
     pub fn call(&self, x: NDArray, train: bool) -> Tensor {
         let x = Tensor::new(x);
-        let y = self.conv1.call(vec![x], train).pop().unwrap();
+        let y = self.conv1.call(x, train);
         let y = call!(Relu, y);
-        let y = self.conv2.call(vec![y], train).pop().unwrap();
+        let y = self.conv2.call(y, train);
         let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
         let y = y.reshape([y.shape()[0], 64 * 12 * 12]);
         let y = call!(Relu, y);
-        let y = self.linear1.call(vec![y], train).pop().unwrap();
+        let y = self.linear1.call(y, train);
         let y = call!(Relu, y);
-        let y = Dropout::new(0.5).call(vec![y], train).pop().unwrap();
-        let y = self.linear2.call(vec![y], train).pop().unwrap();
+        let y = Dropout::new(0.5).call(y, train);
+        let y = self.linear2.call(y, train);
         y
     }
 

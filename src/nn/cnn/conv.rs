@@ -31,26 +31,27 @@ impl Conv2d {
 }
 
 impl Layer for Conv2d {
-    fn call(&self, xs: Vec<Tensor>, _train: bool) -> Vec<Tensor>
+    type Input = Tensor;
+    type Output = Tensor;
+
+    fn call(&self, x: Self::Input, _train: bool) -> Self::Output
     where
         Self: Sized + 'static,
     {
-        assert_eq!(xs.len(), 1);
-
         let oh = get_conv_outsize(
-            xs[0].shape()[2],
+            x.shape()[2],
             self.kernel_size[0],
             self.stride[0],
             self.padding[0],
         );
         let ow = get_conv_outsize(
-            xs[0].shape()[3],
+            x.shape()[3],
             self.kernel_size[1],
             self.stride[1],
             self.padding[1],
         );
         let col = Im2col::new(self.kernel_size, self.stride, self.padding)
-            .call(xs.clone())
+            .call(vec![x.clone()])
             .pop()
             .unwrap();
         let w = self.w.get_tensor();
@@ -64,10 +65,10 @@ impl Layer for Conv2d {
         );
         let b = self.b.get_tensor();
         let t = call!(Add, call!(Matmul, col, w), b);
-        vec![call!(
+        call!(
             Transpose::new(vec![0, 3, 1, 2]),
-            call!(Reshape::new(vec![xs[0].shape()[0], oh, ow, oc]), t)
-        )]
+            call!(Reshape::new(vec![x.shape()[0], oh, ow, oc]), t)
+        )
     }
 
     fn all_params(&self) -> Vec<Param> {
@@ -96,11 +97,11 @@ fn test_conv2d() {
         w: Fixed::new(w),
         b: Fixed::new(b),
     };
-    let ys = conv.call(vec![x.clone()], false);
-    assert_eq!(ys[0].shape(), &[1, 3, 4, 4]);
-    dbg!(&*ys[0]);
+    let y = conv.call(x.clone(), false);
+    assert_eq!(y.shape(), &[1, 3, 4, 4]);
+    dbg!(&*y);
     // export_dot::export_dot(&y, "conv2d.dot").unwrap();
 
-    let grads = gradients(&ys, &[x.clone()], true);
+    let grads = gradients(&[y], &[x.clone()], true);
     dbg!(&*grads[0]);
 }
