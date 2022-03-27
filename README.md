@@ -13,12 +13,14 @@ TBD
 - [x] Dropout
 - [x] Strong typing -> Functional API (tensorflake::function::chain)
 - [ ] Multi thread -> see examples/coin.rs
+  - [ ] High level API
 - [x] Impl ops
 - [ ] Lazy execution
 - [ ] Regularization
+  - [ ] Integrate to optimizee
 - [ ] Batch normalization
 - [ ] Examples
-  - [ ] CNN
+  - [ ] CNN -> too slow...
   - [ ] RNN
   - [ ] GAN
   - [ ] VAE
