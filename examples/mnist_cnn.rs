@@ -14,7 +14,7 @@ fn main() {
 
     let model = BigModel::new();
 
-    let batch_size = 20;
+    let batch_size = 10;
 
     let start = std::time::Instant::now();
 
@@ -106,7 +106,7 @@ impl Model {
                 move |shape: &[usize]| -> Param {
                     let t =
                         Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                        optimizees::AdamOptimizee::new(t)
+                    optimizees::AdamOptimizee::new(t)
                 }
             }
         };
@@ -146,6 +146,7 @@ pub struct BigModel {
     pub conv2: Conv2d,
     pub linear1: Linear,
     pub linear2: Linear,
+    pub dropout: Dropout,
 }
 
 impl BigModel {
@@ -158,7 +159,7 @@ impl BigModel {
                 move |shape: &[usize]| -> Param {
                     let t =
                         Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                        optimizees::AdamOptimizee::new(t)
+                    optimizees::AdamOptimizee::new(t)
                 }
             }
         };
@@ -179,6 +180,7 @@ impl BigModel {
             ),
             linear1: Linear::new(64 * 12 * 12, 128, &mut param_gen(), &mut param_gen()),
             linear2: Linear::new(128, 10, &mut param_gen(), &mut param_gen()),
+            dropout: Dropout::new(0.5, 42),
         }
     }
 
@@ -192,7 +194,7 @@ impl BigModel {
         let y = call!(Relu, y);
         let y = self.linear1.call(y, train);
         let y = call!(Relu, y);
-        let y = Dropout::new(0.5, 42).call(y, train);
+        let y = self.dropout.call(y, train);
         let y = self.linear2.call(y, train);
         y
     }
