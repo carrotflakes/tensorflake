@@ -3,14 +3,14 @@ use crate::*;
 
 pub struct MLP {
     pub linears: Vec<Linear>,
-    pub dropout: Option<f32>,
+    pub dropout: Option<Dropout>,
     pub activation: Box<dyn Fn(Tensor) -> Tensor + Sync + Send>,
 }
 
 impl MLP {
     pub fn new(
         sizes: &[usize],
-        dropout: Option<f32>,
+        dropout: Option<Dropout>,
         activation: impl Fn(Tensor) -> Tensor + Sync + Send + 'static,
         w: &mut impl FnMut(&[usize]) -> Param,
         b: &mut impl FnMut(&[usize]) -> Param,
@@ -20,7 +20,7 @@ impl MLP {
                 .windows(2)
                 .map(|x| Linear::new(x[0], x[1], w, b))
                 .collect(),
-            dropout,
+            dropout: dropout,
             activation: Box::new(activation),
         }
     }
@@ -35,8 +35,8 @@ impl Layer for MLP {
         for linear in &self.linears[..self.linears.len() - 1] {
             y = linear.call(y, train);
             y = (self.activation)(y);
-            if let Some(rate) = self.dropout {
-                y = Dropout::new(rate).call(y, train);
+            if let Some(dropout) = &self.dropout {
+                y = dropout.call(y, train);
             }
         }
         self.linears.last().unwrap().call(y, train)

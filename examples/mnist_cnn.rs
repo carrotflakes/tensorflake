@@ -192,7 +192,7 @@ impl BigModel {
         let y = call!(Relu, y);
         let y = self.linear1.call(y, train);
         let y = call!(Relu, y);
-        let y = Dropout::new(0.5).call(y, train);
+        let y = Dropout::new(0.5, 42).call(y, train);
         let y = self.linear2.call(y, train);
         y
     }

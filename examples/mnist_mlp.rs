@@ -2,11 +2,7 @@ mod mnist;
 
 use ndarray::prelude::*;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-use tensorflake::{
-    losses::SoftmaxCrossEntropy,
-    nn::{Layer, Relu, MLP},
-    *,
-};
+use tensorflake::{losses::SoftmaxCrossEntropy, nn::*, *};
 
 fn main() {
     let mnist = mnist::Mnist::load("./data");
@@ -25,7 +21,7 @@ fn main() {
 
     let mlp = MLP::new(
         &[28 * 28, 128, 10],
-        Some(0.2),
+        Some(Dropout::new(0.2, 42)),
         |x| Relu.call(vec![x]).pop().unwrap(),
         &mut param_gen(),
         &mut param_gen(),
@@ -35,7 +31,7 @@ fn main() {
 
     let start = std::time::Instant::now();
 
-    for epoch in 0..1000 {
+    for epoch in 0..10 {
         let mut train_loss = 0.0;
         let mut trn_correct = 0;
         for (x, t) in mini_batches(&mnist.train_images, &mnist.train_labels, batch_size) {
