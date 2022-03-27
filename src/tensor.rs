@@ -53,13 +53,6 @@ impl Tensor {
     pub fn cut_chain(&self) {
         self.inner.attrs.lock().unwrap().creator = None;
     }
-
-    pub unsafe fn add_assign(&self, other: &Tensor) {
-        assert_eq!(self.shape(), other.shape());
-        #[allow(mutable_transmutes)]
-        let tensor = std::mem::transmute::<&NDArray, &mut NDArray>(&self.inner.data);
-        tensor.add_assign(&other.inner.data);
-    }
 }
 
 impl std::ops::Deref for Tensor {

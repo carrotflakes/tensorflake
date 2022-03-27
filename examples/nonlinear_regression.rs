@@ -6,8 +6,9 @@ fn main() {
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let n = 100;
 
-    let x = Tensor::new(Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_ndarray())
-        .named("x");
+    let x =
+        Tensor::new(Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_ndarray())
+            .named("x");
     let y = call!(
         Add,
         call!(Sin, call!(Mul, x, Tensor::new(scalar(2.0 * 3.14)))),
@@ -15,23 +16,28 @@ fn main() {
     )
     .named("y");
 
-    let l1 = Layer::new(1, 10);
-    let l2 = Layer::new(10, 1);
+    let param_gen = {
+        let rng = rng.clone();
+        move || {
+            let mut rng = rng.clone();
+            move |shape: &[usize]| -> Param {
+                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
+                AdamOptimizee::new(t)
+            }
+        }
+    };
 
-    let trainables = l1
-        .all_params()
-        .into_iter()
-        .chain(l2.all_params())
-        .collect::<Vec<_>>();
+    let l1 = Linear::new(1, 10, &mut param_gen(), &mut param_gen());
+    let l2 = Linear::new(10, 1, &mut param_gen(), &mut param_gen());
 
     let start = std::time::Instant::now();
 
     // let mut ll = 1000.0;
 
     for i in 0..10000 {
-        let h = l1.forward(x.clone());
+        let h = l1.call(x.clone(), true);
         let h = call!(Sigmoid, h).named("hidden");
-        let y_ = l2.forward(h);
+        let y_ = l2.call(h, true);
         // dbg!(&*y_);
         if i == 0 {
             graph(&[y_.clone()], "graph");
@@ -49,17 +55,13 @@ fn main() {
 
         // graph(&[loss.clone()], format!("loss{}", i));
 
-        let gs = gradients(&[loss.clone()], &trainables, false);
-        let lr = Tensor::new(scalar(0.1));
-        for (t, g) in trainables.iter().zip(gs.into_iter()) {
-            unsafe { t.add_assign(&call!(Mul, g, call!(Neg, lr))) };
-        }
+        optimize(&loss, 0.1);
     }
     for i in 0..20 {
         let x = Tensor::new(array![[i as f32 / 20.0]].into_ndarray());
-        let h = l1.forward(x);
+        let h = l1.call(x.clone(), false);
         let h = naive_sigmoid(h).named("hidden");
-        let y_ = l2.forward(h);
+        let y_ = l2.call(h, false);
         println!("{}", &*y_);
     }
     println!("elapsed: {:?}", start.elapsed());
@@ -72,29 +74,6 @@ fn mean_squared_error(x0: Tensor, x1: Tensor) -> Tensor {
         call!(Sum::new((0..x.ndim()).collect(), false), x),
         Tensor::new(scalar(x.shape().iter().product::<usize>() as f32))
     )
-}
-
-pub struct Layer {
-    pub w: Tensor,
-    pub b: Tensor,
-}
-
-impl Layer {
-    pub fn new(input: usize, output: usize) -> Self {
-        Self {
-            w: backprop(Array::random((input, output), Uniform::new(0., 0.01)).into_ndarray())
-                .named("param w"),
-            b: backprop(Array::zeros(output).into_ndarray()).named("param b"),
-        }
-    }
-
-    pub fn forward(&self, x: Tensor) -> Tensor {
-        call!(Add, call!(Matmul, x, self.w), self.b).named("return")
-    }
-
-    pub fn all_params(&self) -> Vec<Tensor> {
-        vec![self.w.clone(), self.b.clone()]
-    }
 }
 
 fn graph(vars: &[Tensor], name: impl ToString) {

@@ -12,7 +12,7 @@ TBD
 - [ ] Save & load -> param_bin.rs
 - [x] Dropout
 - [x] Strong typing -> Functional API (tensorflake::function::chain)
-- [ ] Multi thread
+- [ ] Multi thread -> see examples/coin.rs
 - [x] Impl ops
 - [ ] Lazy execution
 - [ ] Regularization
@@ -23,7 +23,7 @@ TBD
   - [ ] GAN
   - [ ] VAE
 - [ ] wasm
-- [ ] safe rust
+- [x] safe rust
 
 ## Author
 
