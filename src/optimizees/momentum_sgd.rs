@@ -3,34 +3,35 @@ use std::ops::Mul;
 use crate::*;
 
 pub struct MomentumSGDOptimizee {
-    tensor: NDArray,
+    tensor: Tensor,
     momentum: f32,
     velocity: NDArray,
 }
 
 impl MomentumSGDOptimizee {
-    pub fn new(tensor: NDArray, momentum: f32) -> Param {
+    pub fn new(ndarray: NDArray, momentum: f32) -> Param {
         Param::new(MomentumSGDOptimizee {
-            velocity: NDArray::zeros(tensor.shape()),
-            tensor,
+            velocity: NDArray::zeros(ndarray.shape()),
+            tensor: Tensor::new(ndarray),
             momentum,
         })
     }
 }
 
 impl OptimizeeT for MomentumSGDOptimizee {
-    fn tensor_ref(&self) -> &NDArray {
+    fn tensor_ref(&self) -> &Tensor {
         &self.tensor
     }
-    
-    fn set(&mut self, tensor: NDArray) {
+
+    fn set(&mut self, tensor: Tensor) {
         self.tensor = tensor;
     }
 
     fn update(&mut self, grad: &NDArray, lr: f32) {
+        self.tensor.cut_chain();
         self.velocity *= self.momentum;
         self.velocity += &grad.mul(scalar(-lr));
-        self.tensor += &self.velocity;
+        self.tensor = &self.tensor + &self.velocity.clone().into();
     }
 }
 

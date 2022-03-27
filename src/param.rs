@@ -3,8 +3,8 @@ use std::sync::{Arc, Mutex};
 use crate::*;
 
 pub trait OptimizeeT: Sync + Send + 'static {
-    fn tensor_ref(&self) -> &NDArray;
-    fn set(&mut self, tensor: NDArray);
+    fn tensor_ref(&self) -> &Tensor;
+    fn set(&mut self, tensor: Tensor);
     fn update(&mut self, grad: &NDArray, lr: f32);
 
     fn create_graph(&self) -> bool {
@@ -25,8 +25,8 @@ impl Param {
 
     pub fn get_tensor(&self) -> Tensor {
         let inner = self.inner.lock().unwrap();
-        let v = Tensor::new(inner.tensor_ref().clone());
-        if inner.create_graph() {
+        let v = inner.tensor_ref().clone();
+        if inner.create_graph() && !v.has_creator() {
             let creator = Funcall {
                 backward: Box::new(Param {
                     inner: self.inner.clone(),
@@ -41,7 +41,7 @@ impl Param {
 
     pub fn set(&mut self, ndarray: NDArray) {
         let mut inner = self.inner.lock().unwrap();
-        inner.set(ndarray);
+        inner.set(Tensor::new(ndarray));
     }
 
     pub fn update(&self, grad: &Tensor, lr: f32) {

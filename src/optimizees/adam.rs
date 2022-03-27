@@ -3,7 +3,7 @@ use crate::*;
 const EPS: f32 = 1e-8;
 
 pub struct AdamOptimizee {
-    tensor: NDArray,
+    tensor: Tensor,
     beta1: f32,
     beta2: f32,
     mom: NDArray, // TODO: owned mom and vel
@@ -11,21 +11,21 @@ pub struct AdamOptimizee {
 }
 
 impl AdamOptimizee {
-    pub fn new(tensor: NDArray) -> Param {
+    pub fn new(ndarray: NDArray) -> Param {
         Param::new(AdamOptimizee {
-            mom: NDArray::zeros(tensor.shape()),
-            vel: NDArray::zeros(tensor.shape()),
-            tensor,
+            mom: NDArray::zeros(ndarray.shape()),
+            vel: NDArray::zeros(ndarray.shape()),
+            tensor: Tensor::new(ndarray),
             beta1: 0.9,
             beta2: 0.999,
         })
     }
 
-    pub fn new_with_params(tensor: NDArray, beta1: f32, beta2: f32) -> Param {
+    pub fn new_with_params(ndarray: NDArray, beta1: f32, beta2: f32) -> Param {
         Param::new(AdamOptimizee {
-            mom: NDArray::zeros(tensor.shape()),
-            vel: NDArray::zeros(tensor.shape()),
-            tensor,
+            mom: NDArray::zeros(ndarray.shape()),
+            vel: NDArray::zeros(ndarray.shape()),
+            tensor: Tensor::new(ndarray),
             beta1,
             beta2,
         })
@@ -33,19 +33,23 @@ impl AdamOptimizee {
 }
 
 impl OptimizeeT for AdamOptimizee {
-    fn tensor_ref(&self) -> &NDArray {
+    fn tensor_ref(&self) -> &Tensor {
         &self.tensor
     }
-    
-    fn set(&mut self, tensor: NDArray) {
+
+    fn set(&mut self, tensor: Tensor) {
         self.tensor = tensor;
     }
 
     fn update(&mut self, grad: &NDArray, lr: f32) {
+        self.tensor.cut_chain();
         self.mom = (&self.mom * self.beta1 + grad * (1.0 - self.beta1)).into_ndarray();
         self.vel =
             (&self.vel * self.beta2 + grad.map(|x| x.powi(2)) * (1.0 - self.beta2)).into_ndarray();
-        self.tensor += &(&self.mom / self.vel.map(|x| x.sqrt() + EPS) * -lr);
+        self.tensor = &self.tensor
+            + &(&self.mom / self.vel.map(|x| x.sqrt() + EPS) * -lr)
+                .into_ndarray()
+                .into();
     }
 }
 

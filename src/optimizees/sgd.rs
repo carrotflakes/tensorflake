@@ -3,26 +3,29 @@ use std::ops::Mul;
 use crate::*;
 
 pub struct SGDOptimizee {
-    tensor: NDArray,
+    tensor: Tensor,
 }
 
 impl SGDOptimizee {
-    pub fn new(tensor: NDArray) -> Param {
-        Param::new(SGDOptimizee { tensor })
+    pub fn new(ndarray: NDArray) -> Param {
+        Param::new(SGDOptimizee {
+            tensor: Tensor::new(ndarray),
+        })
     }
 }
 
 impl OptimizeeT for SGDOptimizee {
-    fn tensor_ref(&self) -> &NDArray {
+    fn tensor_ref(&self) -> &Tensor {
         &self.tensor
     }
-    
-    fn set(&mut self, tensor: NDArray) {
+
+    fn set(&mut self, tensor: Tensor) {
         self.tensor = tensor;
     }
 
     fn update(&mut self, grad: &NDArray, lr: f32) {
-        self.tensor += &grad.mul(scalar(-lr));
+        self.tensor.cut_chain();
+        self.tensor = &self.tensor + &grad.mul(scalar(-lr)).into();
     }
 }
 
