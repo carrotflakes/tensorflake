@@ -58,7 +58,7 @@ fn main() {
                     (loss[[]] * *len as f32, *len)
                 })
                 .reduce(|| (0.0, 0), |a, b| (a.0 + b.0, a.1 + b.1));
-            ctx.processed += total;
+            ctx.count(total);
             ctx.push_metric(metrics::Loss::new(loss));
         } else {
             for (len, x, t) in mini_batches(&img, batch_size, &mut rng) {
@@ -69,7 +69,7 @@ fn main() {
                 if ctx.train {
                     optimize(&loss, lr);
                 }
-                ctx.processed += len;
+                ctx.count(len);
                 ctx.push_metric(metrics::Loss::new(loss[[]]));
                 ctx.print_progress();
             }

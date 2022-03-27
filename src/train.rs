@@ -73,6 +73,10 @@ pub struct ExecutionContext {
 }
 
 impl ExecutionContext {
+    pub fn count(&mut self, n: usize) {
+        self.processed += n;
+    }
+
     pub fn push_metric<T: Metric + 'static>(&mut self, metric: T) {
         let id = std::any::TypeId::of::<T>();
         for (t, m) in &mut self.metrics {
