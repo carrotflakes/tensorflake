@@ -75,7 +75,7 @@ pub struct ExecutionContext {
 impl ExecutionContext {
     pub fn print_progress(&self) {
         if let Some(total) = self.total {
-            print!("{}/{}", self.processed, total);
+            print!("{:>6.2}%", self.processed as f32 * 100.0 / total as f32);
         } else {
             print!("{}", self.processed);
         }

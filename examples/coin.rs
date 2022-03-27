@@ -36,7 +36,7 @@ fn main() {
 
     let start = std::time::Instant::now();
 
-    for mut ctx in ExecutionContextIter::new(100, None) {
+    for mut ctx in ExecutionContextIter::new(100, Some((img.width() * img.height()) as usize)) {
         if !ctx.train {
             continue;
         }
@@ -58,7 +58,7 @@ fn main() {
         // ctx.processed += total;
         // ctx.corrected += cor;
 
-        for (x, t) in mini_batches(&img, batch_size, &mut rng) {
+        for (len, x, t) in mini_batches(&img, batch_size, &mut rng) {
             let x = Tensor::new(x);
             let t = Tensor::new(t);
             let y = model.call(x.clone(), ctx.train);
@@ -66,8 +66,8 @@ fn main() {
             if ctx.train {
                 optimize(&loss, 0.002 * 0.95f32.powi(ctx.epoch as i32)); // MomentumSGD: 0.1, Adam: 0.001
             }
-            ctx.loss += loss[[]] * t.len() as f32;
-            ctx.processed += t.len();
+            ctx.loss += loss[[]] * len as f32;
+            ctx.processed += len;
             ctx.corrected += 0;
             ctx.print_progress();
         }
@@ -131,7 +131,7 @@ fn mini_batches(
     img: &DynamicImage,
     batch_size: usize,
     rng: &mut rand_isaac::Isaac64Rng,
-) -> Vec<(NDArray, NDArray)> {
+) -> Vec<(usize, NDArray, NDArray)> {
     let p: Vec<_> = (0..img.height() * img.width())
         .map(|_| {
             (
@@ -161,6 +161,7 @@ fn mini_batches(
                 })
                 .collect();
             (
+                p.len(),
                 NDArray::from_shape_vec(&[p.len(), 2][..], x).unwrap(),
                 NDArray::from_shape_vec(&[p.len(), 3][..], y).unwrap(),
             )
