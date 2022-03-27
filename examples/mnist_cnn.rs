@@ -35,9 +35,9 @@ fn main() {
                 (loss[[]] * t.len() as f32, t.len(), count_correction(&y, &t))
             })
             .reduce(|| (0.0, 0, 0), |a, b| (a.0 + b.0, a.1 + b.1, a.2 + b.2));
-        ctx.loss += loss;
         ctx.processed += total;
-        ctx.corrected += correct;
+        ctx.push_metric(metrics::Loss::new(loss));
+        ctx.push_metric(metrics::Accuracy::new(correct));
         ctx.print_result();
     }
 

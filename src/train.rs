@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{metrics::Metric, *};
 
 pub fn optimize(loss: &Tensor, lr: f32) {
     let mut ga = GradientsAccumulator::new();
@@ -67,13 +67,32 @@ pub struct ExecutionContext {
     pub total: Option<usize>,
     pub epoch: usize,
     pub train: bool,
-    pub loss: f32,
     pub processed: usize,
-    pub corrected: usize,
+    pub metrics: Vec<(std::any::TypeId, Box<dyn Metric>)>,
     time: std::time::Instant,
 }
 
 impl ExecutionContext {
+    pub fn push_metric<T: Metric + 'static>(&mut self, metric: T) {
+        let id = std::any::TypeId::of::<T>();
+        for (t, m) in &mut self.metrics {
+            if id == *t {
+                let m = (m as &mut dyn std::any::Any).downcast_mut::<T>().unwrap();
+                m.merge(&metric);
+                return;
+            }
+        }
+        self.metrics.push((id, Box::new(metric)));
+    }
+
+    pub fn display_metrics(&self) -> String {
+        let mut s = String::new();
+        for (_, m) in &self.metrics {
+            s += &format!("{}: {:.4}, ", m.name(), m.value() / self.processed as f32);
+        }
+        s
+    }
+
     pub fn print_progress(&self) {
         if let Some(total) = self.total {
             print!("{:>6.2}%", self.processed as f32 * 100.0 / total as f32);
@@ -85,11 +104,10 @@ impl ExecutionContext {
 
     pub fn print_result(&self) {
         println!(
-            "{} epoch: {}, loss: {:.4}, acc: {:.4}, time: {:.2}s",
+            "{} epoch: {}, {}time: {:.2}s",
             if self.train { "train" } else { "valid" },
             self.epoch,
-            self.loss / self.processed as f32,
-            self.corrected as f32 / self.processed as f32,
+            self.display_metrics(),
             self.time.elapsed().as_secs_f32()
         );
     }
@@ -125,9 +143,8 @@ impl Iterator for ExecutionContextIter {
             total: if self.train { self.data_len } else { None },
             epoch: self.current_epoch,
             train: self.train,
-            loss: 0.0,
             processed: 0,
-            corrected: 0,
+            metrics: Vec::new(),
             time: std::time::Instant::now(),
         };
 
