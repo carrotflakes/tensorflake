@@ -8,6 +8,8 @@ use ndarray_rand::{
 use tensorflake::{functions::*, losses::*, nn::*, *};
 
 fn main() {
+    let use_parallel = true;
+
     let img = image::io::Reader::open("img.png")
         .unwrap()
         .decode()
@@ -40,38 +42,40 @@ fn main() {
             continue;
         }
         let lr = 0.002 * 0.95f32.powi(ctx.epoch as i32); // MomentumSGD: 0.1, Adam: 0.001
-        use rayon::prelude::*;
-        let batches: Vec<_> = mini_batches(&img, batch_size, &mut rng);
-        let (loss, total, cor) = batches
-            .par_iter()
-            .map(|(len, x, t)| {
-                let x = Tensor::new(x.clone());
-                let t = Tensor::new(t.clone());
+        if use_parallel {
+            use rayon::prelude::*;
+            let batches: Vec<_> = mini_batches(&img, batch_size, &mut rng);
+            let (loss, total, cor) = batches
+                .par_iter()
+                .map(|(len, x, t)| {
+                    let x = Tensor::new(x.clone());
+                    let t = Tensor::new(t.clone());
+                    let y = model.call(x.clone(), ctx.train);
+                    let loss = naive_mean_squared_error(t.clone(), y.clone());
+                    if ctx.train {
+                        optimize(&loss, lr);
+                    }
+                    (loss[[]] * *len as f32, *len, 0)
+                })
+                .reduce(|| (0.0, 0, 0), |a, b| (a.0 + b.0, a.1 + b.1, a.2 + b.2));
+            ctx.loss += loss;
+            ctx.processed += total;
+            ctx.corrected += cor;
+        } else {
+            for (len, x, t) in mini_batches(&img, batch_size, &mut rng) {
+                let x = Tensor::new(x);
+                let t = Tensor::new(t);
                 let y = model.call(x.clone(), ctx.train);
                 let loss = naive_mean_squared_error(t.clone(), y.clone());
                 if ctx.train {
                     optimize(&loss, lr);
                 }
-                (loss[[]] * *len as f32, *len, 0)
-            })
-            .reduce(|| (0.0, 0, 0), |a, b| (a.0 + b.0, a.1 + b.1, a.2 + b.2));
-        ctx.loss += loss;
-        ctx.processed += total;
-        ctx.corrected += cor;
-
-        // for (len, x, t) in mini_batches(&img, batch_size, &mut rng) {
-        //     let x = Tensor::new(x);
-        //     let t = Tensor::new(t);
-        //     let y = model.call(x.clone(), ctx.train);
-        //     let loss = naive_mean_squared_error(t.clone(), y.clone());
-        //     if ctx.train {
-        //         optimize(&loss, lr);
-        //     }
-        //     ctx.loss += loss[[]] * len as f32;
-        //     ctx.processed += len;
-        //     ctx.corrected += 0;
-        //     ctx.print_progress();
-        // }
+                ctx.loss += loss[[]] * len as f32;
+                ctx.processed += len;
+                ctx.corrected += 0;
+                ctx.print_progress();
+            }
+        }
 
         ctx.print_result();
         if ctx.epoch % 10 == 0 {
