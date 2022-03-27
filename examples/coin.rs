@@ -45,7 +45,7 @@ fn main() {
         if use_parallel {
             use rayon::prelude::*;
             let batches: Vec<_> = mini_batches(&img, batch_size, &mut rng);
-            let (loss, total) = batches
+            let metrics = batches
                 .par_iter()
                 .map(|(len, x, t)| {
                     let x = Tensor::new(x.clone());
@@ -55,11 +55,19 @@ fn main() {
                     if ctx.train {
                         optimize(&loss, lr);
                     }
-                    (loss[[]] * *len as f32, *len)
+                    let mut metrics = Metrics::new();
+                    metrics.count(*len);
+                    metrics.add(metrics::Loss::new(loss[[]], *len));
+                    metrics
                 })
-                .reduce(|| (0.0, 0), |a, b| (a.0 + b.0, a.1 + b.1));
-            ctx.count(total);
-            ctx.push_metric(metrics::Loss::new(loss));
+                .reduce(
+                    || Metrics::new(),
+                    |mut a, b| {
+                        a.merge(b);
+                        a
+                    },
+                );
+            ctx.merge_metrics(metrics);
         } else {
             for (len, x, t) in mini_batches(&img, batch_size, &mut rng) {
                 let x = Tensor::new(x);
@@ -70,7 +78,7 @@ fn main() {
                     optimize(&loss, lr);
                 }
                 ctx.count(len);
-                ctx.push_metric(metrics::Loss::new(loss[[]]));
+                ctx.add_metric(metrics::Loss::new(loss[[]], len));
                 ctx.print_progress();
             }
         }

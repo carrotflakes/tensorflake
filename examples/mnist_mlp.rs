@@ -2,7 +2,12 @@ mod mnist;
 
 use ndarray::prelude::*;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-use tensorflake::{losses::SoftmaxCrossEntropy, metrics::argmax_accuracy, nn::*, *};
+use tensorflake::{
+    losses::SoftmaxCrossEntropy,
+    metrics::{argmax_accuracy, Metric},
+    nn::*,
+    *,
+};
 
 fn main() {
     let mnist = mnist::Mnist::load("./data");
@@ -40,7 +45,7 @@ fn main() {
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
             train_loss += loss[[]] * t.len() as f32;
-            trn_acc += argmax_accuracy(&t, &y) * t.len() as f32;
+            trn_acc += argmax_accuracy(&t, &y).value() * t.len() as f32;
         }
         train_loss /= mnist.train_labels.len() as f32;
         trn_acc /= mnist.train_labels.len() as f32;
@@ -52,7 +57,7 @@ fn main() {
             let y = mlp.call(x.clone(), false);
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             validation_loss += loss[[]] * t.len() as f32;
-            val_acc += argmax_accuracy(&t, &y) * t.len() as f32;
+            val_acc += argmax_accuracy(&t, &y).value() * t.len() as f32;
         }
         validation_loss /= mnist.test_labels.len() as f32;
         val_acc /= mnist.test_labels.len() as f32;

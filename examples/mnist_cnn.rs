@@ -24,7 +24,7 @@ fn main() {
         } else {
             mini_batches(&mnist.test_images, &mnist.test_labels, batch_size).collect()
         };
-        let (loss, total, correct) = batches
+        let metrics = batches
             .par_iter()
             .map(|(x, t)| {
                 let y = model.call(x.clone(), ctx.train);
@@ -32,32 +32,24 @@ fn main() {
                 if ctx.train {
                     optimize(&loss, 0.0005); // MomentumSGD: 0.1, Adam: 0.001
                 }
-                (loss[[]] * t.len() as f32, t.len(), count_correction(&y, &t))
+                let mut metrics = Metrics::new();
+                metrics.count(t.len());
+                metrics.add(metrics::Loss::new(loss[[]], t.len()));
+                metrics.add(metrics::argmax_accuracy(t, &y));
+                metrics
             })
-            .reduce(|| (0.0, 0, 0), |a, b| (a.0 + b.0, a.1 + b.1, a.2 + b.2));
-        ctx.count(total);
-        ctx.push_metric(metrics::Loss::new(loss));
-        ctx.push_metric(metrics::Accuracy::new(correct));
+            .reduce(
+                || Metrics::new(),
+                |mut a, b| {
+                    a.merge(b);
+                    a
+                },
+            );
+        ctx.merge_metrics(metrics);
         ctx.print_result();
     }
 
     println!("time: {:?}", start.elapsed());
-}
-
-fn count_correction(y: &Tensor, t: &[usize]) -> usize {
-    t.iter()
-        .enumerate()
-        .filter(|(i, t)| {
-            let y = y
-                .slice(s![*i, ..])
-                .iter()
-                .enumerate()
-                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-                .unwrap()
-                .0;
-            y == **t
-        })
-        .count()
 }
 
 fn gen_img(img: &[u8]) -> NDArray {

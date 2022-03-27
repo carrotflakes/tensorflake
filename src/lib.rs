@@ -1,3 +1,4 @@
+mod execution_context;
 pub mod export_dot;
 mod funcall;
 mod function;
@@ -8,23 +9,25 @@ pub mod losses;
 pub mod metrics;
 pub mod ndarray_util;
 pub mod nn;
+mod optimize;
 pub mod optimizees;
 mod param;
 pub mod param_bin;
 mod tensor;
-mod train;
 
 #[cfg(test)]
 mod test;
 
+pub use execution_context::*;
 pub use funcall::*;
 pub use function::*;
 pub use graph::gradients;
+pub use metrics::{Metric, Metrics};
 pub use ndarray_util::{scalar, IntoNDArray, NDArray};
 pub use nn::Layer;
+pub use optimize::*;
 pub use param::*;
 pub use tensor::*;
-pub use train::*;
 
 pub fn backprop(x: NDArray) -> Tensor {
     let y = Tensor::new(x);
