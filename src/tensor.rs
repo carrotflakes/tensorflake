@@ -1,7 +1,4 @@
-use std::{
-    ops::AddAssign,
-    sync::{Arc, Mutex},
-};
+use std::sync::{Arc, Mutex};
 
 use crate::{Funcall, NDArray};
 
