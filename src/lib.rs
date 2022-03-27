@@ -26,7 +26,9 @@ pub use tensor::*;
 pub use train::*;
 
 pub fn backprop(x: NDArray) -> Tensor {
-    functions::CreateGraph::new(x).call(vec![]).pop().unwrap()
+    let y = Tensor::new(x);
+    chain(&[], &[y.clone()], true, "backprop", |_, _, _| vec![]);
+    y
 }
 
 #[macro_export]
