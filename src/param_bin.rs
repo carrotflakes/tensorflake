@@ -40,6 +40,13 @@ pub fn import_from_file(params: &mut [Param], path: &str) {
     }
 }
 
+pub fn params_summary(params: &[Param]) {
+    for (i, param) in params.iter().enumerate() {
+        let shape = param.get_tensor().shape().to_vec();
+        println!("{:>2}{:>8} {:?}", i, shape.iter().product::<usize>(), shape);
+    }
+}
+
 #[test]
 fn test() {
     use crate::optimizees::*;

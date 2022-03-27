@@ -13,6 +13,7 @@ fn main() {
     let mnist = mnist::Mnist::load("./data");
 
     let model = Model::new();
+    param_bin::params_summary(&model.all_params());
 
     let batch_size = 20;
 
@@ -122,6 +123,15 @@ impl Model {
         let y = y.reshape([y.shape()[0], 10 * 7 * 7]);
         let y = self.linear.call(y, train);
         y
+    }
+
+    pub fn all_params(&self) -> Vec<Param> {
+        self.conv1
+            .all_params()
+            .into_iter()
+            .chain(self.conv2.all_params())
+            .chain(self.linear.all_params())
+            .collect()
     }
 }
 pub struct BigModel {
