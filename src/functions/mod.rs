@@ -1,3 +1,4 @@
+mod abs;
 mod add;
 mod broadcast;
 mod concat;
@@ -19,6 +20,7 @@ mod t;
 mod tanh;
 mod transpose;
 
+pub use abs::*;
 pub use add::*;
 pub use broadcast::*;
 pub use concat::*;
