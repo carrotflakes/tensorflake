@@ -23,6 +23,7 @@ TBD
   - [ ] GAN
   - [ ] VAE
 - [ ] wasm
+- [ ] safe rust
 
 ## Author
 

@@ -14,7 +14,7 @@ fn main() {
 
     let model = BigModel::new();
 
-    let batch_size = 10;
+    let batch_size = 20;
 
     let start = std::time::Instant::now();
 

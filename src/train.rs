@@ -62,3 +62,86 @@ impl GradientsAccumulator {
         }
     }
 }
+
+pub struct ExecutionContext {
+    pub total: Option<usize>,
+    pub epoch: usize,
+    pub train: bool,
+    pub loss: f32,
+    pub processed: usize,
+    pub corrected: usize,
+}
+
+impl ExecutionContext {
+    pub fn print_progress(&self) {
+        if let Some(total) = self.total {
+            print!("{}/{}", self.processed, total);
+        } else {
+            print!("{}", self.processed);
+        }
+        print!("\r");
+    }
+
+    pub fn print_result(&self) {
+        println!(
+            "{} epoch: {}, loss: {:.4}, acc: {:.4}",
+            if self.train { "train" } else { "valid" },
+            self.epoch,
+            self.loss / self.processed as f32,
+            self.corrected as f32 / self.processed as f32
+        );
+    }
+}
+
+pub struct ExecutionContextIter {
+    pub total_epochs: usize,
+    pub data_len: Option<usize>,
+    pub current_epoch: usize,
+    pub train: bool,
+}
+
+impl ExecutionContextIter {
+    pub fn new(total_epochs: usize, data_len: Option<usize>) -> Self {
+        Self {
+            total_epochs,
+            data_len,
+            current_epoch: 1,
+            train: true,
+        }
+    }
+}
+
+impl Iterator for ExecutionContextIter {
+    type Item = ExecutionContext;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_epoch > self.total_epochs {
+            return None;
+        }
+
+        let ctx = ExecutionContext {
+            total: self.data_len,
+            epoch: self.current_epoch,
+            train: self.train,
+            loss: 0.0,
+            processed: 0,
+            corrected: 0,
+        };
+
+        if self.train {
+            self.train = false;
+        } else {
+            self.current_epoch += 1;
+            self.train = true;
+        }
+
+        Some(ctx)
+    }
+}
+
+#[test]
+fn test_execution_context_iter() {
+    for c in ExecutionContextIter::new(2, None) {
+        c.print_result();
+    }
+}
