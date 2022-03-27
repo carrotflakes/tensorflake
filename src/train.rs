@@ -70,6 +70,7 @@ pub struct ExecutionContext {
     pub loss: f32,
     pub processed: usize,
     pub corrected: usize,
+    time: std::time::Instant,
 }
 
 impl ExecutionContext {
@@ -84,11 +85,12 @@ impl ExecutionContext {
 
     pub fn print_result(&self) {
         println!(
-            "{} epoch: {}, loss: {:.4}, acc: {:.4}",
+            "{} epoch: {}, loss: {:.4}, acc: {:.4}, time: {:.2}s",
             if self.train { "train" } else { "valid" },
             self.epoch,
             self.loss / self.processed as f32,
-            self.corrected as f32 / self.processed as f32
+            self.corrected as f32 / self.processed as f32,
+            self.time.elapsed().as_secs_f32()
         );
     }
 }
@@ -126,6 +128,7 @@ impl Iterator for ExecutionContextIter {
             loss: 0.0,
             processed: 0,
             corrected: 0,
+            time: std::time::Instant::now(),
         };
 
         if self.train {

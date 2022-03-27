@@ -5,7 +5,6 @@ use ndarray_rand::{
     rand_distr::Uniform,
     RandomExt,
 };
-// use rayon::prelude::*;
 use tensorflake::{functions::*, losses::*, nn::*, *};
 
 fn main() {
@@ -40,10 +39,11 @@ fn main() {
         if !ctx.train {
             continue;
         }
+        // use rayon::prelude::*;
         // let batches: Vec<_> = mini_batches(&img, batch_size, &mut rng);
         // let (loss, total, cor) = batches
         //     .par_iter()
-        //     .map(|(x, t)| {
+        //     .map(|(len, x, t)| {
         //         let x = Tensor::new(x.clone());
         //         let t = Tensor::new(t.clone());
         //         let y = model.call(x.clone(), ctx.train);
@@ -51,7 +51,7 @@ fn main() {
         //         if ctx.train {
         //             optimize(&loss, 0.002 * 0.95f32.powi(ctx.epoch as i32)); // MomentumSGD: 0.1, Adam: 0.001
         //         }
-        //         (loss[[]] * t.len() as f32, t.len(), 0)
+        //         (loss[[]] * *len as f32, *len, 0)
         //     })
         //     .reduce(|| (0.0, 0, 0), |a, b| (a.0 + b.0, a.1 + b.1, a.2 + b.2));
         // ctx.loss += loss;
