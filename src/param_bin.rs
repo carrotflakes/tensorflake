@@ -41,10 +41,14 @@ pub fn import_from_file(params: &mut [Param], path: &str) {
 }
 
 pub fn params_summary(params: &[Param]) {
+    let mut total_size = 0;
     for (i, param) in params.iter().enumerate() {
         let shape = param.get_tensor().shape().to_vec();
-        println!("{:>2}{:>8} {:?}", i, shape.iter().product::<usize>(), shape);
+        let size = shape.iter().product::<usize>();
+        total_size += size;
+        println!("{:>2}{:>8} {:?}", i, size, shape);
     }
+    println!("floats: {} ({} bytes)", total_size, total_size * 4);
 }
 
 #[test]
