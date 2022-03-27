@@ -94,8 +94,8 @@ fn test_conv2d() {
         kernel_size: [3, 3],
         stride: [1, 1],
         padding: [1, 1],
-        w: Fixed::new(w),
-        b: Fixed::new(b),
+        w: optimizees::Fixed::new(w),
+        b: optimizees::Fixed::new(b),
     };
     let y = conv.call(x.clone(), false);
     assert_eq!(y.shape(), &[1, 3, 4, 4]);

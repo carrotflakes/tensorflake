@@ -3,6 +3,7 @@ mod dropout;
 mod layer;
 mod linear;
 mod mlp;
+pub mod regularizers;
 mod relu;
 mod select_net;
 mod sigmoid;

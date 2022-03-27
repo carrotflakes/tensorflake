@@ -62,7 +62,7 @@ fn test() {
             let mut rng = rng.clone();
             move |shape: &[usize]| -> Param {
                 let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                AdamOptimizee::new(t)
+                optimizees::AdamOptimizee::new(t)
             }
         }
     };

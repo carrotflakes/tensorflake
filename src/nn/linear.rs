@@ -1,5 +1,5 @@
 use super::Layer;
-use crate::{functions::*, *};
+use crate::{functions::*, optimizees::Fixed, *};
 
 pub struct Linear {
     pub w: Param,

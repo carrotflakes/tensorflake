@@ -104,7 +104,7 @@ impl Model {
                 move |shape: &[usize]| -> Param {
                     let t =
                         Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                    SGDOptimizee::new(t)
+                        optimizees::SGDOptimizee::new(t)
                     // AdamOptimizee::new(t)
                 }
             }
