@@ -27,7 +27,7 @@ fn main() {
         graph(&[loss], "rnn");
     }
 
-    let mut gradients = GradientsAccumulator::default();
+    let mut gradients = GradientsAccumulator::new();
     for e in 0..100 {
         data.shuffle(&mut rng);
         for i in 0..data.len() {
@@ -41,7 +41,7 @@ fn main() {
             let loss = call!(SoftmaxCrossEntropy::new(arith::encode(&str[eqp + 1..])), yy);
             gradients.compute(&loss);
             if i % 10 == 0 {
-                gradients.optimize(0.01 - e as f32 * 0.0001);
+                gradients.optimize(0.01 * 0.95f32.powi(e));
             }
             if i % 5000 == 0 {
                 // println!("{:?}", &*y[1]);
