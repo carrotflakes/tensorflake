@@ -12,42 +12,33 @@ use tensorflake::{
 fn main() {
     let mnist = mnist::Mnist::load("./data");
 
-    let model = BigModel::new();
+    let model = Model::new();
 
-    let batch_size = 10;
+    let batch_size = 20;
 
     let start = std::time::Instant::now();
 
-    for epoch in 0..1000 {
-        let batches: Vec<_> =
-            mini_batches(&mnist.train_images, &mnist.train_labels, batch_size).collect();
-        let (mut train_loss, trn_correct) = batches
+    for mut ctx in ExecutionContextIter::new(100, Some(mnist.train_labels.len())) {
+        let batches: Vec<_> = if ctx.train {
+            mini_batches(&mnist.train_images, &mnist.train_labels, batch_size).collect()
+        } else {
+            mini_batches(&mnist.test_images, &mnist.test_labels, batch_size).collect()
+        };
+        let (loss, total, correct) = batches
             .par_iter()
             .map(|(x, t)| {
-                let y = model.call(x.clone(), true);
+                let y = model.call(x.clone(), ctx.train);
                 let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
-                optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
-                (loss[[]] * t.len() as f32, count_correction(&y, &t))
+                if ctx.train {
+                    optimize(&loss, 0.0005); // MomentumSGD: 0.1, Adam: 0.001
+                }
+                (loss[[]] * t.len() as f32, t.len(), count_correction(&y, &t))
             })
-            .reduce(|| (0.0, 0), |a, b| (a.0 + b.0, a.1 + b.1));
-        train_loss /= mnist.train_labels.len() as f32;
-        let trn_acc = trn_correct as f32 / mnist.train_labels.len() as f32;
-
-        let mut validation_loss = 0.0;
-        let mut val_correct = 0;
-        for (x, t) in mini_batches(&mnist.test_images, &mnist.test_labels, batch_size) {
-            let y = model.call(x, false);
-            let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
-            validation_loss += loss[[]] * t.len() as f32;
-            val_correct += count_correction(&y, &t);
-        }
-        validation_loss /= mnist.test_labels.len() as f32;
-        let val_acc = val_correct as f32 / mnist.test_labels.len() as f32;
-
-        println!(
-            "epoch: {}, trn_loss: {:.4}, trn_acc: {:.4}, val_loss: {:.4}, val_acc: {:.4}",
-            epoch, train_loss, trn_acc, validation_loss, val_acc
-        );
+            .reduce(|| (0.0, 0, 0), |a, b| (a.0 + b.0, a.1 + b.1, a.2 + b.2));
+        ctx.loss += loss;
+        ctx.processed += total;
+        ctx.corrected += correct;
+        ctx.print_result();
     }
 
     println!("time: {:?}", start.elapsed());

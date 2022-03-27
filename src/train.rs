@@ -122,7 +122,7 @@ impl Iterator for ExecutionContextIter {
         }
 
         let ctx = ExecutionContext {
-            total: self.data_len,
+            total: if self.train { self.data_len } else { None },
             epoch: self.current_epoch,
             train: self.train,
             loss: 0.0,
