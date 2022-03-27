@@ -74,7 +74,7 @@ impl Tensor {
         call!(functions::Cos, self.clone())
     }
 
-    pub fn slice<I: ndarray::SliceArg<ndarray::IxDyn> + Clone + 'static>(
+    pub fn slice<I: ndarray::SliceArg<ndarray::IxDyn> + Clone + Sync + Send + 'static>(
         &self,
         slice_arg: I,
     ) -> Tensor {

@@ -2,17 +2,17 @@ use ndarray::{IxDyn, SliceArg};
 
 use crate::*;
 
-pub struct Slice<I: SliceArg<IxDyn> + Clone + 'static> {
+pub struct Slice<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> {
     slice_arg: I,
 }
 
-impl<I: SliceArg<IxDyn> + Clone + 'static> Slice<I> {
+impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Slice<I> {
     pub fn new(slice_arg: I) -> Self {
         Self { slice_arg }
     }
 }
 
-impl<I: SliceArg<IxDyn> + Clone + 'static> Function for Slice<I> {
+impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Function for Slice<I> {
     fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert_eq!(xs.len(), 1);
         let x = &*xs[0];
@@ -21,12 +21,7 @@ impl<I: SliceArg<IxDyn> + Clone + 'static> Function for Slice<I> {
     }
 
     // NOTE: backward cuts the graph.
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
         let x = &*xs[0];
         let mut gx = NDArray::zeros(x.shape()); // TODO: Too large tensor!

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::{Funcall, Tensor};
 
-pub trait Function: 'static {
+pub trait Function: Sync + Send + 'static {
     fn forward(&self, xs: &[Tensor]) -> Vec<Tensor>;
     fn backward(
         &self,
@@ -39,7 +39,7 @@ pub trait Function: 'static {
     const IS_FORCE_CREATE_GRAPH: bool = false;
 }
 
-pub trait Backward {
+pub trait Backward: Sync + Send {
     fn backward(
         &self,
         xs: &Vec<Tensor>,
