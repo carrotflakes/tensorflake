@@ -2,7 +2,7 @@ mod mnist;
 
 use ndarray::prelude::*;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-use tensorflake::{losses::SoftmaxCrossEntropy, nn::*, *};
+use tensorflake::{losses::SoftmaxCrossEntropy, metrics::argmax_accuracy, nn::*, *};
 
 fn main() {
     let mnist = mnist::Mnist::load("./data");
@@ -33,29 +33,29 @@ fn main() {
 
     for epoch in 0..10 {
         let mut train_loss = 0.0;
-        let mut trn_correct = 0;
+        let mut trn_acc = 0.0;
         for (x, t) in mini_batches(&mnist.train_images, &mnist.train_labels, batch_size) {
             let x = Tensor::new(x);
             let y = mlp.call(x.clone(), true);
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
             train_loss += loss[[]] * t.len() as f32;
-            trn_correct += count_correction(&y, &t);
+            trn_acc += argmax_accuracy(&t, &y) * t.len() as f32;
         }
         train_loss /= mnist.train_labels.len() as f32;
-        let trn_acc = trn_correct as f32 / mnist.train_labels.len() as f32;
+        trn_acc /= mnist.train_labels.len() as f32;
 
         let mut validation_loss = 0.0;
-        let mut val_correct = 0;
+        let mut val_acc = 0.0;
         for (x, t) in mini_batches(&mnist.test_images, &mnist.test_labels, batch_size) {
             let x = Tensor::new(x);
             let y = mlp.call(x.clone(), false);
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
             validation_loss += loss[[]] * t.len() as f32;
-            val_correct += count_correction(&y, &t);
+            val_acc += argmax_accuracy(&t, &y) * t.len() as f32;
         }
         validation_loss /= mnist.test_labels.len() as f32;
-        let val_acc = val_correct as f32 / mnist.test_labels.len() as f32;
+        val_acc /= mnist.test_labels.len() as f32;
 
         println!(
             "epoch: {}, trn_loss: {:.4}, trn_acc: {:.4}, val_loss: {:.4}, val_acc: {:.4}",
@@ -64,22 +64,6 @@ fn main() {
     }
 
     println!("time: {:?}", start.elapsed());
-}
-
-fn count_correction(y: &Tensor, t: &[usize]) -> usize {
-    t.iter()
-        .enumerate()
-        .filter(|(i, t)| {
-            let y = y
-                .slice(s![*i, ..])
-                .iter()
-                .enumerate()
-                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-                .unwrap()
-                .0;
-            y == **t
-        })
-        .count()
 }
 
 fn gen_img(img: &[u8]) -> NDArray {

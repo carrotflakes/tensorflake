@@ -5,6 +5,7 @@ pub mod functions;
 pub mod graph;
 mod impl_ops_for_tensor;
 pub mod losses;
+pub mod metrics;
 pub mod ndarray_util;
 pub mod nn;
 pub mod optimizees;
