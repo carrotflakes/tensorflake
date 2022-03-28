@@ -90,7 +90,7 @@ impl Model {
                 move |shape: &[usize]| -> Param {
                     let t =
                         Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                    optimizees::AdamOptimizee::new(t)
+                    Param::new(t, optimizers::AdamOptimizer::new())
                 }
             }
         };
@@ -152,7 +152,7 @@ impl BigModel {
                 move |shape: &[usize]| -> Param {
                     let t =
                         Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                    optimizees::AdamOptimizee::new(t)
+                    Param::new(t, optimizers::AdamOptimizer::new())
                 }
             }
         };

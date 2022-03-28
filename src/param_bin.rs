@@ -53,14 +53,14 @@ pub fn params_summary(params: &[Param]) {
 
 #[test]
 fn test() {
-    use crate::optimizees::*;
+    use crate::optimizers::*;
     let ndarrays = vec![
         NDArray::from_shape_vec(vec![2, 2], vec![1.0, 2.0, 3.0, 4.0]).unwrap(),
         NDArray::from_shape_vec(vec![3, 4], (0..12).map(|x| x as f32).collect()).unwrap(),
     ];
     let mut params = vec![
-        Fixed::new(ndarrays[0].clone()),
-        Fixed::new(ndarrays[1].clone()),
+        Param::new(ndarrays[0].clone(), Fixed),
+        Param::new(ndarrays[1].clone(), Fixed),
     ];
     let path = "/tmp/tensorflake_param_bin_test.bin";
     export_to_file(&params, path);

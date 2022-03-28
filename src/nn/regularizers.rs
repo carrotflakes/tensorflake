@@ -80,7 +80,10 @@ impl Layer for L1L2 {
 
 #[test]
 fn test() {
-    let p = optimizees::SGDOptimizee::new(ndarray::array![1., 2., 3.].into_ndarray());
+    let p = Param::new(
+        ndarray::array![1., 2., 3.].into_ndarray(),
+        optimizers::SGDOptimizer,
+    );
     let l1 = L1::new(1.0);
     let loss = l1.call(p.get_tensor(), true);
     optimize(&loss, 1.0);
@@ -89,7 +92,10 @@ fn test() {
         &ndarray::array![0., 1., 2.].into_ndarray()
     );
 
-    let p = optimizees::SGDOptimizee::new(ndarray::array![1., 2., 3.].into_ndarray());
+    let p = Param::new(
+        ndarray::array![1., 2., 3.].into_ndarray(),
+        optimizers::SGDOptimizer,
+    );
     let l2 = L2::new(0.25);
     let loss = l2.call(p.get_tensor(), true);
     optimize(&loss, 1.0);

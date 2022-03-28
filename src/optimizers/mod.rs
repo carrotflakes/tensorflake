@@ -3,16 +3,29 @@ mod fixed;
 mod momentum_sgd;
 mod sgd;
 
-pub use adam::*;
-pub use fixed::*;
-pub use momentum_sgd::*;
-pub use sgd::*;
+pub use adam::AdamOptimizer;
+pub use fixed::Fixed;
+pub use momentum_sgd::MomentumSGDOptimizer;
+pub use sgd::SGDOptimizer;
+
+use crate::{NDArray, Tensor};
+
+pub trait Optimizer: Clone + Sync + Send + 'static {
+    type State: Sync + Send + 'static;
+
+    fn new_state(&self, shape: &[usize]) -> Self::State;
+    fn update(&mut self, tensor: &mut Tensor, state: &mut Self::State, grad: &NDArray, lr: f32);
+
+    fn create_graph(&self) -> bool {
+        true
+    }
+}
 
 #[cfg(test)]
-fn test_optimizee(f: impl Fn(crate::NDArray) -> crate::Param, lr: f32) {
+fn test_optimizer(optimizer: impl Optimizer, lr: f32) {
     use crate::*;
 
-    let px = f(scalar(0.0));
+    let px = crate::Param::new(scalar(0.0), optimizer);
 
     let loss_fn = || {
         let x = px.get_tensor();

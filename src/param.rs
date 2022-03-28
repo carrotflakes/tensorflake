@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::*;
 
-pub trait OptimizeeT: Sync + Send + 'static {
+trait ParamInnerT: Sync + Send + 'static {
     fn tensor_ref(&self) -> &Tensor;
     fn set(&mut self, tensor: Tensor);
     fn update(&mut self, grad: &NDArray, lr: f32);
@@ -12,14 +12,43 @@ pub trait OptimizeeT: Sync + Send + 'static {
     }
 }
 
+struct ParamInner<T: Optimizer> {
+    tensor: Tensor,
+    optimizer: T,
+    state: T::State,
+}
+
+impl<T: Optimizer> ParamInnerT for ParamInner<T> {
+    fn tensor_ref(&self) -> &Tensor {
+        &self.tensor
+    }
+
+    fn set(&mut self, tensor: Tensor) {
+        self.tensor = tensor;
+    }
+
+    fn update(&mut self, grad: &NDArray, lr: f32) {
+        self.optimizer
+            .update(&mut self.tensor, &mut self.state, grad, lr);
+    }
+
+    fn create_graph(&self) -> bool {
+        self.optimizer.create_graph()
+    }
+}
+
 pub struct Param {
-    inner: Arc<Mutex<dyn OptimizeeT>>,
+    inner: Arc<Mutex<dyn ParamInnerT>>,
 }
 
 impl Param {
-    pub fn new(inner: impl OptimizeeT) -> Param {
+    pub fn new(ndarray: NDArray, optimizer: impl Optimizer) -> Param {
         Param {
-            inner: Arc::new(Mutex::new(inner)),
+            inner: Arc::new(Mutex::new(ParamInner {
+                state: optimizer.new_state(&ndarray.shape()),
+                optimizer,
+                tensor: ndarray.into(),
+            })),
         }
     }
 

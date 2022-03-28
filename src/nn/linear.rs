@@ -1,5 +1,5 @@
 use super::Layer;
-use crate::{functions::*, optimizees::Fixed, *};
+use crate::{functions::*, optimizers::Fixed, *};
 
 pub struct Linear {
     pub w: Param,
@@ -21,8 +21,8 @@ impl Linear {
 
     pub fn build(&self) -> Self {
         Self {
-            w: Fixed::new((*self.w.get_tensor()).clone()),
-            b: Fixed::new((*self.b.get_tensor()).clone()),
+            w: Param::new((*self.w.get_tensor()).clone(), Fixed),
+            b: Param::new((*self.b.get_tensor()).clone(), Fixed),
         }
     }
 }
