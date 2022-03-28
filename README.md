@@ -10,6 +10,7 @@ TBD
 - [x] Adam
 - [ ] Efficient Linear
 - [ ] Save & load -> param_bin.rs
+  - [ ] Save the structure
 - [x] Dropout
 - [x] Strong typing -> Functional API (tensorflake::function::chain)
 - [ ] Multi thread -> see examples/coin.rs

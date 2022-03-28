@@ -1,6 +1,6 @@
 use std::sync::{Arc, Weak};
 
-use crate::{Backward, Tensor, TensorInner};
+use crate::{tensor::TensorInner, Backward, Tensor};
 
 pub struct Funcall {
     pub(crate) backward: Box<dyn Backward>,

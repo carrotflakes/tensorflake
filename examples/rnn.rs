@@ -70,22 +70,6 @@ fn main() {
     println!("time: {:?}", start.elapsed());
 }
 
-fn count_correction(y: &Tensor, t: &[usize]) -> usize {
-    t.iter()
-        .enumerate()
-        .filter(|(i, t)| {
-            let y = y
-                .slice(s![*i, ..])
-                .iter()
-                .enumerate()
-                .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-                .unwrap()
-                .0;
-            y == **t
-        })
-        .count()
-}
-
 pub struct Model {
     pub vocab_size: usize,
     pub initial: Param,

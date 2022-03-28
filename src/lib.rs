@@ -19,7 +19,7 @@ mod tensor;
 mod test;
 
 pub use execution_context::*;
-pub use funcall::*;
+pub use funcall::Funcall;
 pub use function::*;
 pub use graph::gradients;
 pub use metrics::{Metric, Metrics};
@@ -28,7 +28,7 @@ pub use nn::Layer;
 pub use optimize::*;
 pub use optimizers::Optimizer;
 pub use param::Param;
-pub use tensor::*;
+pub use tensor::Tensor;
 
 pub fn backprop(x: NDArray) -> Tensor {
     let y = Tensor::new(x);
