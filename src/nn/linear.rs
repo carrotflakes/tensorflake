@@ -32,11 +32,7 @@ impl Layer for Linear {
     type Output = Tensor;
 
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output {
-        call!(
-            Add,
-            call!(Matmul, x, self.w.get_tensor()),
-            self.b.get_tensor()
-        )
+        matmul_add(&x, &self.w.get_tensor(), &self.b.get_tensor())
     }
 
     fn all_params(&self) -> Vec<Param> {

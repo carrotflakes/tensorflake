@@ -21,11 +21,6 @@ pub use softmax::*;
 
 use crate::{functions::*, *};
 
-pub fn naive_linear(x: Tensor, w: Tensor, b: Tensor) -> Tensor {
-    // NOTE: w*xの結果は捨てることができるが、そのためのAPIを用意していない
-    call!(Add, call!(Matmul, w, x), b)
-}
-
 pub fn naive_sigmoid(x: Tensor) -> Tensor {
     call!(
         Div,

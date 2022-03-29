@@ -15,10 +15,14 @@ TBD
 - [x] Strong typing -> Functional API (tensorflake::function::chain)
 - [ ] Multi thread -> see examples/coin.rs
   - [ ] High level API
+  - [ ] Synchronous update
+  - [x] Asynchronous update
 - [x] Impl ops
 - [ ] Lazy execution
 - [ ] Regularization
   - [ ] Integrate to optimizee
+- [ ] Tensordot
+- [ ] Transposed convolution
 - [ ] Batch normalization
 - [ ] Examples
   - [ ] CNN -> too slow...

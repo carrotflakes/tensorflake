@@ -32,6 +32,15 @@ pub fn gradients(ys: &[Tensor], xs: &[Tensor], create_graph: bool) -> Vec<Tensor
             }
         }
 
+        if fc.xs.len() != gxs.len() {
+            panic!(
+                "backward of {} has {} inputs, but {} gradients returned",
+                fc.backward.get_function_name(),
+                fc.xs.len(),
+                gxs.len()
+            );
+        }
+
         for (x, gx) in fc.xs.iter().zip(gxs.iter()) {
             match grads.entry(Arc::as_ptr(&x.inner)) {
                 std::collections::hash_map::Entry::Occupied(mut entry) => {

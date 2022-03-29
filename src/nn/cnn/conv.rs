@@ -64,7 +64,7 @@ impl Layer for Conv2d {
             )
         );
         let b = self.b.get_tensor();
-        let t = call!(Add, call!(Matmul, col, w), b);
+        let t = matmul_add(&col, &w, &b);
         call!(
             Transpose::new(vec![0, 3, 1, 2]),
             call!(Reshape::new(vec![x.shape()[0], oh, ow, oc]), t)
