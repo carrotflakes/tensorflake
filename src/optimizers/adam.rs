@@ -41,10 +41,9 @@ impl Optimizer for AdamOptimizer {
         state.mom = (&state.mom * self.beta1 + grad * (1.0 - self.beta1)).into_ndarray();
         state.vel =
             (&state.vel * self.beta2 + grad.map(|x| x.powi(2)) * (1.0 - self.beta2)).into_ndarray();
-        *tensor = &*tensor
-            + &(&state.mom / state.vel.map(|x| x.sqrt() + EPS) * -lr)
-                .into_ndarray()
-                .into();
+        *tensor = (&**tensor + &state.mom / state.vel.map(|x| x.sqrt() + EPS) * -lr)
+            .into_ndarray()
+            .into();
     }
 }
 
