@@ -6,7 +6,13 @@ use ndarray_rand::{
     rand_distr::Uniform,
     RandomExt,
 };
-use tensorflake::{functions::*, losses::SoftmaxCrossEntropy, ndarray_util::onehot, nn::*, *};
+use tensorflake::{
+    functions::*,
+    losses::SoftmaxCrossEntropy,
+    ndarray_util::{argmax, onehot},
+    nn::*,
+    *,
+};
 
 fn main() {
     let mut data = arith::make(10000, 42, 15);
@@ -46,15 +52,7 @@ fn main() {
             if i % 5000 == 0 {
                 // println!("{:?}", &*y[1]);
                 let y = Concat::new(0).call(y).pop().unwrap();
-                let v = y
-                    .map_axis(Axis(1), |x| {
-                        x.iter()
-                            .enumerate()
-                            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
-                            .unwrap()
-                            .0
-                    })
-                    .into_raw_vec();
+                let v = argmax(&*y).into_raw_vec();
                 // println!("{:?}", v);
                 println!("{}", str);
                 println!(" {}", arith::decode(&v));
