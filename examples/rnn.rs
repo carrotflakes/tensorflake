@@ -1,5 +1,6 @@
-mod arith;
+mod data;
 
+use data::arith;
 use ndarray::prelude::*;
 use ndarray_rand::{
     rand::{prelude::SliceRandom, SeedableRng},

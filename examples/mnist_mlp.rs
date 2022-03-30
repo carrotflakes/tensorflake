@@ -1,4 +1,4 @@
-mod mnist;
+mod data;
 
 use ndarray::prelude::*;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
@@ -10,7 +10,7 @@ use tensorflake::{
 };
 
 fn main() {
-    let mnist = mnist::Mnist::load("./data");
+    let mnist = data::mnist::Mnist::load("./data");
 
     let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let param_gen = {

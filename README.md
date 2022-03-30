@@ -8,7 +8,7 @@ TBD
 - [x] backward without create_graph
 - [x] Is Backward removable? -> currently NO because the Function trait is not object-safe.
 - [x] Adam
-- [ ] Efficient Linear
+- [x] Efficient Linear -> matmul_add
 - [ ] Save & load -> param_bin.rs
   - [ ] Save the structure
 - [x] Dropout
@@ -24,6 +24,7 @@ TBD
 - [ ] Tensordot
 - [ ] Transposed convolution
 - [ ] Batch normalization
+- [ ] Profiling
 - [ ] Examples
   - [ ] CNN -> too slow...
   - [ ] RNN

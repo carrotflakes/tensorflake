@@ -48,7 +48,11 @@ impl Function for SoftmaxCrossEntropy {
         let class_num = xs[0].shape()[xs[0].ndim() - 1];
         let gy = call!(Mul, gys[0], Tensor::new(scalar(1.0 / n as f32)));
         let y = call!(Softmax, xs[0]);
-        let t_onehot = Tensor::new(onehot(&Array1::from(self.t.clone()), class_num));
+        let t_onehot = Tensor::new(
+            onehot(&Array1::from(self.t.clone()), class_num)
+                .into_shape(y.shape())
+                .unwrap(),
+        );
         vec![call!(Mul, call!(Sub, y, t_onehot), gy)]
     }
 }
