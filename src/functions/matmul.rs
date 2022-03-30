@@ -11,12 +11,7 @@ impl Function for Matmul {
         vec![forward(&xs[0], &xs[1]).into()]
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         let x = xs[0].clone();
@@ -41,7 +36,13 @@ pub fn forward(x0: &NDArray, x1: &NDArray) -> NDArray {
     let x1s = x1.shape();
     assert!(2 <= x0s.len());
     assert!(2 <= x1s.len());
-    assert_eq!(x0s[x0s.len() - 1], x1s[x1s.len() - 2], "lhs's width must be equal to rhs's height");
+    assert_eq!(
+        x0s[x0s.len() - 1],
+        x1s[x1s.len() - 2],
+        "lhs's width must be equal to rhs's height, lhs: {:?}, rhs: {:?}",
+        x0s,
+        x1s
+    );
 
     let outer_shape =
         broadcast_shape(&x0s[..x0s.len() - 2], &x1s[..x1s.len() - 2]).expect(&format!(

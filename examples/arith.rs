@@ -80,7 +80,7 @@ pub fn encode(s: &str) -> Vec<usize> {
 pub fn decode(v: &[usize]) -> String {
     let mut s = String::new();
     for c in v {
-        s.push(CHARS.chars().nth(*c).unwrap());
+        s.push(CHARS.chars().nth(*c).expect("out of vocabulary"));
     }
     s
 }
