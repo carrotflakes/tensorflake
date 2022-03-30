@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{Funcall, Tensor};
+use crate::{FunctionCall, Tensor};
 
 pub trait Function: Sync + Send + 'static {
     fn forward(&self, xs: &[Tensor]) -> Vec<Tensor>;
@@ -27,7 +27,7 @@ pub trait Function: Sync + Send + 'static {
         let ys = self.forward(&xs);
         if Self::IS_FORCE_CREATE_GRAPH || xs.iter().any(|x| x.has_creator()) {
             let backward = self.into_backward(&xs);
-            let fc = Funcall::new(backward, xs, &ys);
+            let fc = FunctionCall::new(backward, xs, &ys);
             let fc = Arc::new(fc);
             for y in &ys {
                 y.inner.attrs.lock().unwrap().creator = Some(fc.clone());
@@ -106,7 +106,7 @@ pub fn chain(
 ) {
     if force_create_graph || xs.iter().any(|x| x.has_creator()) {
         let backward = Box::new(FnBackward { f: backward, name });
-        let fc = Funcall::new(backward, xs.to_vec(), &ys);
+        let fc = FunctionCall::new(backward, xs.to_vec(), &ys);
         let fc = Arc::new(fc);
         for y in ys {
             y.inner.attrs.lock().unwrap().creator = Some(fc.clone());

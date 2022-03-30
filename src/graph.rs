@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{backprop, call, functions::Add, Funcall, Function, NDArray, Tensor};
+use crate::{backprop, call, functions::Add, FunctionCall, Function, NDArray, Tensor};
 
 pub fn gradients(ys: &[Tensor], xs: &[Tensor], create_graph: bool) -> Vec<Tensor> {
     let mut grads = HashMap::new();
@@ -16,8 +16,8 @@ pub fn gradients(ys: &[Tensor], xs: &[Tensor], create_graph: bool) -> Vec<Tensor
         );
     }
 
-    let funcalls = collect_funcalls(ys.to_vec());
-    for fc in sort_for_backward(funcalls) {
+    let function_calls = collect_function_calls(ys.to_vec());
+    for fc in sort_for_backward(function_calls) {
         let ys = fc.get_ys();
         let gys = ys
             .iter()
@@ -70,13 +70,13 @@ pub fn gradients(ys: &[Tensor], xs: &[Tensor], create_graph: bool) -> Vec<Tensor
 }
 
 pub fn collect_variables(vars: Vec<Tensor>) -> Vec<Tensor> {
-    let fcs = collect_funcalls(vars);
+    let fcs = collect_function_calls(vars);
     let mut vars: Vec<_> = fcs.iter().flat_map(|fc| fc.xs.iter()).cloned().collect();
     vars.dedup();
     vars
 }
 
-pub(crate) fn sort_for_backward(mut fcs: Vec<Arc<Funcall>>) -> Vec<Arc<Funcall>> {
+pub(crate) fn sort_for_backward(mut fcs: Vec<Arc<FunctionCall>>) -> Vec<Arc<FunctionCall>> {
     let mut sorted = Vec::with_capacity(fcs.len());
     let ys = fcs.iter().flat_map(|fc| fc.get_ys()).collect::<Vec<_>>();
     let mut visited: Vec<_> = fcs
@@ -100,8 +100,8 @@ pub(crate) fn sort_for_backward(mut fcs: Vec<Arc<Funcall>>) -> Vec<Arc<Funcall>>
     sorted
 }
 
-pub(crate) fn collect_funcalls(mut vars: Vec<Tensor>) -> Vec<Arc<Funcall>> {
-    let mut funcall_vec = Vec::new();
+pub(crate) fn collect_function_calls(mut vars: Vec<Tensor>) -> Vec<Arc<FunctionCall>> {
+    let mut function_call_vec = Vec::new();
     let mut closed_vars = Vec::new();
     while let Some(var) = vars.pop() {
         if closed_vars.contains(&var) {
@@ -112,14 +112,14 @@ pub(crate) fn collect_funcalls(mut vars: Vec<Tensor>) -> Vec<Arc<Funcall>> {
         if let Some(creator) = var.inner.attrs.lock().unwrap().creator.clone() {
             vars.extend(creator.xs.iter().cloned());
             vars.extend(creator.get_ys());
-            funcall_vec.push(creator);
+            function_call_vec.push(creator);
         }
     }
-    funcall_vec
+    function_call_vec
 }
 
 #[test]
-fn test_collect_funcalls() {
+fn test_collect_function_calls() {
     use crate::{backprop, functions, scalar, Function};
     let x = backprop(scalar(1.0));
     let y = Tensor::new(scalar(2.0));
@@ -127,6 +127,6 @@ fn test_collect_funcalls() {
     let f = functions::Add.call(vec![x.clone(), y.clone()]);
     let g = functions::Add.call([f.clone(), vec![z.clone()]].concat());
     let f = functions::Add.call([g.clone(), vec![x.clone()]].concat());
-    let funcall_vec = collect_funcalls(vec![f[0].clone()]);
-    assert_eq!(funcall_vec.len(), 4);
+    let function_call_vec = collect_function_calls(vec![f[0].clone()]);
+    assert_eq!(function_call_vec.len(), 4);
 }

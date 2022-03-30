@@ -50,10 +50,10 @@ impl GradientsAccumulator {
 }
 
 fn collect_params_grads(loss: &Tensor) -> (Vec<Param>, Vec<Tensor>) {
-    let funcalles = graph::collect_funcalls(vec![loss.clone()]);
+    let function_calls = graph::collect_function_calls(vec![loss.clone()]);
     let mut params = Vec::new();
     let mut trainables = Vec::new();
-    for fc in funcalles {
+    for fc in function_calls {
         if let Some(o) = fc.backward.get_param() {
             params.push(o);
             trainables.push(fc.get_ys()[0].clone());

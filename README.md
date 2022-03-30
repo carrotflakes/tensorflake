@@ -18,13 +18,14 @@ TBD
   - [ ] Synchronous update
   - [x] Asynchronous update
 - [x] Impl ops
-- [ ] Lazy execution
+- [ ] Lazy execution for optimization on the graph
 - [ ] Regularization
   - [ ] Integrate to optimizee
 - [ ] Tensordot
 - [ ] Transposed convolution
 - [ ] Batch normalization
-- [ ] Profiling
+- [ ] Benchmarks
+- [ ] Measure the execution time of functions and export it as dot file
 - [ ] Examples
   - [ ] CNN -> too slow...
   - [ ] RNN

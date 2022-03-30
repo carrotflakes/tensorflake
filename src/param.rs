@@ -56,7 +56,7 @@ impl Param {
         let inner = self.inner.lock().unwrap();
         let v = inner.tensor_ref().clone();
         if inner.create_graph() && !v.has_creator() {
-            let creator = Funcall {
+            let creator = FunctionCall {
                 backward: Box::new(Param {
                     inner: self.inner.clone(),
                 }),

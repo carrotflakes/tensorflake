@@ -1,7 +1,7 @@
 mod execution_context;
 pub mod export_dot;
-mod funcall;
 mod function;
+mod function_call;
 pub mod functions;
 pub mod graph;
 mod impl_ops_for_tensor;
@@ -19,8 +19,8 @@ mod tensor;
 mod test;
 
 pub use execution_context::*;
-pub use funcall::Funcall;
 pub use function::*;
+pub use function_call::FunctionCall;
 pub use graph::gradients;
 pub use metrics::{Metric, Metrics};
 pub use ndarray_util::{scalar, IntoNDArray, NDArray};

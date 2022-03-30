@@ -2,13 +2,13 @@ use std::sync::{Arc, Weak};
 
 use crate::{tensor::TensorInner, Backward, Tensor};
 
-pub struct Funcall {
+pub struct FunctionCall {
     pub(crate) backward: Box<dyn Backward>,
     pub(crate) xs: Vec<Tensor>,
     pub(crate) ys: Vec<Weak<TensorInner>>,
 }
 
-impl Funcall {
+impl FunctionCall {
     pub fn new(backward: Box<dyn Backward>, xs: Vec<Tensor>, ys: &[Tensor]) -> Self {
         Self {
             backward,

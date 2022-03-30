@@ -1,6 +1,6 @@
 use std::sync::{Arc, Weak};
 
-use crate::{graph::collect_funcalls, Tensor};
+use crate::{graph::collect_function_calls, Tensor};
 
 pub fn export_dot(vars: &[Tensor], file: &str) -> Result<(), std::io::Error> {
     let f = std::fs::File::create(file).unwrap();
@@ -14,7 +14,7 @@ pub fn write_dot(
     vars: &[Tensor],
     var_printer: &mut impl FnMut(&Tensor) -> String,
 ) -> Result<(), std::io::Error> {
-    let fcs = collect_funcalls(vars.to_vec());
+    let fcs = collect_function_calls(vars.to_vec());
     let mut vars = fcs
         .iter()
         .flat_map(|fc| fc.xs.iter())

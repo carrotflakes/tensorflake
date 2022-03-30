@@ -1,11 +1,11 @@
 use std::sync::{Arc, Mutex};
 
-use crate::{Funcall, NDArray};
+use crate::{FunctionCall, NDArray};
 
 #[derive(Clone)]
 pub(crate) struct TensorAttrs {
     pub name: String,
-    pub creator: Option<Arc<Funcall>>,
+    pub creator: Option<Arc<FunctionCall>>,
 }
 
 pub(crate) struct TensorInner {
