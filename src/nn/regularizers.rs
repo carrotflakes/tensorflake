@@ -1,6 +1,10 @@
 use crate::functions::*;
 use crate::*;
 
+pub trait Regularizer: Sync + Send + 'static {
+    fn call(&self, x: &Tensor) -> Tensor;
+}
+
 pub struct L1 {
     pub l1: f32,
 }
@@ -11,16 +15,9 @@ impl L1 {
     }
 }
 
-impl Layer for L1 {
-    type Input = Tensor;
-    type Output = Tensor;
-
-    fn call(&self, input: Self::Input, _: bool) -> Self::Output {
+impl Regularizer for L1 {
+    fn call(&self, input: &Tensor) -> Tensor {
         call!(Sum::new((0..input.ndim()).collect(), false), abs(&input)) * scalar(self.l1).into()
-    }
-
-    fn all_params(&self) -> Vec<Param> {
-        vec![]
     }
 }
 
@@ -34,19 +31,12 @@ impl L2 {
     }
 }
 
-impl Layer for L2 {
-    type Input = Tensor;
-    type Output = Tensor;
-
-    fn call(&self, input: Self::Input, _: bool) -> Self::Output {
+impl Regularizer for L2 {
+    fn call(&self, input: &Tensor) -> Tensor {
         call!(
             Sum::new((0..input.ndim()).collect(), false),
             call!(Pow::new(2.0), input)
         ) * scalar(self.l2).into()
-    }
-
-    fn all_params(&self) -> Vec<Param> {
-        vec![]
     }
 }
 
@@ -61,20 +51,13 @@ impl L1L2 {
     }
 }
 
-impl Layer for L1L2 {
-    type Input = Tensor;
-    type Output = Tensor;
-
-    fn call(&self, input: Self::Input, _: bool) -> Self::Output {
+impl Regularizer for L1L2 {
+    fn call(&self, input: &Tensor) -> Tensor {
         call!(Sum::new((0..input.ndim()).collect(), false), abs(&input)) * scalar(self.l1).into()
             + call!(
                 Sum::new((0..input.ndim()).collect(), false),
                 call!(Pow::new(2.0), input)
             ) * scalar(self.l2).into()
-    }
-
-    fn all_params(&self) -> Vec<Param> {
-        vec![]
     }
 }
 
@@ -85,7 +68,7 @@ fn test() {
         optimizers::SGDOptimizer,
     );
     let l1 = L1::new(1.0);
-    let loss = l1.call(p.get_tensor(), true);
+    let loss = l1.call(&p.get_tensor());
     optimize(&loss, 1.0);
     assert_eq!(
         &*p.get_tensor(),
@@ -97,7 +80,7 @@ fn test() {
         optimizers::SGDOptimizer,
     );
     let l2 = L2::new(0.25);
-    let loss = l2.call(p.get_tensor(), true);
+    let loss = l2.call(&p.get_tensor());
     optimize(&loss, 1.0);
     assert_eq!(
         &*p.get_tensor(),
