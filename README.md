@@ -19,8 +19,7 @@ TBD
   - [x] Asynchronous update
 - [x] Impl ops
 - [ ] Lazy execution for optimization on the graph
-- [ ] Regularization
-  - [ ] Integrate to optimizee
+- [x] Regularization
 - [ ] Tensordot
 - [ ] Transposed convolution
 - [ ] Batch normalization

@@ -3,12 +3,14 @@ mod adamw;
 mod fixed;
 mod momentum_sgd;
 mod sgd;
+mod with_regularization;
 
 pub use adam::AdamOptimizer;
 pub use adamw::AdamWOptimizer;
 pub use fixed::Fixed;
 pub use momentum_sgd::MomentumSGDOptimizer;
 pub use sgd::SGDOptimizer;
+pub use with_regularization::WithRegularization;
 
 use crate::{NDArray, Tensor};
 

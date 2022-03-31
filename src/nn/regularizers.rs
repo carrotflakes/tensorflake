@@ -1,10 +1,11 @@
 use crate::functions::*;
 use crate::*;
 
-pub trait Regularizer: Sync + Send + 'static {
+pub trait Regularizer: Clone + Sync + Send + 'static {
     fn call(&self, x: &Tensor) -> Tensor;
 }
 
+#[derive(Clone)]
 pub struct L1 {
     pub l1: f32,
 }
@@ -21,6 +22,7 @@ impl Regularizer for L1 {
     }
 }
 
+#[derive(Clone)]
 pub struct L2 {
     pub l2: f32,
 }
@@ -40,6 +42,7 @@ impl Regularizer for L2 {
     }
 }
 
+#[derive(Clone)]
 pub struct L1L2 {
     pub l1: f32,
     pub l2: f32,
