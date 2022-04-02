@@ -65,6 +65,22 @@ impl Mnist {
             test_labels,
         }
     }
+
+    pub fn trains(
+        &self,
+    ) -> std::iter::Zip<std::slice::Chunks<u8>, std::iter::Copied<std::slice::Iter<u8>>> {
+        self.train_images
+            .chunks(28 * 28)
+            .zip(self.train_labels.iter().copied())
+    }
+
+    pub fn tests(
+        &self,
+    ) -> std::iter::Zip<std::slice::Chunks<u8>, std::iter::Copied<std::slice::Iter<u8>>> {
+        self.test_images
+            .chunks(28 * 28)
+            .zip(self.test_labels.iter().copied())
+    }
 }
 
 fn main() {}

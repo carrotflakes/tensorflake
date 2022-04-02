@@ -5,7 +5,7 @@ pub struct ExecutionContext {
     pub epoch: usize,
     pub train: bool,
     pub metrics: Metrics,
-    time: std::time::Instant,
+    pub time: std::time::Instant,
 }
 
 impl ExecutionContext {
