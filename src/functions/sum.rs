@@ -37,12 +37,7 @@ impl Function for Sum {
         vec![x.into_ndarray().into()]
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         Broadcast::new(self.original_shape.clone()).call(vec![gys[0].clone()])
@@ -58,18 +53,22 @@ impl Function for Sum {
 }
 
 pub fn sum_axes_to_desire(src_shape: &[usize], dst_shape: &[usize]) -> Vec<usize> {
-    let mut axes = Vec::new();
-    let mut target = dst_shape.to_vec();
-    for (axis, size) in src_shape.iter().enumerate() {
-        if let Some(s) = target.first() {
-            if s == size {
-                target.remove(0);
-                continue;
-            }
+    assert!(src_shape.len() >= dst_shape.len());
+    let offset = src_shape.len() - dst_shape.len();
+    let mut axes: Vec<_> = (0..offset).collect();
+    for axis in offset..src_shape.len() {
+        if dst_shape[axis - offset] == 1 {
+            axes.push(axis);
+        } else {
+            assert!(src_shape[axis] == dst_shape[axis - offset]);
         }
-        axes.push(axis);
     }
     axes
+}
+
+#[test]
+fn test_sum_axes_to_desire() {
+    assert_eq!(sum_axes_to_desire(&[2, 3, 4], &[2, 1, 4]), vec![1]);
 }
 
 #[test]

@@ -47,7 +47,8 @@ impl Function for Mul {
 
                 // fit shape
                 if x.shape() != g.shape() {
-                    g = call!(Sum::new(sum_axes_to_desire(g.shape(), x.shape()), false), g);
+                    g = call!(Sum::new(sum_axes_to_desire(g.shape(), x.shape()), true), g);
+                    // TODO: https://github.com/oreilly-japan/deep-learning-from-scratch-3/blob/06419d7fb2e7ea19aa3719efc27795edbdc41a1f/dezero/utils.py#L125
                 }
 
                 g

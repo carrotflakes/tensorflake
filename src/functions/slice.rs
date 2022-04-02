@@ -25,7 +25,8 @@ impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Function for Slice<I> {
         #![allow(unused_variables)]
         let x = &*xs[0];
         let mut gx = NDArray::zeros(x.shape()); // TODO: Too large tensor!
-        gx.slice_mut(self.slice_arg.clone()).assign(&*gys[0]);
+        gx.slice_mut(self.slice_arg.clone())
+            .assign(&(*gys[0]).reshape(ys[0].shape()));
         vec![Tensor::new(gx)]
     }
 }
