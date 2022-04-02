@@ -10,7 +10,7 @@ use tensorflake::{
 };
 
 fn main() {
-    let mnist = data::mnist::Mnist::load("./data");
+    let mnist = data::mnist::Mnist::load("./data/mnist");
 
     let model = Model::new();
     param_bin::params_summary(&model.all_params());

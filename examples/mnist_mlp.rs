@@ -10,7 +10,7 @@ use tensorflake::{
 };
 
 fn main() {
-    let mnist = data::mnist::Mnist::load("./data");
+    let mnist = data::mnist::Mnist::load("./data/mnist");
 
     let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let param_gen = {
