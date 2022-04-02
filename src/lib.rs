@@ -30,6 +30,8 @@ pub use optimizers::Optimizer;
 pub use param::Param;
 pub use tensor::Tensor;
 
+pub type DefaultRng = rand_isaac::Isaac64Rng;
+
 pub fn backprop(x: NDArray) -> Tensor {
     let y = Tensor::new(x);
     chain(&[], &[y.clone()], true, "backprop", |_, _, _| vec![]);

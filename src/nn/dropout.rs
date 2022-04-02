@@ -2,13 +2,12 @@ use std::sync::Mutex;
 
 use ndarray::Array;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-use rand_isaac::Isaac64Rng;
 
 use crate::*;
 
 pub struct Dropout {
     pub rate_fn: Box<dyn Fn() -> f32 + Send + Sync>,
-    rng: Mutex<Isaac64Rng>,
+    rng: Mutex<DefaultRng>,
 }
 
 impl Dropout {
@@ -16,14 +15,14 @@ impl Dropout {
         assert!(0.0 < rate && rate < 1.0);
         Self {
             rate_fn: Box::new(move || rate),
-            rng: Mutex::new(Isaac64Rng::seed_from_u64(seed)),
+            rng: Mutex::new(DefaultRng::seed_from_u64(seed)),
         }
     }
 
     pub fn from_rate_fn(rate_fn: Box<dyn Fn() -> f32 + Send + Sync>, seed: u64) -> Self {
         Self {
             rate_fn,
-            rng: Mutex::new(Isaac64Rng::seed_from_u64(seed)),
+            rng: Mutex::new(DefaultRng::seed_from_u64(seed)),
         }
     }
 }

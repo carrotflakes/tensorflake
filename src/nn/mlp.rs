@@ -54,7 +54,7 @@ impl Layer for MLP {
 fn test() {
     use ndarray::prelude::*;
     use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-    let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
+    let rng = DefaultRng::seed_from_u64(42);
 
     let param_gen = {
         let rng = rng.clone();
