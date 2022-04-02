@@ -1,6 +1,7 @@
 # TensorFlake
 
-TBD
+TensorFlake is my own machine learning framework.
+I'm aiming to be able to train several networks on the CPU fast.
 
 ## TODO
 
@@ -23,8 +24,10 @@ TBD
 - [ ] Tensordot
 - [ ] Transposed convolution
 - [ ] Batch normalization
+- [ ] Embedding
 - [ ] Benchmarks
 - [ ] Measure the execution time of functions and export it as dot file
+- [ ] Tensor summarization
 - [ ] Examples
   - [ ] CNN -> too slow...
   - [ ] RNN
@@ -32,6 +35,8 @@ TBD
   - [ ] VAE
 - [ ] wasm
 - [x] safe rust
+- [ ] Compare performance against GPU Tensorflow
+- [ ] Fitting report
 
 ## Author
 
