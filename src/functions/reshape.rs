@@ -18,11 +18,7 @@ impl Function for Reshape {
     fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert!(xs.len() == 1);
 
-        vec![xs[0]
-            .to_shape(self.shape.as_slice())
-            .unwrap()
-            .into_ndarray()
-            .into()]
+        vec![(*xs[0]).reshape(self.shape.as_slice()).into()]
     }
 
     fn backward(
