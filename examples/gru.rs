@@ -1,4 +1,5 @@
 mod data;
+mod training;
 
 use ndarray::prelude::*;
 use ndarray_rand::{
@@ -6,7 +7,6 @@ use ndarray_rand::{
     rand_distr::Uniform,
     RandomExt,
 };
-use rayon::prelude::*;
 use tensorflake::{
     functions::*,
     losses::SoftmaxCrossEntropy,
@@ -15,102 +15,109 @@ use tensorflake::{
     *,
 };
 
+use crate::training::TrainingConfig;
+
 fn main() {
     // let mut data = data::arith::make(10000, 42, 15);
     // let vocab = plane_corpus::Vocab::new(arith::CHARS);
     let data = data::plane_corpus::load("data/corpus_en.txt").unwrap();
     let vocab = data::plane_corpus::Vocab::new(&data);
     let data = data::plane_corpus::windows(&data, 50, 25);
-    let mut data = data
+    let data = data
         .into_iter()
         .filter(|str| str.len() == 50)
         .collect::<Vec<_>>();
     let vocab_size = vocab.size();
     println!("data size: {}", data.len());
 
+    // let optimizer = optimizers::SGDOptimizer::new();
+    // let lr = 0.1;
+    let optimizer = optimizers::AdamOptimizer::new();
+    // let optimizer = optimizers::WithRegularization::new(optimizer, regularizers::L2::new(0.001));
+    let lr = 0.0002;
+
+    let norm =
+        normalization::Normalization::new(vec![0, 1], 0.001, optimizers::AdamOptimizer::new());
+
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let mut param_gen = {
-        rng.gen::<u32>();
         let mut rng = rng.clone();
         move || {
             rng.gen::<u32>();
             let mut rng = rng.clone();
+            let optimizer = optimizer.clone();
             move |shape: &[usize]| -> Param {
                 let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                Param::new(t, optimizers::SGDOptimizer::new())
+                Param::new(t, optimizer.clone())
             }
         }
     };
 
-    let model = Gru::new(vocab_size, 100, &mut param_gen());
-    let linear = Linear::new(100, vocab_size, &mut param_gen(), &mut param_gen());
+    let state_size = 64;
+    let model = Gru::new(vocab_size, state_size, &mut param_gen());
+    let linear = Linear::new(state_size, vocab_size, &mut param_gen(), &mut param_gen());
+    // let output_fn = |x: Tensor| linear.call(x, true);
+    let output_fn = |x: Tensor| linear.call(norm.call(x, true), true);
 
     let start = std::time::Instant::now();
 
-    // let mut gradients = GradientsAccumulator::new();
-    for mut ctx in ExecutionContextIter::new(100, Some(data.len())) {
-        if !ctx.train {
-            // TODO
-            continue;
-        }
-        data.shuffle(&mut rng);
-        let metrics = data
-            .par_chunks(20)
-            .map(|strs| {
-                let initial_state = Tensor::new(NDArray::zeros(&[strs.len(), 100][..]));
-                let eqp = 10;
-                let mut x = vec![vec![]; 50 - 1];
-                let mut t = vec![vec![]; 50 - eqp];
-                for str in strs.iter() {
-                    let y = vocab.encode(str);
-                    for (j, c) in y.iter().take(str.len() - 1).enumerate() {
-                        x[j].push(*c);
-                    }
-                    for (j, c) in y.iter().skip(eqp + 1).enumerate() {
-                        t[j].push(*c);
-                    }
+    let mut training = TrainingConfig {
+        epoch: 30,
+        train_data: data,
+        batch_size: 100,
+        parallel: true,
+        ..Default::default()
+    }
+    .build();
+    while !training.is_end() {
+        training.fit_one_epoch(|strs, ctx| {
+            let initial_state = Tensor::new(NDArray::zeros(&[strs.len(), state_size][..]));
+            let eqp = 10;
+            let mut x = vec![vec![]; 50 - 1];
+            let mut t = vec![vec![]; 50 - eqp];
+            for str in strs.iter() {
+                let y = vocab.encode(str);
+                for (j, c) in y.iter().take(str.len() - 1).enumerate() {
+                    x[j].push(*c);
                 }
-                if x[0].len() != x[50 - 2].len() {
-                    for s in strs {
-                        println!("{}", s.len());
-                    }
-                    panic!("length unmatch")
+                for (j, c) in y.iter().skip(eqp).enumerate() {
+                    t[j].push(*c);
                 }
-                let x = x
-                    .into_iter()
-                    .map(|x| {
-                        onehot(&Array::from_shape_vec([strs.len()], x).unwrap(), vocab_size).into()
-                    })
-                    .collect::<Vec<_>>();
-                let t = t.into_iter().flatten().collect();
-                let y = model.encode(initial_state, &x);
-                let yy = Concat::new(0)
-                    .call(y.iter().skip(eqp).cloned().collect())
-                    .pop()
-                    .unwrap();
-                let yy = linear.call(yy, true);
-                let loss = call!(SoftmaxCrossEntropy::new(t), yy);
-                optimize(&loss, 0.1 * 0.95f32.powi(ctx.epoch as i32));
-                let mut metrics = Metrics::new();
-                metrics.count(strs.len());
-                metrics.add(metrics::Loss::new(loss[[]], strs.len()));
-                metrics
-            })
-            .reduce(
-                || Metrics::new(),
-                |mut a, b| {
-                    a.merge(b);
-                    a
-                },
-            );
-        ctx.merge_metrics(metrics);
+            }
+            if x[0].len() != x[50 - 2].len() {
+                for s in strs {
+                    println!("{}", s.len());
+                }
+                panic!("length unmatch")
+            }
+            let x = x
+                .into_iter()
+                .map(|x| {
+                    onehot(&Array::from_shape_vec([strs.len()], x).unwrap(), vocab_size).into()
+                })
+                .collect::<Vec<_>>();
+            let t = t.into_iter().flatten().collect();
+            let y = model.encode(initial_state, &x);
+            let yy = Concat::new(0)
+                .call(y.iter().skip(eqp - 1).cloned().collect())
+                .pop()
+                .unwrap();
+            let yy = output_fn(yy);
+            let loss = call!(SoftmaxCrossEntropy::new(t), yy);
+            if ctx.train {
+                optimize(&loss, lr * 0.95f32.powi(ctx.epoch as i32));
+            }
+            ctx.count(strs.len());
+            ctx.add_metric(metrics::Loss::new(loss[[]], strs.len()));
+        });
+
         let y = model.decode(
             Tensor::new(NDArray::random_using(
-                &[1, 100][..],
+                &[1, state_size][..],
                 Uniform::new(0.0, 1.0),
                 &mut rng,
             )),
-            |x| linear.call(x, false),
+            output_fn,
             |x| onehot(&argmax(&*x), vocab_size).into(),
             50,
         );
@@ -119,7 +126,6 @@ fn main() {
             .map(|x| vocab.decode(&argmax(&*x).into_raw_vec()))
             .collect();
         println!("{}", str);
-        ctx.print_result();
     }
 
     println!("time: {:?}", start.elapsed());
