@@ -124,7 +124,7 @@ fn test_rosenbrock_sgd() {
 }
 
 #[test]
-fn second_order_differentia() {
+fn test_second_order_differentia() {
     let x = backprop(scalar(2.0));
 
     let y = call!(

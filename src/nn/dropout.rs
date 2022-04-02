@@ -36,7 +36,6 @@ impl Layer for Dropout {
             return x;
         }
         let rate = (self.rate_fn)();
-        // TODO: use seed
         let fuctor = Tensor::new(
             Array::random_using(
                 x.shape(),

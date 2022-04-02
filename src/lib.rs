@@ -44,7 +44,3 @@ macro_rules! call {
         $e.call(vec![$($es.to_owned()),*]).pop().unwrap()
     };
 }
-
-pub fn call<const N: usize>(func: impl Function, xs: [Tensor; N]) -> Tensor {
-    func.call(xs.to_vec()).pop().unwrap()
-}

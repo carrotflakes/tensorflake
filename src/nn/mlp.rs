@@ -70,7 +70,7 @@ fn test() {
     let mlp = MLP::new(
         &[2, 3, 1],
         None,
-        |x| call!(Sigmoid, x),
+        |x| call!(activations::Sigmoid, x),
         &mut param_gen(),
         &mut param_gen(),
     );

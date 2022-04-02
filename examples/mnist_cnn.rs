@@ -5,7 +5,7 @@ use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use rayon::prelude::*;
 use tensorflake::{
     losses::SoftmaxCrossEntropy,
-    nn::{naive_max_pooling, Conv2d, Dropout, Layer, Linear, Relu},
+    nn::{activations::Relu, naive_max_pooling, Conv2d, Dropout, Layer, Linear},
     *,
 };
 

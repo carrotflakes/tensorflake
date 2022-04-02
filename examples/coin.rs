@@ -118,7 +118,7 @@ impl Model {
                 w,
                 b,
             ),
-            activation: Box::new(|x| call!(Sigmoid, x)),
+            activation: Box::new(|x| call!(activations::Sigmoid, x)),
         }
     }
 }

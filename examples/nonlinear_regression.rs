@@ -1,6 +1,13 @@
 use ndarray::{array, Array};
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-use tensorflake::{functions::*, nn::*, *};
+use tensorflake::{
+    functions::*,
+    nn::{
+        activations::{naive_sigmoid, Sigmoid},
+        *,
+    },
+    *,
+};
 
 fn main() {
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);

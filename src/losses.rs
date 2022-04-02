@@ -4,7 +4,7 @@ use ndarray::{Array1, Axis};
 
 use crate::functions::*;
 use crate::ndarray_util::onehot;
-use crate::nn::Softmax;
+use crate::nn::activations::Softmax;
 use crate::*;
 
 pub fn naive_mean_squared_error(x0: Tensor, x1: Tensor) -> Tensor {

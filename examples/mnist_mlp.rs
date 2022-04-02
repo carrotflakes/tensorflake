@@ -5,7 +5,7 @@ use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use tensorflake::{
     losses::SoftmaxCrossEntropy,
     metrics::{argmax_accuracy, Metric},
-    nn::*,
+    nn::{activations::Relu, *},
     *,
 };
 

@@ -2,7 +2,7 @@ use crate::{functions::*, ndarray_util::as_2d, *};
 
 use ndarray::s;
 
-use super::{Linear, Softmax};
+use super::{activations::Softmax, Linear};
 
 pub struct SelectNet {
     pub output_size: usize,

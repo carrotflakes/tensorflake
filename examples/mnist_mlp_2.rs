@@ -1,22 +1,25 @@
 mod data;
 mod training;
 
-use ndarray::prelude::*;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-use tensorflake::{losses::SoftmaxCrossEntropy, nn::*, *};
+use tensorflake::{
+    losses::SoftmaxCrossEntropy,
+    nn::{activations::Relu, *},
+    *,
+};
 
 use crate::training::TrainingConfig;
 
 fn main() {
     let mnist = data::mnist::Mnist::load("./data/mnist");
 
-    let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
+    let rng = DefaultRng::seed_from_u64(42);
     let param_gen = {
         let rng = rng.clone();
         move || {
             let mut rng = rng.clone();
             move |shape: &[usize]| -> Param {
-                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
+                let t = NDArray::random_using(shape, Uniform::new(0., 0.01), &mut rng);
                 Param::new(t, optimizers::AdamOptimizer::new())
             }
         }

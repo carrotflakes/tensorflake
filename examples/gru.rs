@@ -11,7 +11,7 @@ use tensorflake::{
     functions::*,
     losses::SoftmaxCrossEntropy,
     ndarray_util::{argmax, onehot},
-    nn::*,
+    nn::{activations::Sigmoid, *},
     *,
 };
 
