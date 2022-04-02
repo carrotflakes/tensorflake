@@ -12,7 +12,7 @@ pub fn naive_max_pooling(
     let oh = get_conv_outsize(x_shape[2], kernel_size[0], stride[0], pad[0]);
     let ow = get_conv_outsize(x_shape[3], kernel_size[1], stride[1], pad[1]);
 
-    let col = call!(Im2col::new(kernel_size, stride, pad), x);
+    let col = call!(Im2col::new(kernel_size, stride, pad, true), x);
     let col = col.reshape([col.shape().iter().product::<usize>() / (kh * kw), kh * kw]);
     let y = max(1, &col);
     call!(
@@ -48,7 +48,7 @@ pub fn naive_sum_pooling(
     let oh = get_conv_outsize(x_shape[2], kernel_size[0], stride[0], pad[0]);
     let ow = get_conv_outsize(x_shape[3], kernel_size[1], stride[1], pad[1]);
 
-    let col = call!(Im2col::new(kernel_size, stride, pad), x);
+    let col = call!(Im2col::new(kernel_size, stride, pad, true), x);
     let col = col.reshape([col.shape().iter().product::<usize>() / (kh * kw), kh * kw]);
     let y = call!(Sum::new(vec![1], false), col);
     call!(

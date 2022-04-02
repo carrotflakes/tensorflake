@@ -8,14 +8,21 @@ pub struct Im2col {
     pub kernel_size: [usize; 2],
     pub stride: [usize; 2],
     pub padding: [usize; 2],
+    pub to_matrix: bool,
 }
 
 impl Im2col {
-    pub fn new(kernel_size: [usize; 2], stride: [usize; 2], padding: [usize; 2]) -> Self {
+    pub fn new(
+        kernel_size: [usize; 2],
+        stride: [usize; 2],
+        padding: [usize; 2],
+        to_matrix: bool,
+    ) -> Self {
         Self {
             kernel_size,
             stride,
             padding,
+            to_matrix,
         }
     }
 }
@@ -23,7 +30,14 @@ impl Im2col {
 impl Function for Im2col {
     fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert_eq!(xs.len(), 1);
-        vec![im2col(&*xs[0], self.kernel_size, self.stride, self.padding, true).into()]
+        vec![im2col(
+            &*xs[0],
+            self.kernel_size,
+            self.stride,
+            self.padding,
+            self.to_matrix,
+        )
+        .into()]
     }
 
     fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
@@ -33,6 +47,7 @@ impl Function for Im2col {
             self.kernel_size,
             self.stride,
             self.padding,
+            self.to_matrix,
         )
         .call(gys.clone())
     }
@@ -43,6 +58,7 @@ pub struct Col2im {
     pub kernel_size: [usize; 2],
     pub stride: [usize; 2],
     pub padding: [usize; 2],
+    pub to_matrix: bool,
 }
 
 impl Col2im {
@@ -51,12 +67,14 @@ impl Col2im {
         kernel_size: [usize; 2],
         stride: [usize; 2],
         padding: [usize; 2],
+        to_matrix: bool,
     ) -> Self {
         Self {
             input_shape,
             kernel_size,
             stride,
             padding,
+            to_matrix,
         }
     }
 }
@@ -70,7 +88,7 @@ impl Function for Col2im {
             self.kernel_size,
             self.stride,
             self.padding,
-            true,
+            self.to_matrix,
         )
         .into()]
     }
@@ -78,7 +96,7 @@ impl Function for Col2im {
     fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         drop(xs);
         drop(ys);
-        Im2col::new(self.kernel_size, self.stride, self.padding).call(gys.clone())
+        Im2col::new(self.kernel_size, self.stride, self.padding, self.to_matrix).call(gys.clone())
     }
 }
 
