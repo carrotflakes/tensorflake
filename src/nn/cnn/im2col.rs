@@ -23,15 +23,10 @@ impl Im2col {
 impl Function for Im2col {
     fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
         assert_eq!(xs.len(), 1);
-        vec![im2col(&*xs[0], self.kernel_size, self.stride, self.padding).into()]
+        vec![im2col(&*xs[0], self.kernel_size, self.stride, self.padding, true).into()]
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         drop(ys);
         Col2im::new(
             xs[0].shape().try_into().unwrap(),
@@ -75,16 +70,12 @@ impl Function for Col2im {
             self.kernel_size,
             self.stride,
             self.padding,
+            true,
         )
         .into()]
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         drop(xs);
         drop(ys);
         Im2col::new(self.kernel_size, self.stride, self.padding).call(gys.clone())
@@ -96,6 +87,7 @@ pub fn im2col(
     [kh, kw]: [usize; 2],
     [sh, sw]: [usize; 2],
     [ph, pw]: [usize; 2],
+    to_matrix: bool,
 ) -> NDArray {
     assert_eq!(x.ndim(), 4);
     let s = x.shape();
@@ -128,10 +120,14 @@ pub fn im2col(
         f(&y.into_ndarray())
     };
 
-    cols.permuted_axes([0, 4, 5, 1, 2, 3])
-        .to_shape([s[0] * oh * ow, s[1] * kh * kw])
-        .unwrap()
-        .into_ndarray()
+    if to_matrix {
+        cols.permuted_axes([0, 4, 5, 1, 2, 3])
+            .to_shape([s[0] * oh * ow, s[1] * kh * kw])
+            .unwrap()
+            .into_ndarray()
+    } else {
+        cols.into_ndarray()
+    }
 }
 
 #[test]
@@ -143,15 +139,15 @@ fn test_im2col() {
     ]
     .insert_axis(Axis(0))
     .into_ndarray();
-    let cols = im2col(&x, [2, 2], [2, 2], [1, 1]);
+    let cols = im2col(&x, [2, 2], [2, 2], [1, 1], true);
     dbg!(&cols);
     assert_eq!(cols.shape(), [4, 8]);
 
-    let cols = im2col(&x, [1, 2], [1, 2], [0, 0]);
+    let cols = im2col(&x, [1, 2], [1, 2], [0, 0], true);
     dbg!(&cols);
     assert_eq!(cols.shape(), [3, 4]);
 
-    let cols = im2col(&x, [1, 2], [2, 1], [0, 0]);
+    let cols = im2col(&x, [1, 2], [2, 1], [0, 0], true);
     dbg!(&cols);
     assert_eq!(cols.shape(), [4, 4]);
 }
@@ -162,16 +158,20 @@ pub fn col2im(
     [kh, kw]: [usize; 2],
     [sh, sw]: [usize; 2],
     [ph, pw]: [usize; 2],
+    to_matrix: bool,
 ) -> NDArray {
-    assert_eq!(x.ndim(), 2);
     let s = img_shape;
     let oh = get_conv_outsize(s[2], kh, sh, ph);
     let ow = get_conv_outsize(s[3], kw, sw, pw);
 
-    let col = x
-        .to_shape([s[0], oh, ow, s[1], kh, kw])
-        .unwrap()
-        .permuted_axes([0, 3, 4, 5, 1, 2]);
+    let col = if to_matrix {
+        assert_eq!(x.ndim(), 2);
+        x.reshape([s[0], oh, ow, s[1], kh, kw])
+            .permuted_axes([0, 3, 4, 5, 1, 2])
+            .into_dyn()
+    } else {
+        x.clone()
+    };
 
     let mut img = Array4::zeros([s[0], s[1], s[2] + 2 * ph + sh - 1, s[3] + 2 * pw + sw - 1]);
     for h in 0..kh {
@@ -201,14 +201,41 @@ fn test_im2col_col2im() {
     ]
     .insert_axis(Axis(0))
     .into_ndarray();
-    let cols = im2col(&x, [2, 2], [2, 2], [1, 1]);
+    let cols = im2col(&x, [2, 2], [2, 2], [1, 1], true);
 
-    let img = col2im(&cols, x.shape().try_into().unwrap(), [2, 2], [2, 2], [1, 1]);
+    let img = col2im(
+        &cols,
+        x.shape().try_into().unwrap(),
+        [2, 2],
+        [2, 2],
+        [1, 1],
+        true,
+    );
 
     assert_eq!(&img, &x);
 
-    let cols = im2col(&x, [1, 2], [2, 1], [0, 0]);
-    let img = col2im(&cols, x.shape().try_into().unwrap(), [1, 2], [2, 1], [0, 0]);
+    let cols = im2col(&x, [2, 2], [2, 2], [1, 1], false);
+
+    let img = col2im(
+        &cols,
+        x.shape().try_into().unwrap(),
+        [2, 2],
+        [2, 2],
+        [1, 1],
+        false,
+    );
+
+    assert_eq!(&img, &x);
+
+    let cols = im2col(&x, [1, 2], [2, 1], [0, 0], true);
+    let img = col2im(
+        &cols,
+        x.shape().try_into().unwrap(),
+        [1, 2],
+        [2, 1],
+        [0, 0],
+        true,
+    );
     dbg!(&img);
 }
 

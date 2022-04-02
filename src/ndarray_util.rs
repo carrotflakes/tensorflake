@@ -3,6 +3,8 @@ use ndarray::{
     Ix2, IxDyn, OwnedArcRepr, OwnedRepr, RemoveAxis, ViewRepr,
 };
 
+pub use ndarray_einsum_beta::tensordot;
+
 pub type NDArray = ArrayBase<OwnedArcRepr<f32>, ndarray::IxDyn>;
 
 pub fn scalar(x: f32) -> NDArray {

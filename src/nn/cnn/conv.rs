@@ -1,8 +1,12 @@
+use ndarray::Axis;
+
 use crate::{
     functions::*,
     nn::im2col::{get_conv_outsize, Im2col},
     *,
 };
+
+use super::im2col::{col2im, im2col};
 
 pub struct Conv2d {
     pub kernel_size: [usize; 2],
@@ -69,6 +73,15 @@ impl Layer for Conv2d {
             Transpose::new(vec![0, 3, 1, 2]),
             call!(Reshape::new(vec![x.shape()[0], oh, ow, oc]), t)
         )
+
+        // The implementation using tensordot, but it is slower than the implementation above.
+        // conv2d(
+        //     self.stride,
+        //     self.padding,
+        //     &self.w.get_tensor(),
+        //     Some(&self.b.get_tensor()),
+        //     &x,
+        // )
     }
 
     fn all_params(&self) -> Vec<Param> {
@@ -104,4 +117,154 @@ fn test_conv2d() {
 
     let grads = gradients(&[y], &[x.clone()], true);
     dbg!(&*grads[0]);
+}
+
+pub fn conv2d(
+    stride: [usize; 2],
+    padding: [usize; 2],
+    kernel: &Tensor,
+    bias: Option<&Tensor>,
+    x: &Tensor,
+) -> Tensor {
+    let kh = kernel.shape()[2];
+    let kw = kernel.shape()[3];
+
+    let col = im2col(x, [kh, kw], stride, padding, false);
+
+    let mut y = ndarray_util::tensordot(
+        &col,
+        kernel,
+        &[Axis(1), Axis(2), Axis(3)],
+        &[Axis(1), Axis(2), Axis(3)],
+    );
+
+    if let Some(bias) = bias {
+        y += &**bias;
+    }
+    y = y.permuted_axes(&[0, 3, 1, 2][..]);
+
+    let y = Tensor::new(y.into_ndarray());
+
+    let mut xs = vec![x.clone(), kernel.clone()];
+    xs.extend(bias.cloned());
+    chain(&xs, &[y.clone()], false, "conv2d", move |xs, _, gys| {
+        let gx = conv2d_transposed(
+            stride,
+            padding,
+            [xs[0].shape()[2], xs[0].shape()[3]],
+            &xs[1],
+            None,
+            &gys[0],
+        );
+        let gw = conv2d_grad_w(stride, padding, [kh, kw], &xs[0], &gys[0]);
+
+        match xs.len() {
+            2 => {
+                vec![gx, gw]
+            }
+            3 => {
+                let gb = gys[0].sum(vec![0, 2, 3], false);
+                vec![gx, gw, gb]
+            }
+            _ => panic!(),
+        }
+    });
+
+    y
+}
+
+pub fn conv2d_transposed(
+    stride: [usize; 2],
+    padding: [usize; 2],
+    out_size: [usize; 2],
+    kernel: &Tensor,
+    bias: Option<&Tensor>,
+    x: &Tensor,
+) -> Tensor {
+    let kh = kernel.shape()[2];
+    let kw = kernel.shape()[3];
+
+    let img_shape = [x.shape()[0], x.shape()[1], out_size[0], out_size[1]];
+
+    let gcol = ndarray_util::tensordot(kernel, x, &[Axis(0)], &[Axis(1)]);
+    let gcol = gcol.permuted_axes(&[3, 0, 1, 2, 4, 5][..]);
+    let mut y = col2im(
+        &gcol.into_ndarray(),
+        img_shape,
+        [kh, kw],
+        stride,
+        padding,
+        false,
+    );
+
+    if let Some(bias) = bias {
+        y += &(**bias).reshape([1, bias.len(), 1, 1]);
+    }
+
+    let y = Tensor::new(y);
+
+    let mut xs = vec![x.clone(), kernel.clone()];
+    xs.extend(bias.cloned());
+    chain(
+        &xs,
+        &[y.clone()],
+        false,
+        "conv2d_transposed",
+        move |xs, _, gys| {
+            let gx = conv2d(stride, padding, &xs[1], None, &gys[0]);
+            let gw = conv2d_grad_w(stride, padding, [kh, kw], &gys[0], &xs[0]);
+
+            match xs.len() {
+                2 => {
+                    vec![gx, gw]
+                }
+                3 => {
+                    let gb = gys[0].sum(vec![0, 2, 3], false);
+                    vec![gx, gw, gb]
+                }
+                _ => panic!(),
+            }
+        },
+    );
+
+    y
+}
+
+pub fn conv2d_grad_w(
+    stride: [usize; 2],
+    padding: [usize; 2],
+    kernel_size: [usize; 2],
+    x: &Tensor,
+    gy: &Tensor,
+) -> Tensor {
+    let col = im2col(x, kernel_size, stride, padding, false);
+
+    let gw = ndarray_util::tensordot(
+        gy,
+        &col,
+        &[Axis(0), Axis(2), Axis(3)],
+        &[Axis(0), Axis(4), Axis(5)],
+    );
+    let gw = Tensor::new(gw.into_ndarray());
+
+    chain(
+        &[x.clone(), gy.clone()],
+        &[gw.clone()],
+        false,
+        "conv2d_grad_w",
+        move |xs, ys, _| {
+            let gx = conv2d_transposed(
+                stride,
+                padding,
+                [xs[0].shape()[2], xs[0].shape()[3]],
+                &ys[0],
+                None,
+                &xs[1],
+            );
+            let ggy = conv2d(stride, padding, &ys[0], None, &xs[0]);
+            vec![gx, ggy]
+        },
+    );
+
+    gw
 }

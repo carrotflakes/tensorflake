@@ -21,7 +21,7 @@ I'm aiming to be able to train several networks on the CPU fast.
 - [x] Impl ops
 - [ ] Lazy execution for optimization on the graph
 - [x] Regularization
-- [ ] Tensordot
+- [x] Tensordot -> [ndarray_einsum_beta](https://crates.io/crates/ndarray_einsum_beta)
 - [ ] Transposed convolution
 - [ ] Batch normalization
 - [ ] Embedding
