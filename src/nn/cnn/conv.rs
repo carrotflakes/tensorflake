@@ -134,30 +134,36 @@ impl Layer for Conv2d {
 fn test_conv2d() {
     use ndarray::prelude::*;
     let x = backprop(
-        Array::from_shape_vec((1, 3, 4, 4), (0..16 * 3).map(|x| x as f32).collect())
+        Array::from_shape_vec((1, 2, 3, 4), (0..24).map(|x| x as f32).collect())
             .unwrap()
             .into_ndarray(),
     );
-    let w = Array::from_shape_vec((3, 3, 3, 3), (0..3usize.pow(4)).map(|x| x as f32).collect())
+    let w = Array::from_shape_vec((5, 2, 3, 3), (0..5 * 2 * 3 * 3).map(|x| x as f32).collect())
         .unwrap()
         .into_ndarray();
-    let b = Array::from_shape_vec((3,), (0..3).map(|x| x as f32).collect())
+    let b = Array::from_shape_vec((5,), (0..5).map(|x| x as f32).collect())
         .unwrap()
         .into_ndarray();
     let conv = Conv2d {
         kernel_size: [3, 3],
         stride: [1, 1],
         padding: [1, 1],
-        w: Param::new(w, optimizers::Fixed),
-        b: Some(Param::new(b, optimizers::Fixed)),
+        w: Param::new(w.clone(), optimizers::Fixed),
+        b: Some(Param::new(b.clone(), optimizers::Fixed)),
     };
     let y = conv.call(x.clone(), false);
-    assert_eq!(y.shape(), &[1, 3, 4, 4]);
+    assert_eq!(y.shape(), &[1, 5, 3, 4]);
     dbg!(&*y);
     // export_dot::export_dot(&y, "conv2d.dot").unwrap();
 
-    let grads = gradients(&[y], &[x.clone()], true);
-    dbg!(&*grads[0]);
+    let grads = gradients(&[y.clone()], &[x.clone()], true);
+    // dbg!(&*grads[0]);
+
+    let y2 = conv2d([1, 1], [1, 1], &Tensor::new(w), Some(&Tensor::new(b)), &x);
+    assert_eq!(&*y, &*y2);
+
+    let grads2 = gradients(&[y2.clone()], &[x.clone()], true);
+    assert_eq!(&*grads[0], &*grads2[0]);
 }
 
 pub struct Conv2dTranspose {
@@ -325,7 +331,7 @@ pub fn conv2d_transpose(
     let kh = kernel.shape()[2];
     let kw = kernel.shape()[3];
 
-    let img_shape = [x.shape()[0], x.shape()[1], out_size[0], out_size[1]];
+    let img_shape = [x.shape()[0], kernel.shape()[1], out_size[0], out_size[1]];
 
     let gcol = ndarray_util::tensordot(kernel, x, &[Axis(0)], &[Axis(1)]);
     // gcol: [in_ch, kh, kw, batch_size, oh, ow]

@@ -18,7 +18,7 @@ use tensorflake::{
 use training::TrainingConfig;
 
 fn main() {
-    let mnist = data::mnist::Mnist::load("./data/mnist");
+    let mnist = data::mnist::Mnist::load("./data/fashion-mnist");
 
     let model = Model::new();
     // param_bin::params_summary(&model.all_params());
