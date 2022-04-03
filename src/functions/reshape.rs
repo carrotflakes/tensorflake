@@ -29,14 +29,7 @@ impl Function for Reshape {
     ) -> Vec<crate::Tensor> {
         #![allow(unused_variables)]
 
-        vec![Tensor::new(
-            (*gys[0])
-                .broadcast(self.shape.as_slice())
-                .unwrap()
-                .to_shape(self.original_shape.as_slice())
-                .unwrap()
-                .into_ndarray(),
-        )]
+        vec![gys[0].reshape(self.original_shape.as_slice())]
     }
 
     fn into_backward(mut self, xs: &Vec<crate::Tensor>) -> Box<dyn crate::Backward>

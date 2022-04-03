@@ -42,6 +42,7 @@ impl Layer for Conv2d {
     where
         Self: Sized + 'static,
     {
+        assert_eq!(x.ndim(), 4);
         let oh = get_conv_outsize(
             x.shape()[2],
             self.kernel_size[0],
@@ -230,6 +231,26 @@ impl Layer for Conv2dTranspose {
         }
 
         y
+
+        // if let Some(b) = &self.b {
+        //     conv2d_transpose(
+        //         self.stride,
+        //         self.padding,
+        //         self.out_size,
+        //         &self.w.get_tensor(),
+        //         Some(&b.get_tensor()),
+        //         &x,
+        //     )
+        // } else {
+        //     conv2d_transpose(
+        //         self.stride,
+        //         self.padding,
+        //         self.out_size,
+        //         &self.w.get_tensor(),
+        //         None,
+        //         &x,
+        //     )
+        // }
     }
 
     fn all_params(&self) -> Vec<Param> {

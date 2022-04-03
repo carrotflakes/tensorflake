@@ -38,10 +38,10 @@ impl<T> TrainingConfig<T> {
 }
 
 pub struct Training<T> {
-    config: TrainingConfig<T>,
+    pub config: TrainingConfig<T>,
     rng: rand_isaac::Isaac64Rng,
     shuffle_table: Vec<usize>,
-    epoch: usize,
+    pub epoch: usize,
 }
 
 impl<T> Training<T> {

@@ -28,6 +28,7 @@ I'm aiming to be able to train several networks on the CPU fast.
 - [ ] Benchmarks
 - [ ] Measure the execution time of functions and export it as dot file
 - [ ] Tensor summarization
+- [ ] Sparse tensor
 - [ ] Examples
   - [ ] CNN -> too slow...
   - [ ] RNN
