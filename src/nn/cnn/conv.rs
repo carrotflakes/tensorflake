@@ -12,8 +12,8 @@ pub struct Conv2d {
     pub kernel_size: [usize; 2],
     pub stride: [usize; 2],
     pub padding: [usize; 2],
-    pub w: Param, // [out_ch, in_ch, kh, kw]
-    pub b: Param, // [out_ch]
+    pub w: Param,         // [out_ch, in_ch, kh, kw]
+    pub b: Option<Param>, // [out_ch]
 }
 
 impl Conv2d {
@@ -22,7 +22,7 @@ impl Conv2d {
         stride: [usize; 2],
         padding: [usize; 2],
         w: Param,
-        b: Param,
+        b: Option<Param>,
     ) -> Self {
         Self {
             kernel_size,
@@ -69,8 +69,11 @@ impl Layer for Conv2d {
             )
         );
         // w: [in_ch * kh * kw, out_ch]
-        let b = self.b.get_tensor();
-        let t = matmul_add(&col, &kernel, &b);
+        let t = if let Some(b) = &self.b {
+            matmul_add(&col, &kernel, &b.get_tensor())
+        } else {
+            col.matmul(&kernel)
+        };
         // t: [batch_size * oh * ow, out_ch]
         let y = call!(
             Transpose::new(vec![0, 3, 1, 2]),
@@ -122,7 +125,7 @@ impl Layer for Conv2d {
     }
 
     fn all_params(&self) -> Vec<Param> {
-        vec![self.w.clone(), self.b.clone()]
+        [self.w.clone()].into_iter().chain(self.b.clone()).collect()
     }
 }
 
@@ -145,7 +148,7 @@ fn test_conv2d() {
         stride: [1, 1],
         padding: [1, 1],
         w: Param::new(w, optimizers::Fixed),
-        b: Param::new(b, optimizers::Fixed),
+        b: Some(Param::new(b, optimizers::Fixed)),
     };
     let y = conv.call(x.clone(), false);
     assert_eq!(y.shape(), &[1, 3, 4, 4]);
