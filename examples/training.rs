@@ -12,6 +12,7 @@ pub struct TrainingConfig<T> {
     pub validation_data: Vec<T>,
     pub validation_rate: f32,
     pub batch_size: usize,
+    pub shuffle: bool,
     pub parallel: bool,
     pub update_async: bool,
 }
@@ -25,6 +26,7 @@ impl<T> Default for TrainingConfig<T> {
             validation_data: Default::default(),
             validation_rate: 0.0,
             batch_size: 32,
+            shuffle: true,
             parallel: false,
             update_async: false,
         }
@@ -70,7 +72,9 @@ impl<T: Sync + Send> Training<T> {
         F: Fn(&[&T], &mut ExecutionContext) + Sync + Send,
     {
         self.epoch += 1;
-        self.shuffle_table.shuffle(&mut self.rng);
+        if self.config.shuffle {
+            self.shuffle_table.shuffle(&mut self.rng);
+        }
 
         let do_validation = self.epoch
             == ((self.epoch as f32 * self.config.validation_rate).ceil()
