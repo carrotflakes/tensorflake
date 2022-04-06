@@ -7,13 +7,13 @@ I'm aiming to be able to train several networks on the CPU fast.
 
 - [ ] smallvec
 - [x] backward without create_graph
-- [x] Is Backward removable? -> currently NO because the Function trait is not object-safe.
 - [x] Adam
 - [x] Efficient Linear -> matmul_add
 - [ ] Save & load -> param_bin.rs
-  - [ ] Save the structure
+  - [ ] Save the structure -> serde?
 - [x] Dropout
 - [x] Strong typing -> Functional API (tensorflake::function::chain)
+  - [ ] Generic for dimension
 - [ ] Multi thread -> see examples/coin.rs
   - [ ] High level API
   - [ ] Synchronous update
@@ -22,9 +22,9 @@ I'm aiming to be able to train several networks on the CPU fast.
 - [ ] Lazy execution for optimization on the graph
 - [x] Regularization
 - [x] Tensordot -> [ndarray_einsum_beta](https://crates.io/crates/ndarray_einsum_beta)
-- [ ] Transposed convolution
+- [x] Transposed convolution
 - [ ] Batch normalization
-- [ ] Embedding
+- [x] Embedding
 - [ ] Benchmarks
 - [ ] Measure the execution time of functions and export it as dot file
 - [ ] Tensor summarization
@@ -38,6 +38,13 @@ I'm aiming to be able to train several networks on the CPU fast.
 - [x] safe rust
 - [ ] Compare performance against GPU Tensorflow
 - [ ] Fitting report
+- [ ] Generic ndarray
+
+## Benchmark
+
+``` sh
+$ cargo +nightly bench -q > benches/result.txt
+```
 
 ## Author
 
