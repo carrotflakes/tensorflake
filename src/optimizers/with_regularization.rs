@@ -26,10 +26,6 @@ impl<O: Optimizer, R: Regularizer> Optimizer for WithRegularization<O, R> {
         let grad = (grad + &*self.regularizer.call(tensor)).into_ndarray();
         self.optimizer.update(tensor, state, &grad);
     }
-
-    fn create_graph(&self) -> bool {
-        self.optimizer.create_graph()
-    }
 }
 
 #[test]

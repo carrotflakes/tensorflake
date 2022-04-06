@@ -20,8 +20,4 @@ impl Optimizer for Fixed {
     fn update(&mut self, tensor: &mut Tensor, state: &mut Self::State, grad: &NDArray) {
         #![allow(unused_variables)]
     }
-
-    fn create_graph(&self) -> bool {
-        false
-    }
 }

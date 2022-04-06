@@ -31,10 +31,6 @@ impl<T: Optimizer> ParamInnerT for ParamInner<T> {
         self.optimizer
             .update(&mut self.tensor, &mut self.state, grad);
     }
-
-    fn create_graph(&self) -> bool {
-        self.optimizer.create_graph()
-    }
 }
 
 struct ParamInnerShared<T: Optimizer> {
@@ -56,9 +52,27 @@ impl<T: Optimizer> ParamInnerT for ParamInnerShared<T> {
         let mut optimizer = self.optimizer.lock().unwrap().clone();
         optimizer.update(&mut self.tensor, &mut self.state, grad);
     }
+}
+
+struct ParamInnerFixed {
+    tensor: Tensor,
+}
+
+impl ParamInnerT for ParamInnerFixed {
+    fn tensor_ref(&self) -> &Tensor {
+        &self.tensor
+    }
+
+    fn set(&mut self, tensor: Tensor) {
+        self.tensor = tensor;
+    }
+
+    fn update(&mut self, grad: &NDArray) {
+        drop(grad);
+    }
 
     fn create_graph(&self) -> bool {
-        self.optimizer.lock().unwrap().create_graph()
+        false
     }
 }
 
@@ -83,6 +97,14 @@ impl Param {
             inner: Arc::new(Mutex::new(ParamInnerShared {
                 state,
                 optimizer,
+                tensor: ndarray.into(),
+            })),
+        }
+    }
+
+    pub fn new_fixed(ndarray: NDArray) -> Param {
+        Param {
+            inner: Arc::new(Mutex::new(ParamInnerFixed {
                 tensor: ndarray.into(),
             })),
         }
