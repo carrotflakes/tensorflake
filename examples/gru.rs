@@ -17,7 +17,7 @@ use tensorflake::{
     *,
 };
 
-use crate::training::TrainingConfig;
+use crate::training::TrainConfig;
 
 fn main() {
     // let mut data = data::arith::make(10000, 42, 15);
@@ -68,7 +68,7 @@ fn main() {
 
     let start = std::time::Instant::now();
 
-    let mut training = TrainingConfig {
+    let mut train = TrainConfig {
         epoch: 30,
         train_data: data,
         batch_size: 100,
@@ -76,9 +76,9 @@ fn main() {
         ..Default::default()
     }
     .build();
-    while !training.is_end() {
-        optimizer.lock().unwrap().learning_rate = lr * 0.95f32.powi(training.epoch as i32);
-        training.fit_one_epoch(|strs, ctx| {
+    while !train.is_end() {
+        optimizer.lock().unwrap().learning_rate = lr * 0.95f32.powi(train.epoch as i32);
+        train.fit_one_epoch(|strs, ctx| {
             let initial_state = Tensor::new(NDArray::zeros(&[strs.len(), state_size][..]));
             let eqp = 10;
             let mut x = vec![vec![]; 50 - 1];

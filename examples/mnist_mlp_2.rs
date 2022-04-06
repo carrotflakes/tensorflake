@@ -8,7 +8,7 @@ use tensorflake::{
     *,
 };
 
-use crate::training::TrainingConfig;
+use crate::training::TrainConfig;
 
 fn main() {
     let mnist = data::mnist::Mnist::load("./data/mnist");
@@ -35,7 +35,7 @@ fn main() {
 
     let start = std::time::Instant::now();
 
-    TrainingConfig {
+    TrainConfig {
         epoch: 30,
         train_data: mnist.trains().collect(),
         validation_data: mnist.tests().collect(),
@@ -60,11 +60,7 @@ fn main() {
         let t: Vec<_> = batch.iter().map(|x| x.1 as usize).collect();
         let y = mlp.call(x.clone(), true);
         let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
-        if ctx.train {
-            optimize(&loss);
-        }
-        ctx.count(batch.len());
-        ctx.add_metric(metrics::Loss::new(loss[[]], batch.len()));
+        ctx.finish_batch(&loss, batch.len());
         ctx.add_metric(metrics::argmax_accuracy(&t, &y));
     });
 

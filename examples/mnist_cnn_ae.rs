@@ -15,7 +15,7 @@ use tensorflake::{
     *,
 };
 
-use training::TrainingConfig;
+use training::TrainConfig;
 
 fn main() {
     let mnist = data::mnist::Mnist::load("./data/fashion-mnist");
@@ -25,7 +25,7 @@ fn main() {
 
     let start = std::time::Instant::now();
 
-    let mut train = TrainingConfig {
+    let mut train = TrainConfig {
         epoch: 10,
         train_data: mnist.trains().collect(),
         validation_data: mnist.tests().collect(),
