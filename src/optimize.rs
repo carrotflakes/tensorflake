@@ -1,9 +1,9 @@
 use crate::*;
 
-pub fn optimize(loss: &Tensor, lr: f32) {
+pub fn optimize(loss: &Tensor) {
     let mut ga = GradientsAccumulator::new();
     ga.compute(loss);
-    ga.optimize(lr);
+    ga.optimize();
 }
 
 pub struct GradientsAccumulator {
@@ -35,9 +35,9 @@ impl GradientsAccumulator {
         }
     }
 
-    pub fn optimize(&mut self, lr: f32) {
+    pub fn optimize(&mut self) {
         for (param, grad) in &self.table {
-            param.update(grad, lr);
+            param.update(grad);
         }
         self.table.clear();
     }

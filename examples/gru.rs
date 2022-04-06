@@ -1,10 +1,12 @@
 mod data;
 mod training;
 
+use std::sync::{Arc, Mutex};
+
 use ndarray::prelude::*;
 use ndarray_rand::{
     rand::{prelude::*, SeedableRng},
-    rand_distr::Uniform,
+    rand_distr::{Normal, Uniform},
     RandomExt,
 };
 use tensorflake::{
@@ -33,7 +35,7 @@ fn main() {
 
     // let optimizer = optimizers::SGDOptimizer::new();
     // let lr = 0.1;
-    let optimizer = optimizers::AdamOptimizer::new();
+    let optimizer = Arc::new(Mutex::new(optimizers::AdamOptimizer::new()));
     // let optimizer = optimizers::WithRegularization::new(optimizer, regularizers::L2::new(0.001));
     let lr = 0.0001;
 
@@ -43,13 +45,15 @@ fn main() {
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let mut param_gen = {
         let mut rng = rng.clone();
+        let optimizer = optimizer.clone();
         move || {
             rng.gen::<u32>();
             let mut rng = rng.clone();
             let optimizer = optimizer.clone();
             move |shape: &[usize]| -> Param {
-                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                Param::new(t, optimizer.clone())
+                let t = Array::random_using(shape, Normal::new(0., 0.1).unwrap(), &mut rng)
+                    .into_ndarray();
+                Param::new_shared(t, optimizer.clone())
             }
         }
     };
@@ -73,6 +77,7 @@ fn main() {
     }
     .build();
     while !training.is_end() {
+        optimizer.lock().unwrap().learning_rate = lr * 0.95f32.powi(training.epoch as i32);
         training.fit_one_epoch(|strs, ctx| {
             let initial_state = Tensor::new(NDArray::zeros(&[strs.len(), state_size][..]));
             let eqp = 10;
@@ -109,7 +114,7 @@ fn main() {
             let yy = output_fn(yy);
             let loss = call!(SoftmaxCrossEntropy::new(t), yy);
             if ctx.train {
-                optimize(&loss, lr * 0.95f32.powi(ctx.epoch as i32));
+                optimize(&loss);
             }
             ctx.count(strs.len());
             ctx.add_metric(metrics::Loss::new(loss[[]], strs.len()));

@@ -4,7 +4,8 @@ use crate::*;
 
 #[derive(Clone)]
 pub struct MomentumSGDOptimizer {
-    momentum: f32,
+    pub learning_rate: f32,
+    pub momentum: f32,
 }
 
 pub struct State {
@@ -12,8 +13,11 @@ pub struct State {
 }
 
 impl MomentumSGDOptimizer {
-    pub fn new(momentum: f32) -> Self {
-        MomentumSGDOptimizer { momentum }
+    pub fn new(learning_rate: f32, momentum: f32) -> Self {
+        MomentumSGDOptimizer {
+            learning_rate,
+            momentum,
+        }
     }
 }
 
@@ -26,15 +30,15 @@ impl Optimizer for MomentumSGDOptimizer {
         }
     }
 
-    fn update(&mut self, tensor: &mut Tensor, state: &mut Self::State, grad: &NDArray, lr: f32) {
+    fn update(&mut self, tensor: &mut Tensor, state: &mut Self::State, grad: &NDArray) {
         tensor.cut_chain();
         state.velocity *= self.momentum;
-        state.velocity += &grad.mul(scalar(-lr));
+        state.velocity += &grad.mul(scalar(-self.learning_rate));
         *tensor = &*tensor + &state.velocity.clone().into();
     }
 }
 
 #[test]
 fn test() {
-    super::test_optimizer(MomentumSGDOptimizer::new(0.9), 0.01);
+    super::test_optimizer(MomentumSGDOptimizer::new(0.01, 0.9));
 }

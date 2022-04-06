@@ -1,5 +1,3 @@
-use std::thread::sleep;
-
 use ndarray_rand::rand::prelude::*;
 use rayon::prelude::*;
 use tensorflake::*;
@@ -219,7 +217,7 @@ fn main() {
     }
     .build()
     .fit(|batch, ctx| {
-        sleep(std::time::Duration::from_millis(50));
+        std::thread::sleep(std::time::Duration::from_millis(50));
         ctx.count(batch.len());
         ctx.add_metric(metrics::Loss::new(0.0, batch.len()));
     })

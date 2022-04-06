@@ -62,7 +62,7 @@ fn main() {
 
         // graph(&[loss.clone()], format!("loss{}", i));
 
-        optimize(&loss, 0.1);
+        optimize(&loss);
     }
     for i in 0..20 {
         let x = Tensor::new(array![[i as f32 / 20.0]].into_ndarray());

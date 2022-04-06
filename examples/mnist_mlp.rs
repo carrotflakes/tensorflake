@@ -43,7 +43,7 @@ fn main() {
             let x = Tensor::new(x);
             let y = mlp.call(x.clone(), true);
             let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
-            optimize(&loss, 0.001); // MomentumSGD: 0.1, Adam: 0.001
+            optimize(&loss); // MomentumSGD: 0.1, Adam: 0.001
             train_loss += loss[[]] * t.len() as f32;
             trn_acc += argmax_accuracy(&t, &y).value() * t.len() as f32;
         }

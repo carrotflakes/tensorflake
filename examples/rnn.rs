@@ -48,7 +48,7 @@ fn main() {
             let loss = call!(SoftmaxCrossEntropy::new(arith::encode(&str[eqp + 1..])), yy);
             gradients.compute(&loss);
             if i % 10 == 0 {
-                gradients.optimize(0.01 * 0.95f32.powi(e));
+                gradients.optimize();
             }
             if i % 5000 == 0 {
                 // println!("{:?}", &*y[1]);
@@ -87,7 +87,7 @@ impl Model {
                 move |shape: &[usize]| -> Param {
                     let t =
                         Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                    Param::new(t, optimizers::SGDOptimizer::new())
+                    Param::new(t, optimizers::SGDOptimizer::new(0.01))
                     // AdamOptimizee::new(t)
                 }
             }

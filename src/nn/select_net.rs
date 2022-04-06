@@ -109,7 +109,7 @@ fn test() {
     let loss = losses::naive_mean_squared_error(y.0.clone(), t);
     dbg!(loss[[]]);
     // export_dot::export_dot(&[loss.clone()], &format!("select_net.dot")).unwrap();
-    optimize(&loss, 0.1);
+    optimize(&loss);
 
     let y = select_net.build().call(x.clone(), true);
     dbg!(&*y.0);

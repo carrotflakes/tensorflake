@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use image::{DynamicImage, GenericImageView};
 use ndarray::prelude::*;
 use ndarray_rand::{
@@ -15,15 +17,18 @@ fn main() {
         .decode()
         .unwrap();
 
+    let optimizer = Arc::new(Mutex::new(optimizers::AdamOptimizer::new()));
     let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
     let param_gen = {
         rng.gen::<u32>();
         let rng = rng.clone();
+        let optimizer = optimizer.clone();
         move || {
             let mut rng = rng.clone();
+            let optimizer = optimizer.clone();
             move |shape: &[usize]| -> Param {
                 let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                Param::new(t, optimizers::AdamOptimizer::new())
+                Param::new_shared(t, optimizer.clone())
             }
         }
     };
@@ -41,7 +46,7 @@ fn main() {
         if !ctx.train {
             continue;
         }
-        let lr = 0.002 * 0.95f32.powi(ctx.epoch as i32); // MomentumSGD: 0.1, Adam: 0.001
+        optimizer.lock().unwrap().learning_rate = 0.002 * 0.95f32.powi(ctx.epoch as i32); // MomentumSGD: 0.1, Adam: 0.001
         if use_parallel {
             use rayon::prelude::*;
             let batches: Vec<_> = mini_batches(&img, batch_size, &mut rng);
@@ -53,7 +58,7 @@ fn main() {
                     let y = model.call(x.clone(), ctx.train);
                     let loss = naive_mean_squared_error(t.clone(), y.clone());
                     if ctx.train {
-                        optimize(&loss, lr);
+                        optimize(&loss);
                     }
                     let mut metrics = Metrics::new();
                     metrics.count(*len);
@@ -75,7 +80,7 @@ fn main() {
                 let y = model.call(x.clone(), ctx.train);
                 let loss = naive_mean_squared_error(t.clone(), y.clone());
                 if ctx.train {
-                    optimize(&loss, lr);
+                    optimize(&loss);
                 }
                 ctx.count(len);
                 ctx.add_metric(metrics::Loss::new(loss[[]], len));

@@ -61,7 +61,7 @@ fn main() {
         let y = mlp.call(x.clone(), true);
         let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
         if ctx.train {
-            optimize(&loss, 0.001);
+            optimize(&loss);
         }
         ctx.count(batch.len());
         ctx.add_metric(metrics::Loss::new(loss[[]], batch.len()));

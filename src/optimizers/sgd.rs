@@ -3,11 +3,13 @@ use std::ops::Mul;
 use crate::*;
 
 #[derive(Clone)]
-pub struct SGDOptimizer;
+pub struct SGDOptimizer {
+    pub learning_rate: f32,
+}
 
 impl SGDOptimizer {
-    pub fn new() -> Self {
-        SGDOptimizer
+    pub fn new(learning_rate: f32) -> Self {
+        SGDOptimizer { learning_rate }
     }
 }
 
@@ -19,14 +21,14 @@ impl Optimizer for SGDOptimizer {
         ()
     }
 
-    fn update(&mut self, tensor: &mut Tensor, state: &mut Self::State, grad: &NDArray, lr: f32) {
+    fn update(&mut self, tensor: &mut Tensor, state: &mut Self::State, grad: &NDArray) {
         drop(state);
         tensor.cut_chain();
-        *tensor = &*tensor + &grad.mul(scalar(-lr)).into();
+        *tensor = &*tensor + &grad.mul(scalar(-self.learning_rate)).into();
     }
 }
 
 #[test]
 fn test() {
-    super::test_optimizer(SGDOptimizer::new(), 0.01);
+    super::test_optimizer(SGDOptimizer::new(0.01));
 }

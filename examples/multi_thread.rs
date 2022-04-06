@@ -22,7 +22,7 @@ fn main() {
             let mut rng = rng.clone();
             move |shape: &[usize]| -> Param {
                 let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                Param::new(t, optimizers::SGDOptimizer::new())
+                Param::new(t, optimizers::SGDOptimizer::new(0.01))
             }
         }
     };
@@ -43,7 +43,7 @@ fn main() {
         &mut param_gen(),
     );
 
-    for e in 0..30 {
+    for _ in 0..30 {
         let loss = y
             .par_chunks(100)
             .map(|data| {
@@ -61,7 +61,7 @@ fn main() {
                 .into_ndarray();
                 let ys = mlp.call(xs.into(), true);
                 let loss = naive_mean_squared_error(ys.into(), ts.into());
-                optimize(&loss, 0.01 * 0.95f32.powi(e));
+                optimize(&loss);
                 loss[[]] * data.len() as f32
             })
             .reduce(|| 0.0, |acc, x| acc + x)

@@ -5,7 +5,7 @@ use crate::*;
 trait ParamInnerT: Sync + Send + 'static {
     fn tensor_ref(&self) -> &Tensor;
     fn set(&mut self, tensor: Tensor);
-    fn update(&mut self, grad: &NDArray, lr: f32);
+    fn update(&mut self, grad: &NDArray);
 
     fn create_graph(&self) -> bool {
         true
@@ -27,13 +27,38 @@ impl<T: Optimizer> ParamInnerT for ParamInner<T> {
         self.tensor = tensor;
     }
 
-    fn update(&mut self, grad: &NDArray, lr: f32) {
+    fn update(&mut self, grad: &NDArray) {
         self.optimizer
-            .update(&mut self.tensor, &mut self.state, grad, lr);
+            .update(&mut self.tensor, &mut self.state, grad);
     }
 
     fn create_graph(&self) -> bool {
         self.optimizer.create_graph()
+    }
+}
+
+struct ParamInnerShared<T: Optimizer> {
+    tensor: Tensor,
+    optimizer: Arc<Mutex<T>>,
+    state: T::State,
+}
+
+impl<T: Optimizer> ParamInnerT for ParamInnerShared<T> {
+    fn tensor_ref(&self) -> &Tensor {
+        &self.tensor
+    }
+
+    fn set(&mut self, tensor: Tensor) {
+        self.tensor = tensor;
+    }
+
+    fn update(&mut self, grad: &NDArray) {
+        let mut optimizer = self.optimizer.lock().unwrap().clone();
+        optimizer.update(&mut self.tensor, &mut self.state, grad);
+    }
+
+    fn create_graph(&self) -> bool {
+        self.optimizer.lock().unwrap().create_graph()
     }
 }
 
@@ -46,6 +71,17 @@ impl Param {
         Param {
             inner: Arc::new(Mutex::new(ParamInner {
                 state: optimizer.new_state(&ndarray.shape()),
+                optimizer,
+                tensor: ndarray.into(),
+            })),
+        }
+    }
+
+    pub fn new_shared<T: Optimizer>(ndarray: NDArray, optimizer: Arc<Mutex<T>>) -> Param {
+        let state = optimizer.lock().unwrap().new_state(&ndarray.shape());
+        Param {
+            inner: Arc::new(Mutex::new(ParamInnerShared {
+                state,
                 optimizer,
                 tensor: ndarray.into(),
             })),
@@ -73,9 +109,9 @@ impl Param {
         inner.set(Tensor::new(ndarray));
     }
 
-    pub fn update(&self, grad: &Tensor, lr: f32) {
+    pub fn update(&self, grad: &Tensor) {
         let mut inner = self.inner.lock().unwrap();
-        inner.update(&grad, lr);
+        inner.update(&grad);
     }
 }
 

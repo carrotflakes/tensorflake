@@ -15,7 +15,7 @@ fn main() {
     let model = Model::new();
     param_bin::params_summary(&model.all_params());
 
-    let batch_size = 20;
+    let batch_size = 100;
 
     let start = std::time::Instant::now();
 
@@ -31,7 +31,7 @@ fn main() {
                 let y = model.call(x.clone(), ctx.train);
                 let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
                 if ctx.train {
-                    optimize(&loss, 0.0005); // MomentumSGD: 0.1, Adam: 0.001
+                    optimize(&loss); // MomentumSGD: 0.1, Adam: 0.001
                 }
                 let mut metrics = Metrics::new();
                 metrics.count(t.len());

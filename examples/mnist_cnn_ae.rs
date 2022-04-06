@@ -31,7 +31,7 @@ fn main() {
         validation_data: mnist.tests().collect(),
         validation_rate: 0.1,
         batch_size: 32,
-        parallel: true,
+        parallel: false,
         ..Default::default()
     }
     .build();
@@ -51,7 +51,7 @@ fn main() {
             let y = model.call(x.clone(), ctx.train);
             let loss = naive_mean_squared_error(x.clone(), y.clone());
             if ctx.train {
-                optimize(&loss, 0.001);
+                optimize(&loss);
             }
             ctx.count(batch.len());
             ctx.add_metric(metrics::Loss::new(loss[[]], batch.len()));

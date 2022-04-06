@@ -68,11 +68,11 @@ impl Regularizer for L1L2 {
 fn test() {
     let p = Param::new(
         ndarray::array![1., 2., 3.].into_ndarray(),
-        optimizers::SGDOptimizer,
+        optimizers::SGDOptimizer::new(1.0),
     );
     let l1 = L1::new(1.0);
     let loss = l1.call(&p.get_tensor());
-    optimize(&loss, 1.0);
+    optimize(&loss);
     assert_eq!(
         &*p.get_tensor(),
         &ndarray::array![0., 1., 2.].into_ndarray()
@@ -80,11 +80,11 @@ fn test() {
 
     let p = Param::new(
         ndarray::array![1., 2., 3.].into_ndarray(),
-        optimizers::SGDOptimizer,
+        optimizers::SGDOptimizer::new(1.0),
     );
     let l2 = L2::new(0.25);
     let loss = l2.call(&p.get_tensor());
-    optimize(&loss, 1.0);
+    optimize(&loss);
     assert_eq!(
         &*p.get_tensor(),
         &ndarray::array![0.5, 1.0, 1.5].into_ndarray()
