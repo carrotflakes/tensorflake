@@ -81,6 +81,13 @@ impl Tensor {
         call!(functions::Slice::new(slice_arg), self)
     }
 
+    pub fn slices<I: ndarray::SliceArg<ndarray::IxDyn> + Clone + Sync + Send + 'static>(
+        &self,
+        slice_args: Vec<I>,
+    ) -> Vec<Tensor> {
+        functions::Slices::new(slice_args).call(vec![self.clone()])
+    }
+
     pub fn sum(&self, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Tensor {
         call!(functions::Sum::new(axes.into(), keep_dim), self)
     }

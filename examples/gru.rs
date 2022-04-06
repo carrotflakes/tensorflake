@@ -10,7 +10,7 @@ use ndarray_rand::{
 use tensorflake::{
     functions::*,
     losses::SoftmaxCrossEntropy,
-    ndarray_util::{argmax, onehot},
+    ndarray_util::argmax,
     nn::{activations::Sigmoid, *},
     *,
 };
@@ -29,12 +29,13 @@ fn main() {
         .collect::<Vec<_>>();
     let vocab_size = vocab.size();
     println!("data size: {}", data.len());
+    println!("vocab size: {}", vocab_size);
 
     // let optimizer = optimizers::SGDOptimizer::new();
     // let lr = 0.1;
     let optimizer = optimizers::AdamOptimizer::new();
     // let optimizer = optimizers::WithRegularization::new(optimizer, regularizers::L2::new(0.001));
-    let lr = 0.0002;
+    let lr = 0.0001;
 
     let norm =
         normalization::Normalization::new(vec![0, 1], 0.001, optimizers::AdamOptimizer::new());
@@ -53,8 +54,10 @@ fn main() {
         }
     };
 
-    let state_size = 64;
-    let model = Gru::new(vocab_size, state_size, &mut param_gen());
+    let embedding_size = 64;
+    let state_size = 128;
+    let embedding = Embedding::new(embedding_size, vocab_size, &mut param_gen());
+    let model = Gru::new(embedding_size, state_size, &mut param_gen());
     let linear = Linear::new(state_size, vocab_size, &mut param_gen(), &mut param_gen());
     // let output_fn = |x: Tensor| linear.call(x, true);
     let output_fn = |x: Tensor| linear.call(norm.call(x, true), true);
@@ -93,7 +96,8 @@ fn main() {
             let x = x
                 .into_iter()
                 .map(|x| {
-                    onehot(&Array::from_shape_vec([strs.len()], x).unwrap(), vocab_size).into()
+                    // onehot(&Array::from_shape_vec([strs.len()], x).unwrap(), vocab_size).into()
+                    embedding.call(x, ctx.train)
                 })
                 .collect::<Vec<_>>();
             let t = t.into_iter().flatten().collect();
@@ -118,7 +122,9 @@ fn main() {
                 &mut rng,
             )),
             output_fn,
-            |x| onehot(&argmax(&*x), vocab_size).into(),
+            |x|
+            //onehot(&argmax(&*x), vocab_size).into()
+            embedding.call(argmax(&*x).into_raw_vec(), false),
             50,
         );
         let str: String = y

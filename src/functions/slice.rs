@@ -1,3 +1,5 @@
+use std::ops::AddAssign;
+
 use ndarray::{IxDyn, SliceArg};
 
 use crate::*;
@@ -31,36 +33,34 @@ impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Function for Slice<I> {
     }
 }
 
-// pub struct Slices<const N: usize> {
-//     slice_args: Vec<SliceInfo<N>>,
-// }
+pub struct Slices<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> {
+    slice_args: Vec<I>,
+}
 
-// impl<const N: usize> Slices<N> {
-//     pub fn new(slice_args: Vec<SliceInfo<N>>) -> Self {
-//         Self { slice_args }
-//     }
-// }
+impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Slices<I> {
+    pub fn new(slice_args: Vec<I>) -> Self {
+        Self { slice_args }
+    }
+}
 
-// impl<const N: usize> Function for Slices<N> {
-//     fn forward(&self, xs: &[Variable]) -> Vec<Variable> {
-//         assert_eq!(xs.len(), 1);
-//         let x = &*xs[0];
-//         let y = Tensor::zeros([self.slice_args.len()].into_iter().chain(self.slice_args[0]));
-//         let y = &x.slice(self.slice_args.clone());
-//         vec![y.into_tensor().into()]
-//     }
+impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Function for Slices<I> {
+    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+        assert_eq!(xs.len(), 1);
+        let x = &*xs[0];
+        self.slice_args
+            .iter()
+            .map(|slice_arg| x.slice(slice_arg.clone()).into_ndarray().into())
+            .collect()
+    }
 
-//     // NOTE: backward cuts the graph
-//     fn backward(
-//         &self,
-//         xs: &Vec<Variable>,
-//         ys: &Vec<Variable>,
-//         gys: &Vec<Variable>,
-//     ) -> Vec<Variable> {
-//         #![allow(unused_variables)]
-//         let x = &*xs[0];
-//         let mut gx = Tensor::zeros(x.shape());
-//         gx.slice_mut(self.slice_arg.clone()).assign(&*gys[0]);
-//         vec![Variable::new(gx)]
-//     }
-// }
+    // NOTE: backward cuts the graph.
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+        let x = &*xs[0];
+        let mut gx = NDArray::zeros(x.shape());
+        for i in 0..xs.len() {
+            gx.slice_mut(self.slice_args[i].clone())
+                .add_assign(&(*gys[i]).reshape(ys[i].shape()));
+        }
+        vec![Tensor::new(gx)]
+    }
+}

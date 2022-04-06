@@ -1,6 +1,7 @@
 pub mod activations;
 mod cnn;
 mod dropout;
+mod embedding;
 mod layer;
 mod linear;
 mod mlp;
@@ -10,6 +11,7 @@ mod select_net;
 
 pub use cnn::*;
 pub use dropout::*;
+pub use embedding::*;
 pub use layer::*;
 pub use linear::*;
 pub use mlp::*;
