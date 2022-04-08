@@ -12,6 +12,7 @@ pub struct TrainConfig<T> {
     pub batch_size: usize,
     pub shuffle: bool,
     pub parallel: bool,
+    pub update_strategy: UpdateStrategy,
     pub update_async: bool,
 }
 
@@ -26,6 +27,7 @@ impl<T> Default for TrainConfig<T> {
             batch_size: 32,
             shuffle: true,
             parallel: false,
+            update_strategy: UpdateStrategy::MiniBatch(1),
             update_async: false,
         }
     }
@@ -81,14 +83,14 @@ impl<T: Sync + Send> Train<T> {
 
         if self.config.parallel {
             // train
-            let mut ctx = TrainContext {
-                total: Some(self.config.train_data.len()),
-                epoch: self.epoch,
-                train: true,
-                metrics: Metrics::new(),
-                time: std::time::Instant::now(),
+            let mut ctx = self.context(true);
+            let samples_threshold = match self.config.update_strategy {
+                UpdateStrategy::Sample(n) => n,
+                UpdateStrategy::MiniBatch(n) => n * self.config.batch_size,
+                UpdateStrategy::Batch => usize::MAX,
             };
-            let metrics = self
+
+            let (metrics, mut ga, _) = self
                 .shuffle_table
                 .par_chunks(self.config.batch_size)
                 .map(|shuffle_table| {
@@ -96,24 +98,26 @@ impl<T: Sync + Send> Train<T> {
                         .iter()
                         .map(|i| &self.config.train_data[*i])
                         .collect::<Vec<_>>();
-                    let mut ctx = TrainContext {
-                        total: ctx.total,
-                        epoch: ctx.epoch,
-                        train: ctx.train,
-                        metrics: Metrics::new(),
-                        time: ctx.time,
-                    };
+                    let mut ctx = ctx.child();
                     f(&data, &mut ctx);
-                    ctx.metrics
+                    let samples = ctx.metrics.total;
+                    (ctx.metrics, ctx.gradients_accumulator, samples)
                 })
                 .reduce(
-                    || Metrics::new(),
+                    || (Metrics::new(), GradientsAccumulator::new(), 0),
                     |mut a, b| {
-                        a.merge(b);
+                        a.0.merge(b.0);
+                        a.1.merge(b.1);
+                        a.2 += b.2;
+                        if a.2 > samples_threshold {
+                            a.1.optimize();
+                            a.2 = 0;
+                        }
                         a
                     },
                 );
             ctx.merge_metrics(metrics);
+            ga.optimize();
             ctx.print_result();
 
             // validation
@@ -121,26 +125,14 @@ impl<T: Sync + Send> Train<T> {
                 return;
             }
 
-            let mut ctx = TrainContext {
-                total: Some(self.config.train_data.len()),
-                epoch: self.epoch,
-                train: false,
-                metrics: Metrics::new(),
-                time: std::time::Instant::now(),
-            };
+            let mut ctx = self.context(false);
             let metrics = self
                 .config
                 .validation_data
                 .par_chunks(self.config.batch_size)
                 .map(|data| {
                     let data: Vec<_> = data.iter().collect();
-                    let mut ctx = TrainContext {
-                        total: ctx.total,
-                        epoch: ctx.epoch,
-                        train: ctx.train,
-                        metrics: Metrics::new(),
-                        time: ctx.time,
-                    };
+                    let mut ctx = ctx.child();
                     f(&data, &mut ctx);
                     ctx.metrics
                 })
@@ -155,19 +147,14 @@ impl<T: Sync + Send> Train<T> {
             ctx.print_result();
         } else {
             // train
-            let mut ctx = TrainContext {
-                total: Some(self.config.train_data.len()),
-                epoch: self.epoch,
-                train: true,
-                metrics: Metrics::new(),
-                time: std::time::Instant::now(),
-            };
+            let mut ctx = self.context(true);
             for shuffle_table in self.shuffle_table.chunks(self.config.batch_size) {
                 let data = shuffle_table
                     .iter()
                     .map(|i| &self.config.train_data[*i])
                     .collect::<Vec<_>>();
                 f(&data, &mut ctx);
+                ctx.gradients_accumulator.optimize();
                 ctx.print_progress();
             }
             ctx.print_result();
@@ -177,13 +164,7 @@ impl<T: Sync + Send> Train<T> {
                 return;
             }
 
-            let mut ctx = TrainContext {
-                total: Some(self.config.validation_data.len()),
-                epoch: self.epoch,
-                train: false,
-                metrics: Metrics::new(),
-                time: std::time::Instant::now(),
-            };
+            let mut ctx = self.context(false);
             for data in self.config.validation_data.chunks(self.config.batch_size) {
                 let data: Vec<_> = data.iter().collect();
                 f(&data, &mut ctx);
@@ -201,6 +182,31 @@ impl<T: Sync + Send> Train<T> {
             self.fit_one_epoch(&f);
         }
     }
+
+    fn context(&self, train: bool) -> TrainContext {
+        TrainContext {
+            total: Some(if train {
+                self.config.train_data.len()
+            } else {
+                self.config.validation_data.len()
+            }),
+            epoch: self.epoch,
+            train,
+            metrics: Metrics::new(),
+            time: std::time::Instant::now(),
+            gradients_accumulator: GradientsAccumulator::new(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum UpdateStrategy {
+    /// Update after processing the specified number of samples.
+    Sample(usize),
+    /// Update after processing the specified number of mini-batch.
+    MiniBatch(usize),
+    /// Update each epoch.
+    Batch,
 }
 
 pub struct TrainContext {
@@ -209,9 +215,21 @@ pub struct TrainContext {
     pub train: bool,
     pub metrics: Metrics,
     pub time: std::time::Instant,
+    gradients_accumulator: GradientsAccumulator,
 }
 
 impl TrainContext {
+    fn child(&self) -> Self {
+        TrainContext {
+            total: self.total,
+            epoch: self.epoch,
+            train: self.train,
+            metrics: Metrics::new(),
+            time: self.time,
+            gradients_accumulator: GradientsAccumulator::new(),
+        }
+    }
+
     pub fn finish_batch(&mut self, loss: &Tensor, n: usize) {
         self.optimize(loss);
         self.count(n);
@@ -220,7 +238,7 @@ impl TrainContext {
 
     pub fn optimize(&mut self, loss: &Tensor) {
         if self.train {
-            optimize(loss);
+            self.gradients_accumulator.compute(loss);
         }
     }
 
