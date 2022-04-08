@@ -1,6 +1,8 @@
+mod training;
+
 use std::sync::{Arc, Mutex};
 
-use image::{DynamicImage, GenericImageView};
+use image::GenericImageView;
 use ndarray::prelude::*;
 use ndarray_rand::{
     rand::{Rng, SeedableRng},
@@ -9,9 +11,9 @@ use ndarray_rand::{
 };
 use tensorflake::{functions::*, losses::*, nn::*, *};
 
-fn main() {
-    let use_parallel = true;
+use crate::training::{TrainConfig, UpdateStrategy};
 
+fn main() {
     let img = image::io::Reader::open("img.png")
         .unwrap()
         .decode()
@@ -38,64 +40,58 @@ fn main() {
     // gen_image([img.height(), img.width()], &model, "coin_final.png");
     // return;
 
-    let batch_size = 128;
-
     let start = std::time::Instant::now();
 
-    for mut ctx in ExecutionContextIter::new(100, Some((img.width() * img.height()) as usize)) {
-        if !ctx.train {
-            continue;
-        }
-        optimizer.lock().unwrap().learning_rate = 0.002 * 0.95f32.powi(ctx.epoch as i32); // MomentumSGD: 0.1, Adam: 0.001
-        if use_parallel {
-            use rayon::prelude::*;
-            let batches: Vec<_> = mini_batches(&img, batch_size, &mut rng);
-            let metrics = batches
-                .par_iter()
-                .map(|(len, x, t)| {
-                    let x = Tensor::new(x.clone());
-                    let t = Tensor::new(t.clone());
-                    let y = model.call(x.clone(), ctx.train);
-                    let loss = naive_mean_squared_error(t.clone(), y.clone());
-                    if ctx.train {
-                        optimize(&loss);
-                    }
-                    let mut metrics = Metrics::new();
-                    metrics.count(*len);
-                    metrics.add(metrics::Loss::new(loss[[]], *len));
-                    metrics
-                })
-                .reduce(
-                    || Metrics::new(),
-                    |mut a, b| {
-                        a.merge(b);
-                        a
-                    },
-                );
-            ctx.merge_metrics(metrics);
-        } else {
-            for (len, x, t) in mini_batches(&img, batch_size, &mut rng) {
-                let x = Tensor::new(x);
-                let t = Tensor::new(t);
-                let y = model.call(x.clone(), ctx.train);
-                let loss = naive_mean_squared_error(t.clone(), y.clone());
-                if ctx.train {
-                    optimize(&loss);
-                }
-                ctx.count(len);
-                ctx.add_metric(metrics::Loss::new(loss[[]], len));
-                ctx.print_progress();
-            }
-        }
+    let mut train = TrainConfig {
+        epoch: 100,
+        train_data: (0..img.height())
+            .flat_map(|y| (0..img.width()).map(move |x| (y, x)))
+            .collect::<Vec<_>>(),
+        batch_size: 128,
+        parallel: true,
+        update_strategy: UpdateStrategy::MiniBatch(1),
+        ..TrainConfig::default()
+    }
+    .build();
 
-        ctx.print_result();
-        if ctx.epoch % 10 == 0 {
+    while !train.is_end() {
+        train.fit_one_epoch(|batch, ctx| {
+            let x: Vec<_> = batch
+                .iter()
+                .flat_map(|(y, x)| {
+                    [
+                        *y as f32 / (img.height() - 1) as f32,
+                        *x as f32 / (img.width() - 1) as f32,
+                    ]
+                })
+                .collect();
+            let t = batch
+                .iter()
+                .flat_map(|(y, x)| {
+                    img.get_pixel(*x, *y).0[0..3]
+                        .iter()
+                        .map(|x| *x as f32 / 255.0)
+                        .collect::<Vec<_>>()
+                })
+                .collect();
+            let x = NDArray::from_shape_vec(&[batch.len(), 2][..], x).unwrap();
+            let t = NDArray::from_shape_vec(&[batch.len(), 3][..], t).unwrap();
+            let x = Tensor::new(x.clone());
+            let t = Tensor::new(t.clone());
+
+            let y = model.call(x.clone(), ctx.train);
+            let loss = naive_mean_squared_error(t.clone(), y.clone());
+
+            ctx.finish_batch(&loss, batch.len());
+        });
+
+        if train.epoch % 10 == 0 {
             gen_image(
                 [img.height(), img.width()],
                 &model,
-                &format!("coin_{}.png", ctx.epoch),
+                &format!("coin_{}.png", train.epoch),
             );
-            param_bin::export_to_file(&model.all_params(), &format!("coin_{}.bin", ctx.epoch));
+            param_bin::export_to_file(&model.all_params(), &format!("coin_{}.bin", train.epoch));
         }
     }
 
@@ -142,50 +138,8 @@ impl Layer for Model {
     }
 }
 
-fn mini_batches(
-    img: &DynamicImage,
-    batch_size: usize,
-    rng: &mut rand_isaac::Isaac64Rng,
-) -> Vec<(usize, NDArray, NDArray)> {
-    let p: Vec<_> = (0..img.height() * img.width())
-        .map(|_| {
-            (
-                rng.gen_range(0..img.height()),
-                rng.gen_range(0..img.width()),
-            )
-        })
-        .collect();
-    p.chunks(batch_size)
-        .map(|p| {
-            let x = p
-                .iter()
-                .flat_map(|(y, x)| {
-                    [
-                        *y as f32 / (img.height() - 1) as f32,
-                        *x as f32 / (img.width() - 1) as f32,
-                    ]
-                })
-                .collect();
-            let y = p
-                .iter()
-                .flat_map(|(y, x)| {
-                    img.get_pixel(*x, *y).0[0..3]
-                        .iter()
-                        .map(|x| *x as f32 / 255.0)
-                        .collect::<Vec<_>>()
-                })
-                .collect();
-            (
-                p.len(),
-                NDArray::from_shape_vec(&[p.len(), 2][..], x).unwrap(),
-                NDArray::from_shape_vec(&[p.len(), 3][..], y).unwrap(),
-            )
-        })
-        .collect()
-}
-
 fn gen_image(size: [u32; 2], layer: &impl Layer<Input = Tensor, Output = Tensor>, path: &str) {
-    let mut img = image::ImageBuffer::new(size[0], size[1]);
+    let mut img = image::ImageBuffer::new(size[1], size[0]);
     let ps = (0..size[0])
         .flat_map(|y| (0..size[1]).map(move |x| (y, x)))
         .collect::<Vec<_>>();
