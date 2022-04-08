@@ -1,4 +1,5 @@
 pub mod activations;
+pub mod attention;
 mod cnn;
 mod dropout;
 mod embedding;
