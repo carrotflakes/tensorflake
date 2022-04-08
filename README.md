@@ -14,7 +14,7 @@ I'm aiming to be able to train several networks on the CPU fast.
 - [x] Dropout
 - [x] Strong typing -> Functional API (tensorflake::function::chain)
   - [ ] Generic for dimension
-- [ ] Multi thread -> see examples/coin.rs
+- [ ] Multi thread
   - [ ] High level API
   - [ ] Synchronous update
   - [x] Asynchronous update
@@ -25,6 +25,8 @@ I'm aiming to be able to train several networks on the CPU fast.
 - [x] Transposed convolution
 - [ ] Batch normalization
 - [x] Embedding
+- [ ] Sequential
+- [ ] Param creator
 - [ ] Benchmarks
 - [ ] Measure the execution time of functions and export it as dot file
 - [ ] Tensor summarization
