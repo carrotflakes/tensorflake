@@ -7,7 +7,7 @@ pub fn optimize(loss: &Tensor) {
 }
 
 pub struct GradientsAccumulator {
-    pub table: std::collections::HashMap<Param, Tensor>,
+    pub table: std::collections::HashMap<Param, NDArray>,
 }
 
 impl GradientsAccumulator {
@@ -20,17 +20,17 @@ impl GradientsAccumulator {
     pub fn compute(&mut self, loss: &Tensor) {
         let (params, grads) = collect_params_grads(loss);
         for (param, grad) in params.into_iter().zip(grads.into_iter()) {
-            self.push(param, grad);
+            self.push(param, (*grad).clone());
         }
     }
 
-    pub fn push(&mut self, param: Param, grad: Tensor) {
+    pub fn push(&mut self, param: Param, grad: NDArray) {
         match self.table.entry(param) {
             std::collections::hash_map::Entry::Occupied(mut e) => {
-                *e.get_mut() = e.get() + &grad;
+                *e.get_mut() = e.get() + grad;
             }
             std::collections::hash_map::Entry::Vacant(e) => {
-                e.insert(grad.clone());
+                e.insert(grad);
             }
         }
     }
@@ -56,9 +56,9 @@ fn collect_params_grads(loss: &Tensor) -> (Vec<Param>, Vec<Tensor>) {
     for fc in function_calls {
         if let Some(o) = fc.backward.get_param() {
             params.push(o);
-            trainables.push(fc.get_ys()[0].clone());
+            trainables.push(fc.get_ys().pop().unwrap());
         }
     }
-    let grads = gradients(&vec![loss.clone()], &trainables, false);
+    let grads = gradients(&[loss.clone()], &trainables, false);
     (params, grads)
 }

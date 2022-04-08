@@ -131,9 +131,9 @@ impl Param {
         inner.set(Tensor::new(ndarray));
     }
 
-    pub fn update(&self, grad: &Tensor) {
+    pub fn update(&self, grad: &NDArray) {
         let mut inner = self.inner.lock().unwrap();
-        inner.update(&grad);
+        inner.update(grad);
     }
 }
 
