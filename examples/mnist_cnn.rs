@@ -1,13 +1,19 @@
 mod data;
+mod training;
 
 use ndarray::prelude::*;
-use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-use rayon::prelude::*;
+use ndarray_rand::{
+    rand::SeedableRng,
+    rand_distr::{Normal, Uniform},
+    RandomExt,
+};
 use tensorflake::{
     losses::SoftmaxCrossEntropy,
     nn::{activations::Relu, naive_max_pooling, Conv2d, Dropout, Layer, Linear},
     *,
 };
+
+use crate::training::{TrainConfig, UpdateStrategy};
 
 fn main() {
     let mnist = data::mnist::Mnist::load("./data/mnist");
@@ -15,63 +21,37 @@ fn main() {
     let model = Model::new();
     param_bin::params_summary(&model.all_params());
 
-    let batch_size = 100;
-
     let start = std::time::Instant::now();
 
-    for mut ctx in ExecutionContextIter::new(100, Some(mnist.train_labels.len())) {
-        let batches: Vec<_> = if ctx.train {
-            mini_batches(&mnist.train_images, &mnist.train_labels, batch_size).collect()
-        } else {
-            mini_batches(&mnist.test_images, &mnist.test_labels, batch_size).collect()
-        };
-        let metrics = batches
-            .par_iter()
-            .map(|(x, t)| {
-                let y = model.call(x.clone(), ctx.train);
-                let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
-                if ctx.train {
-                    optimize(&loss); // MomentumSGD: 0.1, Adam: 0.001
-                }
-                let mut metrics = Metrics::new();
-                metrics.count(t.len());
-                metrics.add(metrics::Loss::new(loss[[]], t.len()));
-                metrics.add(metrics::argmax_accuracy(t, &y));
-                metrics
-            })
-            .reduce(
-                || Metrics::new(),
-                |mut a, b| {
-                    a.merge(b);
-                    a
-                },
-            );
-        ctx.merge_metrics(metrics);
-        ctx.print_result();
+    TrainConfig {
+        epoch: 100,
+        train_data: mnist.trains().collect(),
+        validation_data: mnist.tests().collect(),
+        validation_rate: 0.1,
+        batch_size: 100,
+        parallel: true,
+        update_strategy: UpdateStrategy::MiniBatch(1),
+        ..Default::default()
     }
+    .build()
+    .fit(|batch, ctx| {
+        let x = NDArray::from_shape_vec(
+            &[batch.len(), 1, 28, 28][..],
+            batch
+                .iter()
+                .flat_map(|x| x.0)
+                .map(|x| *x as f32 / 255.0)
+                .collect(),
+        )
+        .unwrap();
+        let t: Vec<_> = batch.iter().map(|x| x.1 as usize).collect();
+        let y = model.call(x.clone(), ctx.train);
+        let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
+        ctx.finish_batch(&loss, t.len());
+        ctx.add_metric(metrics::argmax_accuracy(&t, &y));
+    });
 
     println!("time: {:?}", start.elapsed());
-}
-
-fn gen_img(img: &[u8]) -> NDArray {
-    Array4::from_shape_vec(
-        (img.len() / (28 * 28), 1, 28, 28),
-        img.iter().map(|x| *x as f32 / 255.0).collect(),
-    )
-    .unwrap()
-    .into_ndarray()
-}
-
-fn mini_batches<'a>(
-    img: &'a [u8],
-    lbl: &'a [u8],
-    batch_size: usize,
-) -> impl Iterator<Item = (NDArray, Vec<usize>)> + 'a {
-    let img = img.chunks(batch_size * 28 * 28).map(gen_img);
-    let lbl = lbl
-        .chunks(batch_size)
-        .map(|x| x.iter().map(|x| *x as usize).collect::<Vec<_>>());
-    img.zip(lbl)
 }
 
 pub struct Model {
@@ -88,8 +68,8 @@ impl Model {
             move || {
                 let mut rng = rng.clone();
                 move |shape: &[usize]| -> Param {
-                    let t =
-                        Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
+                    let t = Array::random_using(shape, Normal::new(0.0, 0.1).unwrap(), &mut rng)
+                        .into_ndarray();
                     Param::new(t, optimizers::AdamOptimizer::new())
                 }
             }
@@ -150,8 +130,8 @@ impl BigModel {
             move || {
                 let mut rng = rng.clone();
                 move |shape: &[usize]| -> Param {
-                    let t =
-                        Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
+                    let t = Array::random_using(shape, Normal::new(0.0, 0.1).unwrap(), &mut rng)
+                        .into_ndarray();
                     Param::new(t, optimizers::AdamOptimizer::new())
                 }
             }
