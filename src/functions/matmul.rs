@@ -141,6 +141,7 @@ fn broadcast_shape(a: &[usize], b: &[usize]) -> Option<Vec<usize>> {
                 None
             }
         })
+        .rev()
         .collect()
 }
 
@@ -168,5 +169,23 @@ fn test() {
 
         let ys = Matmul.call(vec![b.clone(), a.clone()]);
         assert_eq!(&ys[0].shape(), &[1, 3, 3]);
+    }
+
+    {
+        let a = backprop(
+            NDArray::from_shape_vec(&[2, 3, 4, 5][..], (0..120).map(|x| x as f32).collect())
+                .unwrap(),
+        );
+        let b = backprop(
+            NDArray::from_shape_vec(&[2, 3, 5, 4][..], (0..120).map(|x| x as f32).collect())
+                .unwrap(),
+        );
+        let ys = Matmul.call(vec![a.clone(), b.clone()]);
+        assert_eq!(&ys[0].shape(), &[2, 3, 4, 4]);
+
+        let _grads = gradients(&ys, &[a.clone(), b.clone()], false);
+
+        let ys = Matmul.call(vec![b.clone(), a.clone()]);
+        assert_eq!(&ys[0].shape(), &[2, 3, 5, 5]);
     }
 }
