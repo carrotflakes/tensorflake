@@ -1,3 +1,5 @@
+use std::sync::{Arc, Mutex};
+
 use ndarray_rand::rand::prelude::*;
 use rayon::prelude::*;
 use tensorflake::*;
@@ -89,6 +91,7 @@ impl<T: Sync + Send> Train<T> {
                 UpdateStrategy::MiniBatch(n) => n * self.config.batch_size,
                 UpdateStrategy::Batch => usize::MAX,
             };
+            let progress = Arc::new(Mutex::new(Progress::new(self.config.train_data.len())));
 
             let (metrics, mut ga, _) = self
                 .shuffle_table
@@ -101,6 +104,7 @@ impl<T: Sync + Send> Train<T> {
                     let mut ctx = ctx.child();
                     f(&data, &mut ctx);
                     let samples = ctx.metrics.total;
+                    progress.lock().unwrap().update(samples);
                     (ctx.metrics, ctx.gradients_accumulator, samples)
                 })
                 .reduce(
@@ -126,6 +130,7 @@ impl<T: Sync + Send> Train<T> {
             }
 
             let mut ctx = self.context(false);
+            let progress = Arc::new(Mutex::new(Progress::new(self.config.validation_data.len())));
             let metrics = self
                 .config
                 .validation_data
@@ -134,6 +139,7 @@ impl<T: Sync + Send> Train<T> {
                     let data: Vec<_> = data.iter().collect();
                     let mut ctx = ctx.child();
                     f(&data, &mut ctx);
+                    progress.lock().unwrap().update(ctx.metrics.total);
                     ctx.metrics
                 })
                 .reduce(
@@ -274,6 +280,37 @@ impl TrainContext {
             self.metrics.display_metrics(),
             self.time.elapsed().as_secs_f32()
         );
+    }
+}
+
+struct Progress {
+    total: usize,
+    processed: usize,
+    last_show: std::time::Instant,
+}
+
+impl Progress {
+    fn new(total: usize) -> Self {
+        Self {
+            total,
+            processed: 0,
+            last_show: std::time::Instant::now(),
+        }
+    }
+
+    fn update(&mut self, n: usize) {
+        self.processed += n;
+        if self.last_show.elapsed().as_millis() >= 100 {
+            self.last_show = std::time::Instant::now();
+            print!("\x1b[2K");
+            print!(
+                "{:>6.2}%",
+                self.processed as f32 * 100.0 / self.total as f32
+            );
+            print!("\r");
+            use std::io::Write;
+            std::io::stdout().flush().unwrap();
+        }
     }
 }
 
