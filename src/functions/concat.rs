@@ -3,6 +3,46 @@ use ndarray::{Axis, IxDyn, SliceInfo, SliceInfoElem};
 use crate::functions::*;
 use crate::*;
 
+pub fn concat(xs: &[Tensor], axis: usize) -> Tensor {
+    let y =
+        ndarray::concatenate(Axis(axis), &xs.iter().map(|x| x.view()).collect::<Vec<_>>()).unwrap();
+    let y = Tensor::new(y.into_ndarray());
+
+    chain(xs, &[y.clone()], false, "concat", move |xs, _ys, gys| {
+        let gy = &gys[0];
+        let mut acc = 0;
+        xs.iter()
+            .map(move |x| {
+                let slice_info = SliceInfo::<Vec<SliceInfoElem>, IxDyn, IxDyn>::try_from(
+                    (0..x.ndim())
+                        .map(|i| {
+                            if i == axis {
+                                SliceInfoElem::Slice {
+                                    start: acc as isize,
+                                    end: Some((acc + x.shape()[axis]) as isize),
+                                    step: 1,
+                                }
+                            } else {
+                                SliceInfoElem::Slice {
+                                    start: 0,
+                                    end: None,
+                                    step: 1,
+                                }
+                            }
+                        })
+                        .collect::<Vec<SliceInfoElem>>(),
+                )
+                .unwrap();
+                let v = call!(Slice::new(slice_info), gy);
+                acc += x.shape()[axis];
+                v
+            })
+            .collect()
+    });
+
+    y
+}
+
 pub struct Concat {
     axis: usize,
 }
@@ -23,12 +63,7 @@ impl Function for Concat {
         vec![concated.into_ndarray().into()]
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         drop(ys);
 
         let gy = &gys[0];

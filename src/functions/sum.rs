@@ -4,6 +4,32 @@ use crate::*;
 
 use super::Broadcast;
 
+pub fn sum(x: &Tensor, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Tensor {
+    let axes = axes.into();
+    let mut y = (**x).to_owned();
+    for axis in axes.iter().rev() {
+        y = x.sum_axis(Axis(*axis));
+        if keep_dim {
+            y.insert_axis_inplace(Axis(*axis));
+        }
+    }
+    let y = Tensor::new(y.into_ndarray());
+
+    chain(
+        &[x.clone()],
+        &[y.clone()],
+        false,
+        "sum",
+        move |xs, _ys, gys| {
+            let gx = gys[0].broadcast(xs[0].shape());
+
+            vec![gx]
+        },
+    );
+
+    y
+}
+
 pub struct Sum {
     // NOTE: axes are in order
     pub axes: Vec<usize>,

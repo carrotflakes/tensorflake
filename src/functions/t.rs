@@ -1,5 +1,22 @@
 use crate::*;
 
+pub fn t(x: &Tensor) -> Tensor {
+    let y = Tensor::new((**x).t().into_ndarray());
+
+    chain(
+        &[x.clone()],
+        &[y.clone()],
+        false,
+        "t",
+        move |_xs, _ys, gys| {
+            let gx = gys[0].t();
+            vec![gx]
+        },
+    );
+
+    y
+}
+
 pub struct T;
 
 impl Function for T {
@@ -9,12 +26,7 @@ impl Function for T {
         vec![(&*xs[0]).t().into_ndarray().into()]
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         T.call(vec![gys[0].clone()])

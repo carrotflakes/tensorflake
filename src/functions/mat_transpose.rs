@@ -1,5 +1,22 @@
 use crate::*;
 
+pub fn mat_transpose(x: &Tensor) -> Tensor {
+    let y = Tensor::new(forward(&**x));
+
+    chain(
+        &[x.clone()],
+        &[y.clone()],
+        false,
+        "mat_transpose",
+        |_xs, _ys, gys| {
+            let gx = gys[0].mat_t();
+            vec![gx]
+        },
+    );
+
+    y
+}
+
 pub struct MatTranspose;
 
 impl Function for MatTranspose {
@@ -10,12 +27,7 @@ impl Function for MatTranspose {
         vec![forward(&xs[0]).into()]
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         MatTranspose.call(vec![gys[0].clone()])

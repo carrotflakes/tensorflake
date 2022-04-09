@@ -3,6 +3,26 @@ use ndarray::{Axis, Ix2};
 use crate::functions::*;
 use crate::*;
 
+pub fn matmul(lhs: &Tensor, rhs: &Tensor) -> Tensor {
+    let y = Tensor::new(forward(&lhs, &rhs));
+
+    chain(
+        &[lhs.clone(), rhs.clone()],
+        &[y.clone()],
+        false,
+        "matmul",
+        |xs, _, gys| {
+            let x = xs[0].clone();
+            let w = xs[1].clone();
+            let gx = gys[0].matmul(&w.mat_t());
+            let gw = x.mat_t().matmul(&gys[0]);
+            vec![gx, gw]
+        },
+    );
+
+    y
+}
+
 pub struct Matmul;
 
 impl Function for Matmul {

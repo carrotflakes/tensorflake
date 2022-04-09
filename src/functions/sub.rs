@@ -3,6 +3,34 @@ use crate::{
     *,
 };
 
+pub fn sub(lhs: &Tensor, rhs: &Tensor) -> Tensor {
+    let y = Tensor::new((&**lhs - &**rhs).into_ndarray());
+
+    chain(
+        &[lhs.clone(), rhs.clone()],
+        &[y.clone()],
+        false,
+        "sub",
+        |xs, _ys, gys| {
+            let mut gx0 = gys[0].clone();
+            let mut gx1 = -&gys[0];
+
+            // fit shape
+            if xs[0].shape() != gx0.shape() {
+                gx0 = gx0.sum(sum_axes_to_desire(gx0.shape(), xs[0].shape()), false);
+            }
+
+            if xs[1].shape() != gx1.shape() {
+                gx1 = gx1.sum(sum_axes_to_desire(gx1.shape(), xs[0].shape()), false);
+            }
+
+            vec![gx0, gx1]
+        },
+    );
+
+    y
+}
+
 pub struct Sub;
 
 impl Function for Sub {
@@ -12,12 +40,7 @@ impl Function for Sub {
         vec![(&*xs[0] - &*xs[1]).into_ndarray().into()]
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         let mut gx0 = gys[0].clone();

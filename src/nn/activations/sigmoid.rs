@@ -3,6 +3,23 @@ use crate::{
     *,
 };
 
+pub fn sigmoid(x: &Tensor) -> Tensor {
+    let y = Tensor::new(x.map(|x| (x * 0.5).tanh() * 0.5 + 0.5).into_ndarray());
+
+    chain(
+        &[x.clone()],
+        &[y.clone()],
+        false,
+        "sigmoid",
+        move |_xs, ys, gys| {
+            let gx = &gys[0] * &(&Tensor::new(scalar(1.0)) - &ys[0]) * ys[0].clone();
+            vec![gx]
+        },
+    );
+
+    y
+}
+
 pub struct Sigmoid;
 
 impl Function for Sigmoid {

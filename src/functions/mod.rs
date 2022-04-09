@@ -27,7 +27,7 @@ pub use broadcast::*;
 pub use concat::*;
 pub use div::*;
 pub use exp::*;
-pub use mat_transpose::MatTranspose;
+pub use mat_transpose::{mat_transpose, MatTranspose};
 pub use matmul::Matmul;
 pub use matmul_add::matmul_add;
 pub use max::*;

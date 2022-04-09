@@ -1,5 +1,23 @@
 use crate::*;
 
+pub fn reshape(x: &Tensor, shape: impl Into<Vec<usize>>) -> Tensor {
+    let shape = shape.into();
+    let y = Tensor::new((**x).reshape(shape.as_slice()));
+
+    chain(
+        &[x.clone()],
+        &[y.clone()],
+        false,
+        "reshape",
+        move |xs, _ys, gys| {
+            let gx = gys[0].reshape(xs[0].shape());
+            vec![gx]
+        },
+    );
+
+    y
+}
+
 pub struct Reshape {
     pub shape: Vec<usize>,
     original_shape: Vec<usize>,

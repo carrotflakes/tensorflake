@@ -6,7 +6,7 @@ macro_rules! impl_op {
             type Output = Tensor;
 
             fn $fn(self, rhs: Self) -> Self::Output {
-                call!(functions::$op, self, rhs)
+                functions::$fn(self, rhs)
             }
         }
 
@@ -14,7 +14,7 @@ macro_rules! impl_op {
             type Output = Tensor;
 
             fn $fn(self, rhs: Self) -> Self::Output {
-                call!(functions::$op, self, rhs)
+                functions::$fn(&self, &rhs)
             }
         }
     };
@@ -29,7 +29,7 @@ impl std::ops::Neg for &Tensor {
     type Output = Tensor;
 
     fn neg(self) -> Self::Output {
-        call!(functions::Neg, self)
+        functions::neg(self)
     }
 }
 
@@ -37,41 +37,41 @@ impl std::ops::Neg for Tensor {
     type Output = Tensor;
 
     fn neg(self) -> Self::Output {
-        call!(functions::Neg, self)
+        functions::neg(&self)
     }
 }
 
 impl Tensor {
     pub fn broadcast(&self, shape: impl Into<Vec<usize>>) -> Tensor {
-        call!(functions::Broadcast::new(shape.into()), self)
+        functions::broadcast(self, shape)
     }
 
     pub fn exp(&self) -> Tensor {
-        call!(functions::Exp, self)
+        functions::exp(self)
     }
 
     pub fn mat_t(&self) -> Tensor {
-        call!(functions::MatTranspose, self)
+        functions::mat_transpose(self)
     }
 
     pub fn matmul(&self, rhs: &Tensor) -> Tensor {
-        call!(functions::Matmul, self, rhs)
+        functions::matmul::matmul(self, rhs)
     }
 
     pub fn pow(&self, rhs: f32) -> Tensor {
-        call!(functions::Pow::new(rhs), self)
+        functions::pow(self, rhs)
     }
 
     pub fn reshape(&self, shape: impl Into<Vec<usize>>) -> Tensor {
-        call!(functions::Reshape::new(shape.into()), self)
+        functions::reshape(self, shape)
     }
 
     pub fn sin(&self) -> Tensor {
-        call!(functions::Sin, self)
+        functions::sin(self)
     }
 
     pub fn cos(&self) -> Tensor {
-        call!(functions::Cos, self)
+        functions::cos(self)
     }
 
     pub fn slice<I: ndarray::SliceArg<ndarray::IxDyn> + Clone + Sync + Send + 'static>(
@@ -89,19 +89,19 @@ impl Tensor {
     }
 
     pub fn sum(&self, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Tensor {
-        call!(functions::Sum::new(axes.into(), keep_dim), self)
+        functions::sum(self, axes, keep_dim)
     }
 
     pub fn t(&self) -> Tensor {
-        call!(functions::T, self)
+        functions::t(self)
     }
 
     pub fn tanh(&self) -> Tensor {
-        call!(functions::Tanh, self)
+        functions::tanh(self)
     }
 
     pub fn transpose(&self, axes: impl Into<Vec<usize>>) -> Tensor {
-        call!(functions::Transpose::new(axes.into()), self)
+        functions::transpose(self, axes)
     }
 }
 

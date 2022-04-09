@@ -1,7 +1,4 @@
-use crate::{
-    functions::{Add, Mul, Pow, Sub},
-    *,
-};
+use crate::*;
 
 #[test]
 fn test_add_mul() {
@@ -9,87 +6,43 @@ fn test_add_mul() {
     let b = backprop(scalar(2.0));
     let c = backprop(scalar(1.0));
 
-    let ys = Add.call(vec![
-        Mul.call(vec![a.clone(), b.clone()]).pop().unwrap(),
-        c.clone(),
-    ]);
-    assert_eq!(*ys[0], scalar(7.0));
+    let y = a.clone() * b.clone() + c.clone();
+    assert_eq!(*y, scalar(7.0));
 
-    let grads = gradients(&ys, &vec![a.clone(), b.clone()], false);
+    let grads = gradients(&[y], &vec![a.clone(), b.clone()], false);
     assert_eq!(&*grads[0], scalar(2.0));
     assert_eq!(&*grads[1], scalar(3.0));
 }
 
 #[test]
 fn test_sphere() {
-    let x = backprop(scalar(1.0));
-    let y = backprop(scalar(1.0));
+    let a = backprop(scalar(1.0));
+    let b = backprop(scalar(1.0));
 
-    let ys = Add.call(vec![
-        Pow::new(2.0).call(vec![x.clone()]).pop().unwrap(),
-        Pow::new(2.0).call(vec![y.clone()]).pop().unwrap(),
-    ]);
-    assert_eq!(*ys[0], scalar(2.0));
+    let y = a.pow(2.0) + b.pow(2.0);
+    assert_eq!(*y, scalar(2.0));
 
-    let grads = gradients(&ys, &vec![x.clone(), y.clone()], false);
+    let grads = gradients(&[y], &vec![a.clone(), b.clone()], false);
     assert_eq!(&*grads[0], scalar(2.0));
     assert_eq!(&*grads[1], scalar(2.0));
 }
 
 #[test]
 fn test_matyas() {
-    let x = backprop(scalar(1.0));
-    let y = backprop(scalar(1.0));
+    let a = backprop(scalar(1.0));
+    let b = backprop(scalar(1.0));
 
-    let ys = Sub.call(vec![
-        Mul.call(vec![
-            Tensor::new(scalar(0.26)),
-            Add.call(vec![
-                Pow::new(2.0).call(vec![x.clone()]).pop().unwrap(),
-                Pow::new(2.0).call(vec![y.clone()]).pop().unwrap(),
-            ])
-            .pop()
-            .unwrap(),
-        ])
-        .pop()
-        .unwrap(),
-        Mul.call(vec![Tensor::new(scalar(0.48)), x.clone(), y.clone()])
-            .pop()
-            .unwrap(),
-    ]);
+    let y = Tensor::new(scalar(0.26)) * (a.pow(2.0) + b.pow(2.0))
+        - Tensor::new(scalar(0.48)) * a.clone() * b.clone();
 
-    let grads = gradients(&ys, &vec![x.clone(), y.clone()], false);
+    let grads = gradients(&[y], &vec![a.clone(), b.clone()], false);
     assert!((&*grads[0] - 0.04).iter().next().unwrap().abs() < 1e-6);
     assert!((&*grads[1] - 0.04).iter().next().unwrap().abs() < 1e-6);
 }
 
 fn rosenbrock(a: Tensor, b: Tensor) -> Tensor {
-    Add.call(vec![
-        Mul.call(vec![
-            Tensor::new(scalar(100.0)),
-            Pow::new(2.0)
-                .call(vec![Sub
-                    .call(vec![
-                        b.clone(),
-                        Pow::new(2.0).call(vec![a.clone()]).pop().unwrap(),
-                    ])
-                    .pop()
-                    .unwrap()])
-                .pop()
-                .unwrap(),
-        ])
-        .pop()
-        .unwrap(),
-        Pow::new(2.0)
-            .call(vec![Sub
-                .call(vec![a.clone(), Tensor::new(scalar(1.0))])
-                .pop()
-                .unwrap()])
-            .pop()
-            .unwrap(),
-    ])
-    .pop()
-    .unwrap()
+    Tensor::new(scalar(100.0)) * (b - a.pow(2.0)).pow(2.0)
+        + (a.clone() - Tensor::new(scalar(1.0))).pow(2.0)
 }
 
 #[test]
@@ -127,11 +80,7 @@ fn test_rosenbrock_sgd() {
 fn test_second_order_differentia() {
     let x = backprop(scalar(2.0));
 
-    let y = call!(
-        Sub,
-        call!(Pow::new(4.0), x),
-        call!(Mul, Tensor::new(scalar(2.0)), call!(Pow::new(2.0), x))
-    );
+    let y = x.pow(4.0) - Tensor::new(scalar(2.0)) * x.pow(2.0);
     assert_eq!(*y, scalar(8.0));
 
     let grads = gradients(&vec![y.clone()], &vec![x.clone()], true);

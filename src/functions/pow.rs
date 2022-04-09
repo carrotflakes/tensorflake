@@ -1,6 +1,23 @@
 use super::Mul;
 use crate::*;
 
+pub fn pow(x: &Tensor, a: f32) -> Tensor {
+    let y = Tensor::new((**x).map(|x| x.powf(a)).into_ndarray());
+
+    chain(
+        &[x.clone()],
+        &[y.clone()],
+        false,
+        "pow",
+        move |xs, _ys, gys| {
+            let gx = &gys[0] * &xs[0].pow(a - 1.0) * Tensor::new(scalar(a));
+            vec![gx]
+        },
+    );
+
+    y
+}
+
 pub struct Pow(f32);
 
 impl Pow {
@@ -16,12 +33,7 @@ impl Function for Pow {
         vec![xs[0].map(|x| x.powf(self.0)).into_ndarray().into()]
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         Mul.call(vec![

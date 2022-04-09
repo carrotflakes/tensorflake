@@ -2,6 +2,42 @@ use crate::*;
 
 use super::Sum;
 
+pub fn broadcast(x: &Tensor, shape: impl Into<Vec<usize>>) -> Tensor {
+    let shape = shape.into();
+    let y = Tensor::new(
+        (**x)
+            .broadcast(shape.as_slice())
+            .unwrap_or_else(|| panic!("illegal broadcast: {:?} to {:?}", x.shape(), shape))
+            .into_ndarray(),
+    );
+
+    chain(
+        &[x.clone()],
+        &[y.clone()],
+        false,
+        "broadcast",
+        move |xs, _ys, gys| {
+            let mut axes = Vec::new();
+            let mut target = xs[0].shape().to_vec();
+            for (axis, size) in shape.iter().enumerate() {
+                if let Some(s) = target.first() {
+                    if s == size {
+                        target.remove(0);
+                        continue;
+                    }
+                }
+                axes.push(axis);
+            }
+
+            let gx = gys[0].sum(axes, false);
+
+            vec![gx]
+        },
+    );
+
+    y
+}
+
 pub struct Broadcast {
     pub shape: Vec<usize>,
     axes: Vec<usize>,
@@ -30,12 +66,7 @@ impl Function for Broadcast {
         )]
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         vec![call!(Sum::new(self.axes.clone(), false), &gys[0])]

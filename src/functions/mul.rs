@@ -2,6 +2,34 @@ use crate::*;
 
 use super::{sum_axes_to_desire, Sum};
 
+pub fn mul(a: &Tensor, b: &Tensor) -> Tensor {
+    let y = Tensor::new((&**a * &**b).into_ndarray());
+
+    chain(
+        &[a.clone(), b.clone()],
+        &[y.clone()],
+        false,
+        "mul",
+        |xs, _ys, gys| {
+            let mut gx0 = &gys[0] * &xs[1];
+            let mut gx1 = &gys[0] * &xs[0];
+
+            // fit shape
+            if xs[0].shape() != gx0.shape() {
+                gx0 = gx0.sum(sum_axes_to_desire(gx0.shape(), xs[0].shape()), true);
+            }
+
+            if xs[1].shape() != gx1.shape() {
+                gx1 = gx1.sum(sum_axes_to_desire(gx1.shape(), xs[0].shape()), true);
+            }
+
+            vec![gx0, gx1]
+        },
+    );
+
+    y
+}
+
 pub struct Mul;
 
 impl Function for Mul {
@@ -23,12 +51,7 @@ impl Function for Mul {
         vec![y.into_ndarray().into()]
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<Tensor>,
-    ) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
         #![allow(unused_variables)]
 
         xs.iter()
