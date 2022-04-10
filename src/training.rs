@@ -314,8 +314,8 @@ impl Progress {
     }
 }
 
-#[allow(dead_code)]
-fn main() {
+#[test]
+fn test() {
     TrainConfig {
         epoch: 10,
         train_data: (0..100).collect(),
@@ -328,7 +328,7 @@ fn main() {
     }
     .build()
     .fit(|batch, ctx| {
-        std::thread::sleep(std::time::Duration::from_millis(50));
+        std::thread::sleep(std::time::Duration::from_millis(10));
         let loss = Tensor::new(scalar(0.0));
         ctx.finish_batch(&loss, batch.len());
         ctx.add_metric(metrics::Loss::new(loss[[]], batch.len()));
