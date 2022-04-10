@@ -116,6 +116,11 @@ fn main() {
                 Uniform::new(0.0, 1.0),
                 &mut rand_isaac::Isaac64Rng::seed_from_u64(42),
             )),
+            Tensor::new(NDArray::random_using(
+                &[1, embedding_size][..],
+                Uniform::new(0.0, 1.0),
+                &mut rand_isaac::Isaac64Rng::seed_from_u64(42),
+            )),
             output_fn,
             |x|
             //onehot(&argmax(&*x), vocab_size).into()
@@ -130,6 +135,42 @@ fn main() {
     }
 
     println!("time: {:?}", start.elapsed());
+}
+
+pub trait Cell {
+    fn get_state_size(&self) -> usize;
+    fn get_input_size(&self) -> usize;
+    fn step(&self, x: Tensor, state: Tensor) -> (Tensor, Tensor);
+
+    fn encode(&self, initial_state: Tensor, x: &Vec<Tensor>) -> Vec<Tensor> {
+        let mut state = initial_state.clone();
+        let mut outputs = vec![];
+        for x in x {
+            let output;
+            (state, output) = self.step(x.clone(), state);
+            outputs.push(output.clone());
+        }
+        outputs
+    }
+
+    fn decode(
+        &self,
+        mut state: Tensor,
+        mut input: Tensor,
+        output_fn: impl Fn(Tensor) -> Tensor,
+        output_to_input_fn: impl Fn(Tensor) -> Tensor,
+        len: usize,
+    ) -> Vec<Tensor> {
+        let mut outputs = vec![];
+        for _ in 0..len {
+            let output;
+            (state, output) = self.step(input, state);
+            let output = output_fn(output);
+            outputs.push(output.clone());
+            input = output_to_input_fn(output);
+        }
+        outputs
+    }
 }
 
 pub struct Gru {
@@ -167,7 +208,26 @@ impl Gru {
         }
     }
 
-    pub fn step(&self, x: Tensor, state: Tensor) -> Tensor {
+    pub fn all_params(&self) -> Vec<Param> {
+        self.ws
+            .iter()
+            .chain(self.us.iter())
+            .chain(self.bs.iter())
+            .cloned()
+            .collect()
+    }
+}
+
+impl Cell for Gru {
+    fn get_state_size(&self) -> usize {
+        self.state_size
+    }
+
+    fn get_input_size(&self) -> usize {
+        self.input_size
+    }
+
+    fn step(&self, x: Tensor, state: Tensor) -> (Tensor, Tensor) {
         let z = call!(
             Sigmoid,
             x.matmul(&self.ws[0].get_tensor())
@@ -180,54 +240,14 @@ impl Gru {
                 + state.matmul(&self.us[1].get_tensor())
                 + self.bs[1].get_tensor()
         );
-        (Tensor::new(NDArray::ones(z.shape())) - z.clone()) * state.clone()
+        let state = (Tensor::new(NDArray::ones(z.shape())) - z.clone()) * state.clone()
             + z * call!(
                 Tanh,
                 x.matmul(&self.ws[2].get_tensor())
                     + (r * state).matmul(&self.us[2].get_tensor())
                     + self.bs[2].get_tensor()
-            )
-    }
-
-    pub fn encode(&self, initial_state: Tensor, x: &Vec<Tensor>) -> Vec<Tensor> {
-        let batch_size = x[0].shape()[0];
-        assert_eq!(initial_state.shape(), &[batch_size, self.state_size]);
-        for x in x {
-            assert_eq!(x.shape(), &[batch_size, self.input_size]);
-        }
-        let mut state = initial_state.clone();
-        let mut outputs = vec![];
-        for x in x {
-            state = self.step(x.clone(), state);
-            outputs.push(state.clone());
-        }
-        outputs
-    }
-
-    pub fn decode(
-        &self,
-        mut state: Tensor,
-        output_fn: impl Fn(Tensor) -> Tensor,
-        output_to_input_fn: impl Fn(Tensor) -> Tensor,
-        len: usize,
-    ) -> Vec<Tensor> {
-        let mut outputs = vec![];
-        for _ in 0..len {
-            let output = output_fn(state.clone());
-            outputs.push(output.clone());
-            let input = output_to_input_fn(output);
-            state = self.step(input, state);
-        }
-        outputs
-    }
-
-    pub fn all_params(&self) -> Vec<Param> {
-        self.ws
-            .iter()
-            .chain(self.us.iter())
-            .chain(self.bs.iter())
-            .cloned()
-            .collect()
+            );
+        (state.clone(), state)
     }
 }
 
