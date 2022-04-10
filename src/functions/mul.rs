@@ -30,6 +30,52 @@ pub fn mul(a: &Tensor, b: &Tensor) -> Tensor {
     y
 }
 
+pub fn multi_mul(xs: &[Tensor]) -> Tensor {
+    assert!(xs.len() >= 1);
+    if broadcasted_shape(&xs).is_none() {
+        panic!(
+            "cannot broadcast on shapes: {:?}",
+            xs.iter()
+                .map(|x| (**x).shape().to_vec())
+                .collect::<Vec<_>>()
+        );
+    };
+
+    let mut y = (*xs[0]).to_owned();
+    for x in xs.iter().skip(1) {
+        y = y * &**x;
+    }
+    let y = Tensor::new(y.into_ndarray());
+
+    chain(xs, &[y.clone()], false, "multi_mul", |xs, _ys, gys| {
+        xs.iter()
+            .enumerate()
+            .map(|(i, x)| {
+                let mut g = Mul
+                    .call(
+                        (0..xs.len())
+                            .filter(|j| *j != i)
+                            .map(|j| xs[j].clone())
+                            .chain(gys.iter().cloned())
+                            .collect(),
+                    )
+                    .pop()
+                    .unwrap();
+
+                // fit shape
+                if x.shape() != g.shape() {
+                    g = call!(Sum::new(sum_axes_to_desire(g.shape(), x.shape()), true), g);
+                    // TODO: https://github.com/oreilly-japan/deep-learning-from-scratch-3/blob/06419d7fb2e7ea19aa3719efc27795edbdc41a1f/dezero/utils.py#L125
+                }
+
+                g
+            })
+            .collect()
+    });
+
+    y
+}
+
 pub struct Mul;
 
 impl Function for Mul {

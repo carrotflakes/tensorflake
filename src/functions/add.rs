@@ -29,6 +29,34 @@ pub fn add(a: &Tensor, b: &Tensor) -> Tensor {
     y
 }
 
+pub fn multi_add(xs: &[Tensor]) -> Tensor {
+    let mut y = (*xs[0]).clone();
+    for x in xs.iter().skip(1) {
+        y = y + &**x;
+    }
+    let y = Tensor::new(y);
+
+    chain(xs, &[y.clone()], false, "multi_add", |xs, _ys, gys| {
+        xs.iter()
+            .map(|x| {
+                let mut gx = gys[0].clone();
+
+                // fit shape
+                if x.shape() != gx.shape() {
+                    gx = call!(
+                        Sum::new(sum_axes_to_desire(gx.shape(), x.shape()), false),
+                        gx
+                    );
+                }
+
+                gx
+            })
+            .collect()
+    });
+
+    y
+}
+
 pub struct Add;
 
 impl Function for Add {
@@ -63,29 +91,27 @@ impl Function for Add {
 }
 
 #[test]
-fn test_add() {
+fn test() {
     use crate::scalar;
 
     {
-        let x = backprop(scalar(1.0));
-        let y = backprop(scalar(2.0));
-        let z = backprop(scalar(3.0));
-        let xs = vec![x.clone(), y.clone(), z.clone()];
-        let ys = Add.call(xs);
-        assert_eq!(*ys[0], scalar(6.0));
+        let a = backprop(scalar(1.0));
+        let b = backprop(scalar(2.0));
+        let c = backprop(scalar(3.0));
+        let y = multi_add(&[a.clone(), b.clone(), c.clone()]);
+        assert_eq!(*y, scalar(6.0));
 
-        let grads = gradients(&ys, &vec![x.clone(), y.clone(), z.clone()], false);
+        let grads = gradients(&[y], &[a.clone(), b.clone(), c.clone()], false);
         assert_eq!(grads[0][[]], 1.0);
         assert_eq!(grads[1][[]], 1.0);
         assert_eq!(grads[2][[]], 1.0);
     }
     {
         let x = backprop(scalar(3.0));
-        Add.call(vec![x.clone(), x.clone()]);
-        let ys = Add.call(vec![x.clone(), x.clone()]);
-        assert_eq!(*ys[0], scalar(6.0));
+        let y = multi_add(&[x.clone(), x.clone()]);
+        assert_eq!(*y, scalar(6.0));
 
-        let grads = gradients(&ys, &vec![x.clone()], false);
+        let grads = gradients(&[y], &[x.clone()], false);
         assert_eq!(grads[0][[]], 2.0);
     }
 }
