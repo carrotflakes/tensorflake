@@ -1,5 +1,5 @@
 use super::Layer;
-use crate::{functions::*, optimizers::Fixed, *};
+use crate::{functions::*, initializers::Initializer, optimizers::Fixed, *};
 
 pub struct Linear {
     pub w: Param,
@@ -10,12 +10,12 @@ impl Linear {
     pub fn new(
         input: usize,
         output: usize,
-        w: &mut impl FnMut(&[usize]) -> Param,
-        b: &mut impl FnMut(&[usize]) -> Param,
+        w: &mut impl Initializer,
+        b: &mut impl Initializer,
     ) -> Self {
         Self {
-            w: w(&[input, output]),
-            b: b(&[output]),
+            w: w.initialize(&[input, output]),
+            b: b.initialize(&[output]),
         }
     }
 

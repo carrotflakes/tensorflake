@@ -1,5 +1,5 @@
 use super::*;
-use crate::*;
+use crate::{initializers::Initializer, *};
 
 pub struct MLP {
     pub linears: Vec<Linear>,
@@ -12,8 +12,8 @@ impl MLP {
         sizes: &[usize],
         dropout: Option<Dropout>,
         activation: impl Fn(Tensor) -> Tensor + Sync + Send + 'static,
-        w: &mut impl FnMut(&[usize]) -> Param,
-        b: &mut impl FnMut(&[usize]) -> Param,
+        w: &mut impl Initializer,
+        b: &mut impl Initializer,
     ) -> Self {
         Self {
             linears: sizes

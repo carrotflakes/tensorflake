@@ -1,6 +1,6 @@
 mod data;
 
-use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
+use ndarray_rand::rand_distr::Normal;
 use tensorflake::{
     losses::SoftmaxCrossEntropy,
     nn::{activations::Relu, *},
@@ -11,24 +11,22 @@ use tensorflake::{
 fn main() {
     let mnist = data::mnist::Mnist::load("./data/mnist");
 
-    let rng = DefaultRng::seed_from_u64(42);
-    let param_gen = {
-        let rng = rng.clone();
-        move || {
-            let mut rng = rng.clone();
-            move |shape: &[usize]| -> Param {
-                let t = NDArray::random_using(shape, Uniform::new(0., 0.01), &mut rng);
-                Param::new(t, optimizers::AdamOptimizer::new())
-            }
-        }
-    };
+    let optimizer = optimizers::AdamOptimizer::new();
+    let mut init_kernel = initializers::InitializerWithOptimizer::new(
+        Normal::new(0.0, 0.1).unwrap(),
+        optimizer.clone(),
+    );
+    let mut init_bias = initializers::InitializerWithOptimizer::new(
+        Normal::new(0.0, 0.0).unwrap(),
+        optimizer.clone(),
+    );
 
     let mlp = MLP::new(
         &[28 * 28, 128, 10],
         Some(Dropout::new(0.2, 42)),
         |x| Relu.call(vec![x]).pop().unwrap(),
-        &mut param_gen(),
-        &mut param_gen(),
+        &mut init_kernel,
+        &mut init_bias,
     );
 
     let start = std::time::Instant::now();

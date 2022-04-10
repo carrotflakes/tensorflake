@@ -1,4 +1,4 @@
-use crate::{functions::select, *};
+use crate::{functions::select, initializers::Initializer, *};
 
 pub struct Embedding {
     pub embedding_size: usize,
@@ -6,10 +6,10 @@ pub struct Embedding {
 }
 
 impl Embedding {
-    pub fn new(embedding_size: usize, len: usize, gen: &mut impl FnMut(&[usize]) -> Param) -> Self {
+    pub fn new(embedding_size: usize, len: usize, init: &mut impl Initializer) -> Self {
         Self {
             embedding_size,
-            weights: gen(&[len, embedding_size]),
+            weights: init.initialize(&[len, embedding_size]),
         }
     }
 }

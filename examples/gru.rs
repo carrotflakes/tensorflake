@@ -2,9 +2,8 @@ mod data;
 
 use std::sync::{Arc, Mutex};
 
-use ndarray::prelude::*;
 use ndarray_rand::{
-    rand::{prelude::*, SeedableRng},
+    rand::SeedableRng,
     rand_distr::{Normal, Uniform},
     RandomExt,
 };
@@ -40,27 +39,20 @@ fn main() {
     let norm =
         normalization::Normalization::new(vec![0, 1], 0.001, optimizers::AdamOptimizer::new());
 
-    let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
-    let mut param_gen = {
-        let mut rng = rng.clone();
-        let optimizer = optimizer.clone();
-        move || {
-            rng.gen::<u32>();
-            let mut rng = rng.clone();
-            let optimizer = optimizer.clone();
-            move |shape: &[usize]| -> Param {
-                let t = Array::random_using(shape, Normal::new(0., 0.1).unwrap(), &mut rng)
-                    .into_ndarray();
-                Param::new_shared(t, optimizer.clone())
-            }
-        }
-    };
+    let mut init_kernel = initializers::InitializerWithSharedOptimizer::new(
+        Normal::new(0., 0.1).unwrap(),
+        optimizer.clone(),
+    );
+    let mut init_bias = initializers::InitializerWithSharedOptimizer::new(
+        Normal::new(0., 0.0).unwrap(),
+        optimizer.clone(),
+    );
 
     let embedding_size = 64;
     let state_size = 128;
-    let embedding = Embedding::new(embedding_size, vocab_size, &mut param_gen());
-    let model = Gru::new(embedding_size, state_size, &mut param_gen());
-    let linear = Linear::new(state_size, vocab_size, &mut param_gen(), &mut param_gen());
+    let embedding = Embedding::new(embedding_size, vocab_size, &mut init_kernel);
+    let model = Gru::new(embedding_size, state_size, &mut init_kernel);
+    let linear = Linear::new(state_size, vocab_size, &mut init_kernel, &mut init_bias);
     // let output_fn = |x: Tensor| linear.call(x, true);
     let output_fn = |x: Tensor| linear.call(norm.call(x, true), true);
 
@@ -122,7 +114,7 @@ fn main() {
             Tensor::new(NDArray::random_using(
                 &[1, state_size][..],
                 Uniform::new(0.0, 1.0),
-                &mut rng,
+                &mut rand_isaac::Isaac64Rng::seed_from_u64(42),
             )),
             output_fn,
             |x|
@@ -152,25 +144,25 @@ impl Gru {
     pub fn new(
         input_size: usize,
         state_size: usize,
-        param_gen: &mut impl FnMut(&[usize]) -> Param,
+        kernel: &mut impl initializers::Initializer,
     ) -> Self {
         Self {
             input_size,
             state_size,
             ws: [
-                param_gen(&[input_size, state_size]),
-                param_gen(&[input_size, state_size]),
-                param_gen(&[input_size, state_size]),
+                kernel.initialize(&[input_size, state_size]),
+                kernel.initialize(&[input_size, state_size]),
+                kernel.initialize(&[input_size, state_size]),
             ],
             us: [
-                param_gen(&[state_size, state_size]),
-                param_gen(&[state_size, state_size]),
-                param_gen(&[state_size, state_size]),
+                kernel.initialize(&[state_size, state_size]),
+                kernel.initialize(&[state_size, state_size]),
+                kernel.initialize(&[state_size, state_size]),
             ],
             bs: [
-                param_gen(&[state_size]),
-                param_gen(&[state_size]),
-                param_gen(&[state_size]),
+                kernel.initialize(&[state_size]),
+                kernel.initialize(&[state_size]),
+                kernel.initialize(&[state_size]),
             ],
         }
     }

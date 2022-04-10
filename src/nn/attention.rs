@@ -1,4 +1,4 @@
-use crate::*;
+use crate::{initializers::Initializer, *};
 
 use super::{activations::Softmax, normalization::Normalization, Linear};
 
@@ -20,8 +20,8 @@ impl MultiHeadAttention {
         embed_dim: usize,
         num_heads: usize,
         layer_norm_eps: f32,
-        w: &mut impl FnMut(&[usize]) -> Param,
-        b: &mut impl FnMut(&[usize]) -> Param,
+        w: &mut impl Initializer,
+        b: &mut impl Initializer,
         opt: impl Optimizer,
     ) -> Self {
         MultiHeadAttention {
