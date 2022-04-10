@@ -15,7 +15,7 @@ I'm aiming to be able to train several networks on the CPU fast.
 - [x] Strong typing -> Functional API (tensorflake::function::chain)
   - [ ] Generic for dimension
 - [ ] Multi thread
-  - [ ] High level API
+  - [x] High level API
   - [ ] Synchronous update
   - [x] Asynchronous update
 - [x] Impl ops
@@ -26,13 +26,13 @@ I'm aiming to be able to train several networks on the CPU fast.
 - [ ] Batch normalization
 - [x] Embedding
 - [ ] Sequential
-- [ ] Param creator
+- [ ] Param creator -> Initializer
 - [ ] Benchmarks
 - [ ] Measure the execution time of functions and export it as dot file
 - [ ] Tensor summarization
 - [ ] Sparse tensor
 - [ ] Examples
-  - [ ] CNN -> too slow...
+  - [ ] CNN
   - [ ] RNN
   - [ ] GAN
   - [ ] VAE
