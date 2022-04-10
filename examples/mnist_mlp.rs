@@ -1,93 +1,64 @@
 mod data;
 
-use ndarray::prelude::*;
-use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
+use ndarray_rand::rand_distr::Normal;
 use tensorflake::{
     losses::SoftmaxCrossEntropy,
-    metrics::{argmax_accuracy, Metric},
     nn::{activations::Relu, *},
+    training::TrainConfig,
     *,
 };
 
 fn main() {
     let mnist = data::mnist::Mnist::load("./data/mnist");
 
-    let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
-    let param_gen = {
-        let rng = rng.clone();
-        move || {
-            let mut rng = rng.clone();
-            move |shape: &[usize]| -> Param {
-                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                Param::new(t, optimizers::AdamOptimizer::new())
-            }
-        }
-    };
+    let optimizer = optimizers::AdamOptimizer::new();
+    let mut init_kernel = initializers::InitializerWithOptimizer::new(
+        Normal::new(0.0, 0.1).unwrap(),
+        optimizer.clone(),
+    );
+    let mut init_bias = initializers::InitializerWithOptimizer::new(
+        Normal::new(0.0, 0.0).unwrap(),
+        optimizer.clone(),
+    );
 
     let mlp = MLP::new(
         &[28 * 28, 128, 10],
         Some(Dropout::new(0.2, 42)),
         |x| Relu.call(vec![x]).pop().unwrap(),
-        &mut param_gen(),
-        &mut param_gen(),
+        &mut init_kernel,
+        &mut init_bias,
     );
-
-    let batch_size = 100;
 
     let start = std::time::Instant::now();
 
-    for epoch in 0..10 {
-        let mut train_loss = 0.0;
-        let mut trn_acc = 0.0;
-        for (x, t) in mini_batches(&mnist.train_images, &mnist.train_labels, batch_size) {
-            let x = Tensor::new(x);
-            let y = mlp.call(x.clone(), true);
-            let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
-            optimize(&loss); // MomentumSGD: 0.1, Adam: 0.001
-            train_loss += loss[[]] * t.len() as f32;
-            trn_acc += argmax_accuracy(&t, &y).value() * t.len() as f32;
-        }
-        train_loss /= mnist.train_labels.len() as f32;
-        trn_acc /= mnist.train_labels.len() as f32;
-
-        let mut validation_loss = 0.0;
-        let mut val_acc = 0.0;
-        for (x, t) in mini_batches(&mnist.test_images, &mnist.test_labels, batch_size) {
-            let x = Tensor::new(x);
-            let y = mlp.call(x.clone(), false);
-            let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
-            validation_loss += loss[[]] * t.len() as f32;
-            val_acc += argmax_accuracy(&t, &y).value() * t.len() as f32;
-        }
-        validation_loss /= mnist.test_labels.len() as f32;
-        val_acc /= mnist.test_labels.len() as f32;
-
-        println!(
-            "epoch: {}, trn_loss: {:.4}, trn_acc: {:.4}, val_loss: {:.4}, val_acc: {:.4}",
-            epoch, train_loss, trn_acc, validation_loss, val_acc
-        );
+    TrainConfig {
+        epoch: 30,
+        train_data: mnist.trains().collect(),
+        validation_data: mnist.tests().collect(),
+        validation_rate: 0.1,
+        batch_size: 32,
+        parallel: false,
+        ..Default::default()
     }
+    .build()
+    .fit(|batch, ctx| {
+        let x = Tensor::new(
+            NDArray::from_shape_vec(
+                &[batch.len(), 28 * 28][..],
+                batch
+                    .iter()
+                    .flat_map(|x| x.0)
+                    .map(|x| *x as f32 / 255.0)
+                    .collect(),
+            )
+            .unwrap(),
+        );
+        let t: Vec<_> = batch.iter().map(|x| x.1 as usize).collect();
+        let y = mlp.call(x.clone(), true);
+        let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
+        ctx.finish_batch(&loss, batch.len());
+        ctx.add_metric(metrics::argmax_accuracy(&t, &y));
+    });
 
     println!("time: {:?}", start.elapsed());
-}
-
-fn gen_img(img: &[u8]) -> NDArray {
-    Array2::from_shape_vec(
-        (img.len() / (28 * 28), 28 * 28),
-        img.iter().map(|x| *x as f32 / 255.0).collect(),
-    )
-    .unwrap()
-    .into_ndarray()
-}
-
-fn mini_batches<'a>(
-    img: &'a [u8],
-    lbl: &'a [u8],
-    batch_size: usize,
-) -> impl Iterator<Item = (NDArray, Vec<usize>)> + 'a {
-    let img = img.chunks(batch_size * 28 * 28).map(gen_img);
-    let lbl = lbl
-        .chunks(batch_size)
-        .map(|x| x.iter().map(|x| *x as usize).collect::<Vec<_>>());
-    img.zip(lbl)
 }
