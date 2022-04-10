@@ -1,4 +1,3 @@
-mod execution_context;
 pub mod export_dot;
 mod function;
 mod function_call;
@@ -14,11 +13,11 @@ pub mod optimizers;
 mod param;
 pub mod param_bin;
 mod tensor;
+pub mod training;
 
 #[cfg(test)]
 mod test;
 
-pub use execution_context::*;
 pub use function::*;
 pub use function_call::FunctionCall;
 pub use graph::gradients;

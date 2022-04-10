@@ -1,5 +1,4 @@
 mod data;
-mod training;
 
 use ndarray_rand::{
     rand::{Rng, SeedableRng},
@@ -12,10 +11,9 @@ use tensorflake::{
         activations::{Relu, Sigmoid},
         *,
     },
+    training::TrainConfig,
     *,
 };
-
-use training::TrainConfig;
 
 fn main() {
     let mnist = data::mnist::Mnist::load("./data/fashion-mnist");

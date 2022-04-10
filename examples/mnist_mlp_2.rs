@@ -1,14 +1,12 @@
 mod data;
-mod training;
 
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use tensorflake::{
     losses::SoftmaxCrossEntropy,
     nn::{activations::Relu, *},
+    training::TrainConfig,
     *,
 };
-
-use crate::training::TrainConfig;
 
 fn main() {
     let mnist = data::mnist::Mnist::load("./data/mnist");

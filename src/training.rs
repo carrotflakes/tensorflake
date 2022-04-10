@@ -1,8 +1,8 @@
 use std::sync::{Arc, Mutex};
 
+use crate::*;
 use ndarray_rand::rand::prelude::*;
 use rayon::prelude::*;
-use tensorflake::*;
 
 #[derive(Clone)]
 pub struct TrainConfig<T> {

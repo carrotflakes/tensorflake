@@ -1,5 +1,3 @@
-mod training;
-
 use std::sync::{Arc, Mutex};
 
 use image::GenericImageView;
@@ -9,9 +7,13 @@ use ndarray_rand::{
     rand_distr::Uniform,
     RandomExt,
 };
-use tensorflake::{functions::*, losses::*, nn::*, *};
-
-use crate::training::{TrainConfig, UpdateStrategy};
+use tensorflake::{
+    functions::*,
+    losses::*,
+    nn::*,
+    training::{TrainConfig, UpdateStrategy},
+    *,
+};
 
 fn main() {
     let img = image::io::Reader::open("img.png")

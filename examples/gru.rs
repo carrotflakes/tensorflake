@@ -1,5 +1,4 @@
 mod data;
-mod training;
 
 use std::sync::{Arc, Mutex};
 
@@ -14,10 +13,9 @@ use tensorflake::{
     losses::SoftmaxCrossEntropy,
     ndarray_util::argmax,
     nn::{activations::Sigmoid, *},
+    training::TrainConfig,
     *,
 };
-
-use crate::training::TrainConfig;
 
 fn main() {
     // let mut data = data::arith::make(10000, 42, 15);

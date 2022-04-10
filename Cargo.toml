@@ -10,7 +10,7 @@ ndarray = "0.15.4"
 ndarray-rand = "0.14.0"
 rand_isaac = "0.3.0"
 ndarray_einsum_beta = "0.7.0"
+rayon = "1.5.1"
 
 [dev-dependencies]
-rayon = "1.5.1"
 image = "0.24.1"
