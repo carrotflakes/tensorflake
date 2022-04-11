@@ -8,7 +8,7 @@ pub fn sum(x: &Tensor, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Tensor {
     let axes = axes.into();
     let mut y = (**x).to_owned();
     for axis in axes.iter().rev() {
-        y = x.sum_axis(Axis(*axis));
+        y = y.sum_axis(Axis(*axis));
         if keep_dim {
             y.insert_axis_inplace(Axis(*axis));
         }
