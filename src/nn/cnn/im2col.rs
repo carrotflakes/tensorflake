@@ -270,3 +270,13 @@ fn test_get_conv_outsize() {
     assert_eq!(get_conv_outsize(3, 1, 2, 1), 3);
     assert_eq!(get_conv_outsize(3, 2, 1, 1), 4);
 }
+
+pub fn get_transposed_conv_outsize(
+    input_size: usize,
+    kernel_size: usize,
+    stride: usize,
+    pad: usize,
+    out_pad: usize,
+) -> usize {
+    stride * (input_size - 1) + kernel_size - 2 * pad + out_pad
+}

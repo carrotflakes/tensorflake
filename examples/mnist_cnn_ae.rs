@@ -2,7 +2,6 @@ mod data;
 
 use ndarray_rand::rand_distr::Normal;
 use tensorflake::{
-    initializers::Initializer,
     losses::naive_mean_squared_error,
     nn::{
         activations::{Relu, Sigmoid},
@@ -91,42 +90,54 @@ impl Model {
         Self {
             encoder_convs: [
                 Conv2d::new(
+                    1,
+                    16,
                     [3, 3],
                     [2, 2],
                     [1, 1],
-                    init_kernel.initialize(&[16, 1, 3, 3]),
-                    Some(init_bias.initialize(&[16])),
+                    &mut init_kernel,
+                    Some(&mut init_bias),
                 ),
                 Conv2d::new(
+                    16,
+                    8,
                     [3, 3],
                     [2, 2],
                     [1, 1],
-                    init_kernel.initialize(&[8, 16, 3, 3]),
-                    Some(init_bias.initialize(&[8])),
+                    &mut init_kernel,
+                    Some(&mut init_bias),
                 ),
             ],
             decoder_convts: [
                 Conv2dTranspose::new(
+                    8,
+                    8,
+                    [3, 3],
                     [2, 2],
                     [1, 1],
-                    [14, 14],
-                    init_kernel.initialize(&[8, 8, 3, 3]),
-                    Some(init_bias.initialize(&[8])),
+                    Some([14, 14]),
+                    &mut init_kernel,
+                    Some(&mut init_bias),
                 ),
                 Conv2dTranspose::new(
+                    16,
+                    8,
+                    [3, 3],
                     [2, 2],
                     [1, 1],
-                    [28, 28],
-                    init_kernel.initialize(&[8, 16, 3, 3]),
-                    Some(init_bias.initialize(&[16])),
+                    Some([28, 28]),
+                    &mut init_kernel,
+                    Some(&mut init_bias),
                 ),
             ],
             decoder_conv: Conv2d::new(
+                16,
+                1,
                 [3, 3],
                 [1, 1],
                 [1, 1],
-                init_kernel.initialize(&[1, 16, 3, 3]),
-                Some(init_bias.initialize(&[1])),
+                &mut init_kernel,
+                Some(&mut init_bias),
             ),
         }
     }

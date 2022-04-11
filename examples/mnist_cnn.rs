@@ -70,19 +70,23 @@ impl Model {
         };
         Self {
             conv1: Conv2d::new(
+                1,
+                10,
                 [3, 3],
                 // [1, 1],
                 [2, 2],
                 [1, 1],
-                param_gen()(&[10, 1, 3, 3]),
-                Some(param_gen()(&[10])),
+                &mut param_gen(),
+                Some(&mut param_gen()),
             ),
             conv2: Conv2d::new(
+                10,
+                10,
                 [3, 3],
                 [2, 2],
                 [1, 1],
-                param_gen()(&[10, 10, 3, 3]),
-                Some(param_gen()(&[10])),
+                &mut param_gen(),
+                Some(&mut param_gen()),
             ),
             linear: Linear::new(10 * 7 * 7, 10, &mut param_gen(), &mut param_gen()),
         }
@@ -132,18 +136,22 @@ impl BigModel {
         };
         Self {
             conv1: Conv2d::new(
+                1,
+                32,
                 [3, 3],
                 [1, 1],
                 [0, 0],
-                param_gen()(&[32, 1, 3, 3]),
-                Some(param_gen()(&[32])),
+                &mut param_gen(),
+                Some(&mut param_gen()),
             ),
             conv2: Conv2d::new(
+                32,
+                64,
                 [3, 3],
                 [1, 1],
                 [0, 0],
-                param_gen()(&[64, 32, 3, 3]),
-                Some(param_gen()(&[64])),
+                &mut param_gen(),
+                Some(&mut param_gen()),
             ),
             linear1: Linear::new(64 * 12 * 12, 128, &mut param_gen(), &mut param_gen()),
             linear2: Linear::new(128, 10, &mut param_gen(), &mut param_gen()),

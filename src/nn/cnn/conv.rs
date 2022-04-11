@@ -2,11 +2,12 @@ use ndarray::Axis;
 
 use crate::{
     functions::*,
+    initializers::Initializer,
     nn::im2col::{get_conv_outsize, Im2col},
     *,
 };
 
-use super::im2col::{col2im, im2col, Col2im};
+use super::im2col::{col2im, get_transposed_conv_outsize, im2col, Col2im};
 
 pub struct Conv2d {
     pub kernel_size: [usize; 2],
@@ -18,18 +19,25 @@ pub struct Conv2d {
 
 impl Conv2d {
     pub fn new(
+        input_channel: usize,
+        output_channel: usize,
         kernel_size: [usize; 2],
         stride: [usize; 2],
         padding: [usize; 2],
-        w: Param,
-        b: Option<Param>,
+        w: &mut impl Initializer,
+        b: Option<&mut impl Initializer>,
     ) -> Self {
         Self {
             kernel_size,
             stride,
             padding,
-            w,
-            b,
+            w: w.initialize(&[
+                output_channel,
+                input_channel,
+                kernel_size[0],
+                kernel_size[1],
+            ]),
+            b: b.map(|b| b.initialize(&[output_channel])),
         }
     }
 }
@@ -167,27 +175,37 @@ fn test_conv2d() {
 }
 
 pub struct Conv2dTranspose {
+    pub kernel_size: [usize; 2],
     pub stride: [usize; 2],
     pub padding: [usize; 2],
-    pub out_size: [usize; 2],
+    pub out_size: Option<[usize; 2]>,
     pub w: Param,         // [out_ch, in_ch, kh, kw]
     pub b: Option<Param>, // [out_ch]
 }
 
 impl Conv2dTranspose {
     pub fn new(
+        input_channel: usize,
+        output_channel: usize,
+        kernel_size: [usize; 2],
         stride: [usize; 2],
         padding: [usize; 2],
-        out_size: [usize; 2],
-        w: Param,
-        b: Option<Param>,
+        out_size: Option<[usize; 2]>,
+        w: &mut impl Initializer,
+        b: Option<&mut impl Initializer>,
     ) -> Self {
         Self {
+            kernel_size,
             stride,
             padding,
             out_size,
-            w,
-            b,
+            w: w.initialize(&[
+                output_channel,
+                input_channel,
+                kernel_size[0],
+                kernel_size[1],
+            ]),
+            b: b.map(|b| b.initialize(&[input_channel])),
         }
     }
 }
@@ -202,12 +220,28 @@ impl Layer for Conv2dTranspose {
     {
         let kernel = self.w.get_tensor(); // [out_ch, in_ch, kh, kw]
 
-        let img_shape = [
-            x.shape()[0],
-            kernel.shape()[1],
-            self.out_size[0],
-            self.out_size[1],
-        ];
+        let [oh, ow] = if let Some(out_size) = &self.out_size {
+            out_size.clone()
+        } else {
+            [
+                get_transposed_conv_outsize(
+                    x.shape()[2],
+                    self.kernel_size[0],
+                    self.stride[0],
+                    self.padding[0],
+                    0,
+                ),
+                get_transposed_conv_outsize(
+                    x.shape()[3],
+                    self.kernel_size[1],
+                    self.stride[1],
+                    self.padding[1],
+                    0,
+                ),
+            ]
+        };
+
+        let img_shape = [x.shape()[0], kernel.shape()[1], oh, ow];
 
         let kernel_size = [kernel.shape()[2], kernel.shape()[3]];
         let kernel = kernel.reshape(vec![
