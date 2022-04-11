@@ -1,11 +1,8 @@
 mod data;
 
-use ndarray_rand::{
-    rand::{Rng, SeedableRng},
-    rand_distr::Uniform,
-    RandomExt,
-};
+use ndarray_rand::rand_distr::Normal;
 use tensorflake::{
+    initializers::Initializer,
     losses::naive_mean_squared_error,
     nn::{
         activations::{Relu, Sigmoid},
@@ -48,13 +45,10 @@ fn main() {
             );
             let y = model.call(x.clone(), ctx.train);
             let loss = naive_mean_squared_error(x.clone(), y.clone());
-            if ctx.train {
-                optimize(&loss);
-            }
-            ctx.count(batch.len());
-            ctx.add_metric(metrics::Loss::new(loss[[]], batch.len()));
+            ctx.finish_batch(&loss, batch.len());
         });
 
+        // generate images
         let x = Tensor::new(
             NDArray::from_shape_vec(
                 &[32, 1, 28, 28][..],
@@ -85,33 +79,30 @@ pub struct Model {
 
 impl Model {
     pub fn new() -> Self {
-        let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
-        let param_gen = {
-            rng.gen::<u32>();
-            let rng = rng.clone();
-            move || {
-                let mut rng = rng.clone();
-                move |shape: &[usize]| -> Param {
-                    let t = NDArray::random_using(shape, Uniform::new(-0.01, 0.01), &mut rng);
-                    Param::new(t, optimizers::AdamOptimizer::new())
-                }
-            }
-        };
+        let optimizer = optimizers::AdamOptimizer::new();
+        let mut init_kernel = initializers::InitializerWithOptimizer::new(
+            Normal::new(0.0, 0.1).unwrap(),
+            optimizer.clone(),
+        );
+        let mut init_bias = initializers::InitializerWithOptimizer::new(
+            Normal::new(0.0, 0.0).unwrap(),
+            optimizer.clone(),
+        );
         Self {
             encoder_convs: [
                 Conv2d::new(
                     [3, 3],
                     [2, 2],
                     [1, 1],
-                    param_gen()(&[16, 1, 3, 3]),
-                    Some(param_gen()(&[16])),
+                    init_kernel.initialize(&[16, 1, 3, 3]),
+                    Some(init_bias.initialize(&[16])),
                 ),
                 Conv2d::new(
                     [3, 3],
                     [2, 2],
                     [1, 1],
-                    param_gen()(&[8, 16, 3, 3]),
-                    Some(param_gen()(&[8])),
+                    init_kernel.initialize(&[8, 16, 3, 3]),
+                    Some(init_bias.initialize(&[8])),
                 ),
             ],
             decoder_convts: [
@@ -119,23 +110,23 @@ impl Model {
                     [2, 2],
                     [1, 1],
                     [14, 14],
-                    param_gen()(&[8, 8, 3, 3]),
-                    Some(param_gen()(&[8])),
+                    init_kernel.initialize(&[8, 8, 3, 3]),
+                    Some(init_bias.initialize(&[8])),
                 ),
                 Conv2dTranspose::new(
                     [2, 2],
                     [1, 1],
                     [28, 28],
-                    param_gen()(&[8, 16, 3, 3]),
-                    Some(param_gen()(&[16])),
+                    init_kernel.initialize(&[8, 16, 3, 3]),
+                    Some(init_bias.initialize(&[16])),
                 ),
             ],
             decoder_conv: Conv2d::new(
                 [3, 3],
                 [1, 1],
                 [1, 1],
-                param_gen()(&[1, 16, 3, 3]),
-                Some(param_gen()(&[1])),
+                init_kernel.initialize(&[1, 16, 3, 3]),
+                Some(init_bias.initialize(&[1])),
             ),
         }
     }
