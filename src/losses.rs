@@ -8,12 +8,9 @@ use crate::nn::activations::Softmax;
 use crate::*;
 
 pub fn naive_mean_squared_error(x0: Tensor, x1: Tensor) -> Tensor {
-    let x = call!(Pow::new(2.0), call!(Sub, x0, x1));
-    call!(
-        Div,
-        call!(Sum::new((0..x.ndim()).collect(), false), x),
-        Tensor::new(scalar(x.shape().iter().product::<usize>() as f32))
-    )
+    let x = (x0 - x1).pow(2.0);
+    x.sum(Vec::from_iter(0..x.ndim()), false)
+        / Tensor::new(scalar(x.shape().iter().product::<usize>() as f32))
 }
 
 pub struct SoftmaxCrossEntropy {

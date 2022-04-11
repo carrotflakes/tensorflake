@@ -70,13 +70,9 @@ impl Layer for Conv2d {
         // col: [batch_size * oh * ow, in_ch * kh * kw]
         let w = self.w.get_tensor();
         let oc = w.shape()[0];
-        let kernel = call!(
-            T,
-            call!(
-                Reshape::new(vec![w.shape()[0], w.shape().iter().skip(1).product()]),
-                w
-            )
-        );
+        let kernel = w
+            .reshape(vec![w.shape()[0], w.shape().iter().skip(1).product()])
+            .t();
         // w: [in_ch * kh * kw, out_ch]
         let t = if let Some(b) = &self.b {
             matmul_add(&col, &kernel, &b.get_tensor())
@@ -84,10 +80,9 @@ impl Layer for Conv2d {
             col.matmul(&kernel)
         };
         // t: [batch_size * oh * ow, out_ch]
-        let y = call!(
-            Transpose::new(vec![0, 3, 1, 2]),
-            call!(Reshape::new(vec![x.shape()[0], oh, ow, oc]), t)
-        );
+        let y = t
+            .reshape(vec![x.shape()[0], oh, ow, oc])
+            .transpose(vec![0, 3, 1, 2]);
 
         // let stride = self.stride;
         // let padding = self.padding;

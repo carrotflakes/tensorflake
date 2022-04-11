@@ -8,7 +8,6 @@ use ndarray_rand::{
     RandomExt,
 };
 use tensorflake::{
-    functions::*,
     losses::*,
     nn::*,
     training::{TrainConfig, UpdateStrategy},
@@ -117,11 +116,11 @@ impl Model {
                 &[2, 28, 28, 28, 28, 28, 28, 28, 28, 28, 3],
                 // Some(Dropout::new(0.2, 42)),
                 None,
-                |x| call!(Sin, x),
+                |x| x.sin(),
                 w,
                 b,
             ),
-            activation: Box::new(|x| call!(activations::Sigmoid, x)),
+            activation: Box::new(|x| activations::sigmoid(&x)),
         }
     }
 }

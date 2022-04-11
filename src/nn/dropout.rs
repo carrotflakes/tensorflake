@@ -45,7 +45,7 @@ impl Layer for Dropout {
             .map(|x| if *x > rate { 1.0 / (1.0 - rate) } else { 0.0 })
             .into_ndarray(),
         );
-        call!(functions::Mul, x, fuctor)
+        x * fuctor
     }
 
     fn all_params(&self) -> Vec<Param> {

@@ -11,7 +11,7 @@ use tensorflake::{
     functions::*,
     losses::SoftmaxCrossEntropy,
     ndarray_util::argmax,
-    nn::{activations::Sigmoid, *},
+    nn::{activations::sigmoid, *},
     training::TrainConfig,
     *,
 };
@@ -228,24 +228,21 @@ impl Cell for Gru {
     }
 
     fn step(&self, x: Tensor, state: Tensor) -> (Tensor, Tensor) {
-        let z = call!(
-            Sigmoid,
-            x.matmul(&self.ws[0].get_tensor())
+        let z = sigmoid(
+            &(x.matmul(&self.ws[0].get_tensor())
                 + state.matmul(&self.us[0].get_tensor())
-                + self.bs[0].get_tensor()
+                + self.bs[0].get_tensor()),
         );
-        let r = call!(
-            Sigmoid,
-            x.matmul(&self.ws[1].get_tensor())
+        let r = sigmoid(
+            &(x.matmul(&self.ws[1].get_tensor())
                 + state.matmul(&self.us[1].get_tensor())
-                + self.bs[1].get_tensor()
+                + self.bs[1].get_tensor()),
         );
         let state = (Tensor::new(NDArray::ones(z.shape())) - z.clone()) * state.clone()
-            + z * call!(
-                Tanh,
-                x.matmul(&self.ws[2].get_tensor())
+            + z * tanh(
+                &(x.matmul(&self.ws[2].get_tensor())
                     + (r * state).matmul(&self.us[2].get_tensor())
-                    + self.bs[2].get_tensor()
+                    + self.bs[2].get_tensor()),
             );
         (state.clone(), state)
     }

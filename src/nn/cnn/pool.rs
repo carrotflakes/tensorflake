@@ -15,10 +15,8 @@ pub fn naive_max_pooling(
     let col = call!(Im2col::new(kernel_size, stride, pad, true), x);
     let col = col.reshape([col.shape().iter().product::<usize>() / (kh * kw), kh * kw]);
     let y = max(1, &col);
-    call!(
-        Transpose::new(vec![0, 3, 1, 2]),
-        call!(Reshape::new(vec![x_shape[0], oh, ow, x_shape[1]]), y)
-    )
+    y.reshape(vec![x_shape[0], oh, ow, x_shape[1]])
+        .transpose(vec![0, 3, 1, 2])
 }
 
 #[test]
@@ -50,11 +48,9 @@ pub fn naive_sum_pooling(
 
     let col = call!(Im2col::new(kernel_size, stride, pad, true), x);
     let col = col.reshape([col.shape().iter().product::<usize>() / (kh * kw), kh * kw]);
-    let y = call!(Sum::new(vec![1], false), col);
-    call!(
-        Transpose::new(vec![0, 3, 1, 2]),
-        call!(Reshape::new(vec![x_shape[0], oh, ow, x_shape[1]]), y)
-    )
+    let y = col.sum([1], false);
+    y.reshape(vec![x_shape[0], oh, ow, x_shape[1]])
+        .transpose(vec![0, 3, 1, 2])
 }
 
 #[test]
