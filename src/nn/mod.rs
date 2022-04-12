@@ -8,6 +8,7 @@ mod linear;
 mod mlp;
 pub mod normalization;
 pub mod regularizers;
+pub mod rnn;
 mod select_net;
 
 pub use cnn::*;
