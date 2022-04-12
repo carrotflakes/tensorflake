@@ -18,7 +18,7 @@ impl L1 {
 
 impl Regularizer for L1 {
     fn call(&self, input: &Tensor) -> Tensor {
-        call!(Sum::new((0..input.ndim()).collect(), false), abs(&input)) * scalar(self.l1).into()
+        abs(&input).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l1).into()
     }
 }
 
@@ -35,10 +35,7 @@ impl L2 {
 
 impl Regularizer for L2 {
     fn call(&self, input: &Tensor) -> Tensor {
-        call!(
-            Sum::new((0..input.ndim()).collect(), false),
-            call!(Pow::new(2.0), input)
-        ) * scalar(self.l2).into()
+        input.pow(2.0).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l2).into()
     }
 }
 
@@ -56,11 +53,8 @@ impl L1L2 {
 
 impl Regularizer for L1L2 {
     fn call(&self, input: &Tensor) -> Tensor {
-        call!(Sum::new((0..input.ndim()).collect(), false), abs(&input)) * scalar(self.l1).into()
-            + call!(
-                Sum::new((0..input.ndim()).collect(), false),
-                call!(Pow::new(2.0), input)
-            ) * scalar(self.l2).into()
+        abs(&input).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l1).into()
+            + input.pow(2.0).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l2).into()
     }
 }
 

@@ -1,9 +1,9 @@
 use ndarray::{array, Array};
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use tensorflake::{
-    functions::*,
+    losses::naive_mean_squared_error,
     nn::{
-        activations::{naive_sigmoid, Sigmoid},
+        activations::{naive_sigmoid, sigmoid},
         *,
     },
     *,
@@ -16,11 +16,10 @@ fn main() {
     let x =
         Tensor::new(Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_ndarray())
             .named("x");
-    let y = call!(
-        Add,
-        call!(Sin, call!(Mul, x, Tensor::new(scalar(2.0 * 3.14)))),
-        Tensor::new(Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_ndarray())
-    )
+    let y = ((&x * &Tensor::new(scalar(2.0 * 3.14))).sin()
+        + Tensor::new(
+            Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_ndarray(),
+        ))
     .named("y");
 
     let param_gen = {
@@ -43,14 +42,14 @@ fn main() {
 
     for i in 0..10000 {
         let h = l1.call(x.clone(), true);
-        let h = call!(Sigmoid, h).named("hidden");
+        let h = sigmoid(&h).named("hidden");
         let y_ = l2.call(h, true);
         // dbg!(&*y_);
         if i == 0 {
             graph(&[y_.clone()], "graph");
         }
 
-        let loss = mean_squared_error(y.clone(), y_.clone());
+        let loss = naive_mean_squared_error(y.clone(), y_.clone());
         if i % 1000 == 0 {
             println!("loss: {}", loss[[]]);
         }
@@ -72,15 +71,6 @@ fn main() {
         println!("{}", &*y_);
     }
     println!("elapsed: {:?}", start.elapsed());
-}
-
-fn mean_squared_error(x0: Tensor, x1: Tensor) -> Tensor {
-    let x = call!(Pow::new(2.0), call!(Sub, x0, x1));
-    call!(
-        Div,
-        call!(Sum::new((0..x.ndim()).collect(), false), x),
-        Tensor::new(scalar(x.shape().iter().product::<usize>() as f32))
-    )
 }
 
 fn graph(vars: &[Tensor], name: impl ToString) {

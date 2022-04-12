@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{backprop, call, functions::Add, FunctionCall, Function, NDArray, Tensor};
+use crate::{backprop, FunctionCall, NDArray, Tensor};
 
 pub fn gradients(ys: &[Tensor], xs: &[Tensor], create_graph: bool) -> Vec<Tensor> {
     let mut grads = HashMap::new();
@@ -44,7 +44,7 @@ pub fn gradients(ys: &[Tensor], xs: &[Tensor], create_graph: bool) -> Vec<Tensor
         for (x, gx) in fc.xs.iter().zip(gxs.iter()) {
             match grads.entry(Arc::as_ptr(&x.inner)) {
                 std::collections::hash_map::Entry::Occupied(mut entry) => {
-                    *entry.get_mut() = call!(Add, entry.get(), gx);
+                    *entry.get_mut() = entry.get() + gx;
                 }
                 std::collections::hash_map::Entry::Vacant(entry) => {
                     entry.insert(gx.clone());

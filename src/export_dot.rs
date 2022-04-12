@@ -65,11 +65,11 @@ pub fn default_var_printer(var: &Tensor) -> String {
 
 #[test]
 fn test() {
-    use crate::{backprop, call, functions::Mul, scalar, Function};
+    use crate::{backprop, scalar};
 
     let a = backprop(scalar(2.0)).named("a");
     let b = backprop(scalar(3.0)).named("b");
-    let y = call!(Mul, a, b).named("y");
+    let y = (a * b).named("y");
 
     // export_dot(&y, "graph.dot").unwrap();
 

@@ -9,7 +9,7 @@ use ndarray_rand::{
 };
 use tensorflake::{
     functions::*,
-    losses::SoftmaxCrossEntropy,
+    losses::softmax_cross_entropy,
     ndarray_util::argmax,
     nn::{activations::sigmoid, *},
     training::TrainConfig,
@@ -102,7 +102,7 @@ fn main() {
                 .pop()
                 .unwrap();
             let yy = output_fn(yy);
-            let loss = call!(SoftmaxCrossEntropy::new(t), yy);
+            let loss = softmax_cross_entropy(t, &yy);
             if ctx.train {
                 optimize(&loss);
             }

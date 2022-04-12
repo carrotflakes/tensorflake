@@ -9,7 +9,7 @@ use ndarray_rand::{
 };
 use tensorflake::{
     functions::*,
-    losses::SoftmaxCrossEntropy,
+    losses::softmax_cross_entropy,
     ndarray_util::{argmax, onehot},
     nn::*,
     *,
@@ -30,7 +30,7 @@ fn main() {
         let str = "1+2=3";
         let y = model.call(arith::encode(&str[..str.len() - 1]), true);
         let y = Concat::new(0).call(y).pop().unwrap();
-        let loss = call!(SoftmaxCrossEntropy::new(arith::encode(&str[1..])), y);
+        let loss = softmax_cross_entropy(arith::encode(&str[1..]), &y);
         graph(&[loss], "rnn");
     }
 
@@ -45,7 +45,7 @@ fn main() {
                 .call(y.iter().skip(eqp).cloned().collect())
                 .pop()
                 .unwrap();
-            let loss = call!(SoftmaxCrossEntropy::new(arith::encode(&str[eqp + 1..])), yy);
+            let loss = softmax_cross_entropy(arith::encode(&str[eqp + 1..]), &yy);
             gradients.compute(&loss);
             if i % 10 == 0 {
                 gradients.optimize();
@@ -109,10 +109,9 @@ impl Model {
             let enb = self
                 .enb
                 .call(onehot(&ndarray::arr1(&[x]), self.vocab_size).into(), train);
-            // let concated = call!(Concat::new(1), enb, state);
             let concated = &enb + &state;
             state = self.linear.call(concated, train);
-            state = call!(Tanh, state);
+            state = state.tanh();
             outputs.push(self.output.call(state.clone(), train).named("output"));
         }
         outputs

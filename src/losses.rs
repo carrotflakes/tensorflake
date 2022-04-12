@@ -4,13 +4,45 @@ use ndarray::{Array1, Axis};
 
 use crate::functions::*;
 use crate::ndarray_util::onehot;
-use crate::nn::activations::Softmax;
+use crate::nn::activations::{softmax, Softmax};
 use crate::*;
 
 pub fn naive_mean_squared_error(x0: Tensor, x1: Tensor) -> Tensor {
     let x = (x0 - x1).pow(2.0);
     x.sum(Vec::from_iter(0..x.ndim()), false)
         / Tensor::new(scalar(x.shape().iter().product::<usize>() as f32))
+}
+
+pub fn softmax_cross_entropy(t: Vec<usize>, x: &Tensor) -> Tensor {
+    let n = x.shape().iter().take(x.ndim() - 1).product();
+    let log_z = log_sum_exp(&*x);
+    let log_p = x.to_shape((n, x.shape()[x.ndim() - 1])).unwrap();
+    let mut y = 0.0;
+    for i in 0..n {
+        y -= log_p[[i, t[i]]] - log_z[i];
+    }
+    let y = Tensor::new(scalar(y / n as f32));
+
+    chain(
+        &[x.clone()],
+        &[y.clone()],
+        false,
+        "softmax_cross_entropy",
+        move |xs, _ys, gys| {
+            let n: usize = xs[0].shape().iter().take(xs[0].ndim() - 1).product();
+            let class_num = xs[0].shape()[xs[0].ndim() - 1];
+            let gy = &gys[0] * &Tensor::new(scalar(1.0 / n as f32));
+            let y = softmax(&xs[0]);
+            let t_onehot = Tensor::new(
+                onehot(&Array1::from(t.clone()), class_num)
+                    .into_shape(y.shape())
+                    .unwrap(),
+            );
+            vec![(y - t_onehot) * gy]
+        },
+    );
+
+    y
 }
 
 pub struct SoftmaxCrossEntropy {
@@ -58,7 +90,7 @@ impl Function for SoftmaxCrossEntropy {
 fn test_softmax_cross_entropy() {
     let x = backprop(ndarray::array![[0.1, 0.2, 0.3], [0.0, 0.0, 100.0]].into_ndarray());
     let t = vec![1, 2];
-    let loss = call!(SoftmaxCrossEntropy::new(t), x.clone());
+    let loss = softmax_cross_entropy(t, &x);
     dbg!(&*loss);
 
     let grads = gradients(&[loss], &vec![x.clone()], false);

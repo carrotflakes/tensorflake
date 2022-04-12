@@ -2,7 +2,7 @@ mod data;
 
 use ndarray_rand::rand_distr::Normal;
 use tensorflake::{
-    losses::SoftmaxCrossEntropy,
+    losses::softmax_cross_entropy,
     nn::{activations::Relu, *},
     training::TrainConfig,
     *,
@@ -55,7 +55,7 @@ fn main() {
         );
         let t: Vec<_> = batch.iter().map(|x| x.1 as usize).collect();
         let y = mlp.call(x.clone(), true);
-        let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
+        let loss = softmax_cross_entropy(t.clone(), &y);
         ctx.finish_batch(&loss, batch.len());
         ctx.add_metric(metrics::argmax_accuracy(&t, &y));
     });

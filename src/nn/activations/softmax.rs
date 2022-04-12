@@ -57,7 +57,7 @@ impl Function for Softmax {
 #[test]
 fn test() {
     let x = backprop(ndarray::array![[0.1, 0.2, 0.3], [0.0, 0.0, 100.0]].into_ndarray());
-    let y = call!(Softmax, x.clone());
+    let y = softmax(&x);
     dbg!(&*y);
 
     let grads = gradients(&[y], &[x], false);

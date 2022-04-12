@@ -3,8 +3,8 @@ mod data;
 use ndarray::prelude::*;
 use ndarray_rand::{rand::SeedableRng, rand_distr::Normal, RandomExt};
 use tensorflake::{
-    losses::SoftmaxCrossEntropy,
-    nn::{activations::Relu, naive_max_pooling, Conv2d, Dropout, Layer, Linear},
+    losses::softmax_cross_entropy,
+    nn::{activations::relu, naive_max_pooling, Conv2d, Dropout, Layer, Linear},
     training::{TrainConfig, UpdateStrategy},
     *,
 };
@@ -40,7 +40,7 @@ fn main() {
         .unwrap();
         let t: Vec<_> = batch.iter().map(|x| x.1 as usize).collect();
         let y = model.call(x.clone(), ctx.train);
-        let loss = call!(SoftmaxCrossEntropy::new(t.clone()), y);
+        let loss = softmax_cross_entropy(t.clone(), &y);
         ctx.finish_batch(&loss, t.len());
         ctx.add_metric(metrics::argmax_accuracy(&t, &y));
     });
@@ -95,9 +95,9 @@ impl Model {
     pub fn call(&self, x: NDArray, train: bool) -> Tensor {
         let y = self.conv1.call(Tensor::new(x), train);
         // let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
-        let y = call!(Relu, y);
+        let y = relu(&y);
         let y = self.conv2.call(y, train);
-        let y = call!(Relu, y);
+        let y = relu(&y);
         let y = y.reshape([y.shape()[0], 10 * 7 * 7]);
         let y = self.linear.call(y, train);
         y
@@ -162,13 +162,13 @@ impl BigModel {
     pub fn call(&self, x: NDArray, train: bool) -> Tensor {
         let x = Tensor::new(x);
         let y = self.conv1.call(x, train);
-        let y = call!(Relu, y);
+        let y = relu(&y);
         let y = self.conv2.call(y, train);
         let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
         let y = y.reshape([y.shape()[0], 64 * 12 * 12]);
-        let y = call!(Relu, y);
+        let y = relu(&y);
         let y = self.linear1.call(y, train);
-        let y = call!(Relu, y);
+        let y = relu(&y);
         let y = self.dropout.call(y, train);
         let y = self.linear2.call(y, train);
         y
