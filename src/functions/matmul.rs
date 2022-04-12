@@ -51,6 +51,14 @@ impl Function for Matmul {
 }
 
 pub fn forward(x0: &NDArray, x1: &NDArray) -> NDArray {
+    // let x0 = if x0.ndim() == 1 {
+    //     dbg!("a", x1.shape());
+    //     // extend axis if x0 is 1d
+    //     x0.clone().insert_axis(Axis(0))
+    // } else {
+    //     x0.clone()
+    // };
+
     // 行列同士の積に限定する
     let x0s = x0.shape();
     let x1s = x1.shape();

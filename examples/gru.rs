@@ -72,7 +72,7 @@ fn main() {
     while !train.is_end() {
         optimizer.lock().unwrap().learning_rate = lr * 0.95f32.powi(train.epoch as i32);
         train.fit_one_epoch(|strs, ctx| {
-            let initial_state = Tensor::new(NDArray::zeros(&[strs.len(), state_size][..]));
+            let initial_state = model.initial_state(strs.len());
             let eqp = 10;
             let mut x = vec![vec![]; 50 - 1];
             let mut t = vec![vec![]; 50 - eqp];
@@ -114,11 +114,7 @@ fn main() {
         });
 
         let y = model.decode(
-            Tensor::new(NDArray::random_using(
-                &[1, state_size][..],
-                Uniform::new(0.0, 1.0),
-                &mut rand_isaac::Isaac64Rng::seed_from_u64(42),
-            )),
+            model.initial_state(1),
             Tensor::new(NDArray::random_using(
                 &[1, embedding_size][..],
                 Uniform::new(0.0, 1.0),

@@ -5,15 +5,15 @@ use crate::{
 
 use super::Cell;
 
-pub struct Gru {
+pub struct Lstm {
     pub input_size: usize,
     pub state_size: usize,
-    pub ws: [Param; 3],
-    pub us: [Param; 3],
-    pub bs: [Param; 3],
+    pub ws: [Param; 4],
+    pub us: [Param; 4],
+    pub bs: [Param; 4],
 }
 
-impl Gru {
+impl Lstm {
     pub fn new(
         input_size: usize,
         state_size: usize,
@@ -26,13 +26,16 @@ impl Gru {
                 kernel.initialize(&[input_size, state_size]),
                 kernel.initialize(&[input_size, state_size]),
                 kernel.initialize(&[input_size, state_size]),
+                kernel.initialize(&[input_size, state_size]),
             ],
             us: [
                 kernel.initialize(&[state_size, state_size]),
                 kernel.initialize(&[state_size, state_size]),
                 kernel.initialize(&[state_size, state_size]),
+                kernel.initialize(&[state_size, state_size]),
             ],
             bs: [
+                kernel.initialize(&[state_size]),
                 kernel.initialize(&[state_size]),
                 kernel.initialize(&[state_size]),
                 kernel.initialize(&[state_size]),
@@ -50,11 +53,14 @@ impl Gru {
     }
 }
 
-impl Cell for Gru {
-    type State = Tensor;
+impl Cell for Lstm {
+    type State = [Tensor; 2];
 
     fn initial_state(&self, batch_size: usize) -> Self::State {
-        Tensor::new(NDArray::zeros(&[batch_size, self.state_size][..]))
+        [
+            Tensor::new(NDArray::zeros(&[batch_size, self.state_size][..])),
+            Tensor::new(NDArray::zeros(&[batch_size, self.state_size][..])),
+        ]
     }
 
     fn get_input_size(&self) -> usize {
@@ -62,22 +68,29 @@ impl Cell for Gru {
     }
 
     fn step(&self, x: Tensor, state: Self::State) -> (Self::State, Tensor) {
-        let z = sigmoid(
+        let [c, h] = state;
+        let f = sigmoid(
             &(x.matmul(&self.ws[0].get_tensor())
-                + state.matmul(&self.us[0].get_tensor())
+                + h.matmul(&self.us[0].get_tensor())
                 + self.bs[0].get_tensor()),
         );
-        let r = sigmoid(
+        let i = sigmoid(
             &(x.matmul(&self.ws[1].get_tensor())
-                + state.matmul(&self.us[1].get_tensor())
+                + h.matmul(&self.us[1].get_tensor())
                 + self.bs[1].get_tensor()),
         );
-        let state = (Tensor::new(NDArray::ones(z.shape())) - z.clone()) * state.clone()
-            + z * tanh(
-                &(x.matmul(&self.ws[2].get_tensor())
-                    + (r * state).matmul(&self.us[2].get_tensor())
-                    + self.bs[2].get_tensor()),
-            );
-        (state.clone(), state)
+        let o = tanh(
+            &(x.matmul(&self.ws[2].get_tensor())
+                + h.matmul(&self.us[2].get_tensor())
+                + self.bs[2].get_tensor()),
+        );
+        let d = sigmoid(
+            &(x.matmul(&self.ws[3].get_tensor())
+                + h.matmul(&self.us[3].get_tensor())
+                + self.bs[3].get_tensor()),
+        );
+        let c = f * c + i * d;
+        let h = o * tanh(&c);
+        ([c, h.clone()], h)
     }
 }
