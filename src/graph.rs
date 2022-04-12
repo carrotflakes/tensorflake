@@ -28,7 +28,7 @@ pub fn gradients(ys: &[Tensor], xs: &[Tensor], create_graph: bool) -> Vec<Tensor
 
         if !create_graph {
             for gx in &gxs {
-                gx.cut_chain();
+                gx.unchain();
             }
         }
 

@@ -23,7 +23,7 @@ impl Optimizer for SGDOptimizer {
 
     fn update(&mut self, tensor: &mut Tensor, state: &mut Self::State, grad: &NDArray) {
         drop(state);
-        tensor.cut_chain();
+        tensor.unchain();
         *tensor = &*tensor + &grad.mul(scalar(-self.learning_rate)).into();
     }
 }

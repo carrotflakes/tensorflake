@@ -46,7 +46,7 @@ impl Optimizer for AdamWOptimizer {
     }
 
     fn update(&mut self, tensor: &mut Tensor, state: &mut Self::State, grad: &NDArray) {
-        tensor.cut_chain();
+        tensor.unchain();
         let wd = &**tensor * self.weight_decay;
         let grad = grad + &wd;
         state.mom = (&state.mom * self.beta1 + &grad * (1.0 - self.beta1)).into_ndarray();

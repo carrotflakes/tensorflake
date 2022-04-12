@@ -47,7 +47,7 @@ impl Tensor {
         self.inner.attrs.lock().unwrap().creator.is_some()
     }
 
-    pub fn cut_chain(&self) {
+    pub fn unchain(&self) {
         self.inner.attrs.lock().unwrap().creator = None;
     }
 }
