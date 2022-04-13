@@ -4,7 +4,7 @@ use ndarray::{Array1, Axis};
 
 use crate::functions::*;
 use crate::ndarray_util::onehot;
-use crate::nn::activations::{softmax, Softmax};
+use crate::nn::activations::{relu, softmax, Softmax};
 use crate::*;
 
 pub fn naive_mean_squared_error(x0: Tensor, x1: Tensor) -> Tensor {
@@ -95,6 +95,10 @@ fn test_softmax_cross_entropy() {
 
     let grads = gradients(&[loss], &vec![x.clone()], false);
     dbg!(&*grads[0]);
+}
+
+pub fn sigmoid_cross_entropy_with_logits(labels: &Tensor, logits: &Tensor) -> Tensor {
+    relu(logits) - logits * labels + (Tensor::new(scalar(1.0)) + (-logits.abs()).exp()).log()
 }
 
 // max(x) + log(sum(exp(x - max(x))))

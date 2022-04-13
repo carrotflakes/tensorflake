@@ -42,12 +42,20 @@ impl std::ops::Neg for Tensor {
 }
 
 impl Tensor {
+    pub fn abs(&self) -> Tensor {
+        functions::abs(self)
+    }
+
     pub fn broadcast(&self, shape: impl Into<Vec<usize>>) -> Tensor {
         functions::broadcast(self, shape)
     }
 
     pub fn exp(&self) -> Tensor {
         functions::exp(self)
+    }
+
+    pub fn log(&self) -> Tensor {
+        functions::log(self)
     }
 
     pub fn mat_t(&self) -> Tensor {
