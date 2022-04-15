@@ -1,3 +1,4 @@
+pub mod contrib;
 pub mod export_dot;
 mod function;
 mod function_call;
