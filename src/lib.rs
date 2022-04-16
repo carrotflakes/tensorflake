@@ -10,6 +10,7 @@ pub mod ndarray_util;
 pub mod nn;
 pub mod optimizers;
 pub mod param_bin;
+pub mod regularizers;
 pub mod training;
 
 #[cfg(test)]

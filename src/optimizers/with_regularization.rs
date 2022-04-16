@@ -1,4 +1,4 @@
-use crate::{nn::regularizers::Regularizer, *};
+use crate::{regularizers::Regularizer, *};
 
 #[derive(Clone)]
 pub struct WithRegularization<O: Optimizer, R: Regularizer> {
@@ -31,6 +31,6 @@ impl<O: Optimizer, R: Regularizer> Optimizer for WithRegularization<O, R> {
 #[test]
 fn test() {
     let optimizer = super::AdamOptimizer::new_with_params(0.01, 0.9, 0.999);
-    let optimizer = WithRegularization::new(optimizer, nn::regularizers::L1::new(0.01));
+    let optimizer = WithRegularization::new(optimizer, regularizers::L1::new(0.01));
     super::test_optimizer(optimizer);
 }
