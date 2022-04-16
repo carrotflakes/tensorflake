@@ -13,7 +13,7 @@ pub use sgd::SGDOptimizer;
 pub use with_regularization::WithRegularization;
 
 #[cfg(test)]
-fn test_optimizer(optimizer: impl crate::Optimizer) {
+fn test_optimizer(optimizer: impl crate::Optimizer + Clone) {
     use crate::*;
 
     let px = crate::Param::new(scalar(0.0), optimizer);

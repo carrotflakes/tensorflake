@@ -22,7 +22,7 @@ impl MultiHeadAttention {
         layer_norm_eps: f32,
         w: &mut impl Initializer,
         b: &mut impl Initializer,
-        opt: impl Optimizer,
+        opt: impl Optimizer + Clone,
     ) -> Self {
         MultiHeadAttention {
             head_dim: embed_dim / num_heads,

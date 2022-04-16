@@ -1,6 +1,6 @@
 use crate::*;
 
-pub trait Regularizer: Clone + Sync + Send + 'static {
+pub trait Regularizer: Sync + Send + 'static {
     fn loss(&self, x: &Tensor) -> Tensor;
 
     fn grad(&self, x: &Tensor) -> Tensor {
@@ -91,19 +91,14 @@ fn test() {
     );
 
     let x = backprop(ndarray::array![-1., 1., 2.].into_ndarray());
-    let r = L1::new(1.1);
-    assert_eq!(
-        &*r.grad(&x),
-        &*gradients(&[r.loss(&x)], &[x.clone()], false)[0]
-    );
-    let r = L2::new(1.2);
-    assert_eq!(
-        &*r.grad(&x),
-        &*gradients(&[r.loss(&x)], &[x.clone()], false)[0]
-    );
-    let r = L1L2::new(1.1, 2.2);
-    assert_eq!(
-        &*r.grad(&x),
-        &*gradients(&[r.loss(&x)], &[x.clone()], false)[0]
-    );
+    for r in &[
+        &L1::new(1.1) as &dyn Regularizer,
+        &L2::new(1.2),
+        &L1L2::new(1.1, 1.2),
+    ] {
+        assert_eq!(
+            &*r.grad(&x),
+            &*gradients(&[r.loss(&x)], &[x.clone()], false)[0]
+        );
+    }
 }

@@ -1,6 +1,6 @@
 use super::{NDArray, Tensor};
 
-pub trait Optimizer: Clone + Sync + Send + 'static {
+pub trait Optimizer: Sync + Send + 'static {
     type State: Sync + Send + 'static;
 
     fn new_state(&self, shape: &[usize]) -> Self::State;

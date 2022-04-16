@@ -12,13 +12,13 @@ pub trait ParamInnerT: Sync + Send + 'static {
     }
 }
 
-struct ParamInner<T: Optimizer> {
+struct ParamInner<T: Optimizer + Clone> {
     tensor: Tensor,
     optimizer: T,
     state: T::State,
 }
 
-impl<T: Optimizer> ParamInnerT for ParamInner<T> {
+impl<T: Optimizer + Clone> ParamInnerT for ParamInner<T> {
     fn tensor(&self) -> Tensor {
         self.tensor.clone()
     }
@@ -33,13 +33,13 @@ impl<T: Optimizer> ParamInnerT for ParamInner<T> {
     }
 }
 
-struct ParamInnerShared<T: Optimizer> {
+struct ParamInnerShared<T: Optimizer + Clone> {
     tensor: Tensor,
     optimizer: Arc<Mutex<T>>,
     state: T::State,
 }
 
-impl<T: Optimizer> ParamInnerT for ParamInnerShared<T> {
+impl<T: Optimizer + Clone> ParamInnerT for ParamInnerShared<T> {
     fn tensor(&self) -> Tensor {
         self.tensor.clone()
     }
@@ -81,7 +81,7 @@ pub struct Param {
 }
 
 impl Param {
-    pub fn new(ndarray: NDArray, optimizer: impl Optimizer) -> Param {
+    pub fn new(ndarray: NDArray, optimizer: impl Optimizer + Clone) -> Param {
         Param {
             inner: Arc::new(Mutex::new(ParamInner {
                 state: optimizer.new_state(&ndarray.shape()),
@@ -91,7 +91,7 @@ impl Param {
         }
     }
 
-    pub fn new_shared<T: Optimizer>(ndarray: NDArray, optimizer: Arc<Mutex<T>>) -> Param {
+    pub fn new_shared<T: Optimizer + Clone>(ndarray: NDArray, optimizer: Arc<Mutex<T>>) -> Param {
         let state = optimizer.lock().unwrap().new_state(&ndarray.shape());
         Param {
             inner: Arc::new(Mutex::new(ParamInnerShared {

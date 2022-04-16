@@ -12,7 +12,7 @@ pub struct Normalization {
 }
 
 impl Normalization {
-    pub fn new(axes: Vec<usize>, eps: f32, optimizer: impl Optimizer) -> Self {
+    pub fn new(axes: Vec<usize>, eps: f32, optimizer: impl Optimizer + Clone) -> Self {
         Self {
             axes,
             gamma: Param::new(scalar(1.0), optimizer.clone()),

@@ -18,13 +18,13 @@ impl<F: FnMut(&[usize]) -> Param> Initializer for F {
     }
 }
 
-pub struct InitializerWithOptimizer<D: Distribution<f32> + Clone, O: Optimizer> {
+pub struct InitializerWithOptimizer<D: Distribution<f32> + Clone, O: Optimizer + Clone> {
     pub distribution: D,
     pub optimizer: O,
     pub rng: DefaultRng,
 }
 
-impl<D: Distribution<f32> + Clone, O: Optimizer> InitializerWithOptimizer<D, O> {
+impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> InitializerWithOptimizer<D, O> {
     pub fn new(distribution: D, optimizer: O) -> Self {
         Self {
             distribution,
@@ -34,14 +34,16 @@ impl<D: Distribution<f32> + Clone, O: Optimizer> InitializerWithOptimizer<D, O> 
     }
 }
 
-impl<D: Distribution<f32> + Clone, O: Optimizer> Initializer for InitializerWithOptimizer<D, O> {
+impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> Initializer
+    for InitializerWithOptimizer<D, O>
+{
     fn initialize(&mut self, shape: &[usize]) -> Param {
         let t = NDArray::random_using(shape, self.distribution.clone(), &mut self.rng);
         Param::new(t, self.optimizer.clone())
     }
 }
 
-impl<D: Distribution<f32> + Clone, O: Optimizer> Clone for InitializerWithOptimizer<D, O> {
+impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> Clone for InitializerWithOptimizer<D, O> {
     fn clone(&self) -> Self {
         let mut rng = self.rng.clone();
         rng.gen::<u32>();
@@ -53,13 +55,13 @@ impl<D: Distribution<f32> + Clone, O: Optimizer> Clone for InitializerWithOptimi
     }
 }
 
-pub struct InitializerWithSharedOptimizer<D: Distribution<f32> + Clone, O: Optimizer> {
+pub struct InitializerWithSharedOptimizer<D: Distribution<f32> + Clone, O: Optimizer + Clone> {
     pub distribution: D,
     pub optimizer: Arc<Mutex<O>>,
     pub rng: DefaultRng,
 }
 
-impl<D: Distribution<f32> + Clone, O: Optimizer> InitializerWithSharedOptimizer<D, O> {
+impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> InitializerWithSharedOptimizer<D, O> {
     pub fn new(distribution: D, optimizer: Arc<Mutex<O>>) -> Self {
         Self {
             distribution,
@@ -69,7 +71,7 @@ impl<D: Distribution<f32> + Clone, O: Optimizer> InitializerWithSharedOptimizer<
     }
 }
 
-impl<D: Distribution<f32> + Clone, O: Optimizer> Initializer
+impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> Initializer
     for InitializerWithSharedOptimizer<D, O>
 {
     fn initialize(&mut self, shape: &[usize]) -> Param {
@@ -78,7 +80,9 @@ impl<D: Distribution<f32> + Clone, O: Optimizer> Initializer
     }
 }
 
-impl<D: Distribution<f32> + Clone, O: Optimizer> Clone for InitializerWithSharedOptimizer<D, O> {
+impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> Clone
+    for InitializerWithSharedOptimizer<D, O>
+{
     fn clone(&self) -> Self {
         let mut rng = self.rng.clone();
         rng.gen::<u32>();
