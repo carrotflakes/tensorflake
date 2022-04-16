@@ -1,17 +1,15 @@
 # TensorFlake
 
 TensorFlake is my own machine learning framework.
-I'm aiming to be able to train several networks on the CPU fast.
+This aims to be able to train several networks on the CPU fast.
 
 ## TODO
 
 - [ ] smallvec
 - [x] backward without create_graph
-- [x] Adam
 - [x] Efficient Linear -> matmul_add
 - [ ] Save & load -> param_bin.rs
   - [ ] Save the structure -> serde?
-- [x] Dropout
 - [x] Strong typing -> Functional API (tensorflake::function::chain)
   - [ ] Generic for dimension
 - [ ] Multi thread
@@ -41,6 +39,10 @@ I'm aiming to be able to train several networks on the CPU fast.
 - [ ] Compare performance against GPU Tensorflow
 - [ ] Fitting report
 - [ ] Generic ndarray
+- [ ] functions
+  - [ ] reduce_sum
+  - [ ] signum
+- [ ] Optimize consecutive element-wise operations
 
 ## Benchmark
 
