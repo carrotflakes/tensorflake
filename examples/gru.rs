@@ -55,7 +55,12 @@ fn main() {
     let state_size = 128;
     let embedding = Embedding::new(embedding_size, vocab_size, &mut init_kernel);
     let model = Gru::new(embedding_size, state_size, &mut init_kernel);
-    let linear = Linear::new(state_size, vocab_size, &mut init_kernel, &mut init_bias);
+    let linear = Linear::new(
+        state_size,
+        vocab_size,
+        &mut init_kernel,
+        Some(&mut init_bias),
+    );
     // let output_fn = |x: Tensor| linear.call(x, true);
     let output_fn = |x: Tensor| linear.call(norm.call(x, true), true);
 

@@ -18,9 +18,9 @@ impl MLP {
         Self {
             linears: sizes
                 .windows(2)
-                .map(|x| Linear::new(x[0], x[1], w, b))
+                .map(|x| Linear::new(x[0], x[1], w, Some(b)))
                 .collect(),
-            dropout: dropout,
+            dropout,
             activation: Box::new(activation),
         }
     }

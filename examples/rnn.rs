@@ -96,9 +96,24 @@ impl Model {
         Self {
             vocab_size,
             initial: param_gen()(&[1, state_size]),
-            enb: Linear::new(vocab_size, state_size, &mut param_gen(), &mut param_gen()),
-            linear: Linear::new(state_size, state_size, &mut param_gen(), &mut param_gen()),
-            output: Linear::new(state_size, vocab_size, &mut param_gen(), &mut param_gen()),
+            enb: Linear::new(
+                vocab_size,
+                state_size,
+                &mut param_gen(),
+                Some(&mut param_gen()),
+            ),
+            linear: Linear::new(
+                state_size,
+                state_size,
+                &mut param_gen(),
+                Some(&mut param_gen()),
+            ),
+            output: Linear::new(
+                state_size,
+                vocab_size,
+                &mut param_gen(),
+                Some(&mut param_gen()),
+            ),
         }
     }
 

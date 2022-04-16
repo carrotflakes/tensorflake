@@ -88,7 +88,7 @@ impl Model {
                 &mut param_gen(),
                 Some(&mut param_gen()),
             ),
-            linear: Linear::new(10 * 7 * 7, 10, &mut param_gen(), &mut param_gen()),
+            linear: Linear::new(10 * 7 * 7, 10, &mut param_gen(), Some(&mut param_gen())),
         }
     }
 
@@ -153,8 +153,8 @@ impl BigModel {
                 &mut param_gen(),
                 Some(&mut param_gen()),
             ),
-            linear1: Linear::new(64 * 12 * 12, 128, &mut param_gen(), &mut param_gen()),
-            linear2: Linear::new(128, 10, &mut param_gen(), &mut param_gen()),
+            linear1: Linear::new(64 * 12 * 12, 128, &mut param_gen(), Some(&mut param_gen())),
+            linear2: Linear::new(128, 10, &mut param_gen(), Some(&mut param_gen())),
             dropout: Dropout::new(0.5, 42),
         }
     }

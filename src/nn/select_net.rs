@@ -20,9 +20,9 @@ impl SelectNet {
     ) -> Self {
         Self {
             output_size: output,
-            select_layer: Linear::new(input, n, w, b),
+            select_layer: Linear::new(input, n, w, Some(b)),
             layers: (0..n)
-                .map(move |_| Linear::new(input, output, w, b))
+                .map(move |_| Linear::new(input, output, w, Some(b)))
                 .collect(),
         }
     }

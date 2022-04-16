@@ -27,10 +27,10 @@ impl MultiHeadAttention {
         MultiHeadAttention {
             head_dim: embed_dim / num_heads,
             num_heads,
-            key_proj: Linear::new(embed_dim, embed_dim, w, b),
-            query_proj: Linear::new(embed_dim, embed_dim, w, b),
-            value_proj: Linear::new(embed_dim, embed_dim, w, b),
-            dense: Linear::new(embed_dim, embed_dim, w, b),
+            key_proj: Linear::new(embed_dim, embed_dim, w, Some(b)),
+            query_proj: Linear::new(embed_dim, embed_dim, w, Some(b)),
+            value_proj: Linear::new(embed_dim, embed_dim, w, Some(b)),
+            dense: Linear::new(embed_dim, embed_dim, w, Some(b)),
             norm: Normalization::new(vec![1], layer_norm_eps, opt),
         }
     }

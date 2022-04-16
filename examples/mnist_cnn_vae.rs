@@ -122,9 +122,24 @@ impl Model {
                     Some(&mut init_bias),
                 ),
             ],
-            encoder_linear1: Linear::new(64 * 7 * 7, latent_dim, &mut init_kernel, &mut init_bias),
-            encoder_linear2: Linear::new(64 * 7 * 7, latent_dim, &mut init_kernel, &mut init_bias),
-            decoder_linear: Linear::new(latent_dim, 32 * 7 * 7, &mut init_kernel, &mut init_bias),
+            encoder_linear1: Linear::new(
+                64 * 7 * 7,
+                latent_dim,
+                &mut init_kernel,
+                Some(&mut init_bias),
+            ),
+            encoder_linear2: Linear::new(
+                64 * 7 * 7,
+                latent_dim,
+                &mut init_kernel,
+                Some(&mut init_bias),
+            ),
+            decoder_linear: Linear::new(
+                latent_dim,
+                32 * 7 * 7,
+                &mut init_kernel,
+                Some(&mut init_bias),
+            ),
             decoder_convts: [
                 Conv2dTranspose::new(
                     64,

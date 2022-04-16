@@ -33,8 +33,8 @@ fn main() {
         }
     };
 
-    let l1 = Linear::new(1, 10, &mut param_gen(), &mut param_gen());
-    let l2 = Linear::new(10, 1, &mut param_gen(), &mut param_gen());
+    let l1 = Linear::new(1, 10, &mut param_gen(), Some(&mut param_gen()));
+    let l2 = Linear::new(10, 1, &mut param_gen(), Some(&mut param_gen()));
 
     let start = std::time::Instant::now();
 
