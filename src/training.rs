@@ -12,6 +12,7 @@ pub struct TrainConfig<T> {
     pub validation_data: Vec<T>,
     pub validation_rate: f32,
     pub batch_size: usize,
+    pub parallel_chunk_size: usize,
     pub shuffle: bool,
     pub parallel: bool,
     pub update_strategy: UpdateStrategy,
@@ -27,6 +28,7 @@ impl<T> Default for TrainConfig<T> {
             validation_data: Default::default(),
             validation_rate: 0.0,
             batch_size: 32,
+            parallel_chunk_size: usize::MAX,
             shuffle: true,
             parallel: false,
             update_strategy: UpdateStrategy::MiniBatch(1),
@@ -95,7 +97,7 @@ impl<T: Sync + Send> Train<T> {
 
             let (metrics, mut ga, _) = self
                 .shuffle_table
-                .par_chunks(self.config.batch_size)
+                .par_chunks(self.config.parallel_chunk_size.min(self.config.batch_size))
                 .map(|shuffle_table| {
                     let data = shuffle_table
                         .iter()
@@ -134,7 +136,7 @@ impl<T: Sync + Send> Train<T> {
             let metrics = self
                 .config
                 .validation_data
-                .par_chunks(self.config.batch_size)
+                .par_chunks(self.config.parallel_chunk_size.min(self.config.batch_size))
                 .map(|data| {
                     let data: Vec<_> = data.iter().collect();
                     let mut ctx = ctx.child();

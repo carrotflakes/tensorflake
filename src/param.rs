@@ -2,8 +2,8 @@ use std::sync::{Arc, Mutex};
 
 use crate::*;
 
-trait ParamInnerT: Sync + Send + 'static {
-    fn tensor_ref(&self) -> &Tensor;
+pub trait ParamInnerT: Sync + Send + 'static {
+    fn tensor(&self) -> Tensor;
     fn set(&mut self, tensor: Tensor);
     fn update(&mut self, grad: &NDArray);
 
@@ -19,8 +19,8 @@ struct ParamInner<T: Optimizer> {
 }
 
 impl<T: Optimizer> ParamInnerT for ParamInner<T> {
-    fn tensor_ref(&self) -> &Tensor {
-        &self.tensor
+    fn tensor(&self) -> Tensor {
+        self.tensor.clone()
     }
 
     fn set(&mut self, tensor: Tensor) {
@@ -40,8 +40,8 @@ struct ParamInnerShared<T: Optimizer> {
 }
 
 impl<T: Optimizer> ParamInnerT for ParamInnerShared<T> {
-    fn tensor_ref(&self) -> &Tensor {
-        &self.tensor
+    fn tensor(&self) -> Tensor {
+        self.tensor.clone()
     }
 
     fn set(&mut self, tensor: Tensor) {
@@ -59,8 +59,8 @@ struct ParamInnerFixed {
 }
 
 impl ParamInnerT for ParamInnerFixed {
-    fn tensor_ref(&self) -> &Tensor {
-        &self.tensor
+    fn tensor(&self) -> Tensor {
+        self.tensor.clone()
     }
 
     fn set(&mut self, tensor: Tensor) {
@@ -110,9 +110,15 @@ impl Param {
         }
     }
 
+    pub fn from_inner(inner: impl ParamInnerT) -> Param {
+        Param {
+            inner: Arc::new(Mutex::new(inner)),
+        }
+    }
+
     pub fn get_tensor(&self) -> Tensor {
         let inner = self.inner.lock().unwrap();
-        let v = inner.tensor_ref().clone();
+        let v = inner.tensor().clone();
         if inner.create_graph() && !v.has_creator() {
             let creator = FunctionCall {
                 backward: Box::new(Param {
