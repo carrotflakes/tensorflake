@@ -55,8 +55,13 @@ fn collect_params_grads(loss: &Tensor) -> (Vec<Param>, Vec<Tensor>) {
     let mut trainables = Vec::new();
     for fc in function_calls {
         if let Some(o) = fc.backward.get_param() {
+            let trainable = fc.get_ys().pop().unwrap();
+            if trainables.contains(&trainable) {
+                panic!("same trainables");
+                // continue;
+            }
+            trainables.push(trainable);
             params.push(o);
-            trainables.push(fc.get_ys().pop().unwrap());
         }
     }
     let grads = gradients(&[loss.clone()], &trainables, false);
