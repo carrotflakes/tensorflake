@@ -1,8 +1,12 @@
-use crate::functions::*;
 use crate::*;
 
 pub trait Regularizer: Clone + Sync + Send + 'static {
-    fn call(&self, x: &Tensor) -> Tensor;
+    fn loss(&self, x: &Tensor) -> Tensor;
+
+    fn grad(&self, x: &Tensor) -> Tensor {
+        let loss = self.loss(x);
+        gradients(&[loss], &[x.clone()], false).pop().unwrap()
+    }
 }
 
 #[derive(Clone)]
@@ -17,8 +21,8 @@ impl L1 {
 }
 
 impl Regularizer for L1 {
-    fn call(&self, input: &Tensor) -> Tensor {
-        abs(&input).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l1).into()
+    fn loss(&self, input: &Tensor) -> Tensor {
+        input.abs().sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l1).into()
     }
 }
 
@@ -34,7 +38,7 @@ impl L2 {
 }
 
 impl Regularizer for L2 {
-    fn call(&self, input: &Tensor) -> Tensor {
+    fn loss(&self, input: &Tensor) -> Tensor {
         input.pow(2.0).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l2).into()
     }
 }
@@ -52,20 +56,22 @@ impl L1L2 {
 }
 
 impl Regularizer for L1L2 {
-    fn call(&self, input: &Tensor) -> Tensor {
-        abs(&input).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l1).into()
+    fn loss(&self, input: &Tensor) -> Tensor {
+        input.abs().sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l1).into()
             + input.pow(2.0).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l2).into()
     }
 }
 
 #[test]
 fn test() {
+    use crate::*;
+
     let p = Param::new(
         ndarray::array![1., 2., 3.].into_ndarray(),
         optimizers::SGDOptimizer::new(1.0),
     );
     let l1 = L1::new(1.0);
-    let loss = l1.call(&p.get_tensor());
+    let loss = l1.loss(&p.get_tensor());
     optimize(&loss);
     assert_eq!(
         &*p.get_tensor(),
@@ -77,10 +83,27 @@ fn test() {
         optimizers::SGDOptimizer::new(1.0),
     );
     let l2 = L2::new(0.25);
-    let loss = l2.call(&p.get_tensor());
+    let loss = l2.loss(&p.get_tensor());
     optimize(&loss);
     assert_eq!(
         &*p.get_tensor(),
         &ndarray::array![0.5, 1.0, 1.5].into_ndarray()
+    );
+
+    let x = backprop(ndarray::array![-1., 1., 2.].into_ndarray());
+    let r = L1::new(1.1);
+    assert_eq!(
+        &*r.grad(&x),
+        &*gradients(&[r.loss(&x)], &[x.clone()], false)[0]
+    );
+    let r = L2::new(1.2);
+    assert_eq!(
+        &*r.grad(&x),
+        &*gradients(&[r.loss(&x)], &[x.clone()], false)[0]
+    );
+    let r = L1L2::new(1.1, 2.2);
+    assert_eq!(
+        &*r.grad(&x),
+        &*gradients(&[r.loss(&x)], &[x.clone()], false)[0]
     );
 }

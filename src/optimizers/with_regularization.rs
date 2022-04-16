@@ -23,7 +23,7 @@ impl<O: Optimizer, R: Regularizer> Optimizer for WithRegularization<O, R> {
     }
 
     fn update(&mut self, tensor: &mut Tensor, state: &mut Self::State, grad: &NDArray) {
-        let grad = (grad + &*self.regularizer.call(tensor)).into_ndarray();
+        let grad = (grad + &*self.regularizer.grad(tensor)).into_ndarray();
         self.optimizer.update(tensor, state, &grad);
     }
 }

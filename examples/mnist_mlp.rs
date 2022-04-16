@@ -1,4 +1,5 @@
 mod data;
+mod flush_denormals;
 
 use ndarray_rand::rand_distr::Normal;
 use tensorflake::{
@@ -9,9 +10,11 @@ use tensorflake::{
 };
 
 fn main() {
+    // unsafe {flush_denormals::flush_denormals()};
     let mnist = data::mnist::Mnist::load("./data/mnist");
 
-    let optimizer = optimizers::AdamOptimizer::new();
+    let optimizer = optimizers::SGDOptimizer::new(0.01);
+    // let optimizer = optimizers::WithRegularization::new(optimizer, regularizers::L1::new(0.001));
     let mut init_kernel = initializers::InitializerWithOptimizer::new(
         Normal::new(0.0, 0.1).unwrap(),
         optimizer.clone(),
@@ -35,7 +38,7 @@ fn main() {
         epoch: 30,
         train_data: mnist.trains().collect(),
         validation_data: mnist.tests().collect(),
-        validation_rate: 0.1,
+        validation_rate: 1.0,
         batch_size: 32,
         parallel: false,
         ..Default::default()
