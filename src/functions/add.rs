@@ -43,10 +43,7 @@ pub fn multi_add(xs: &[Tensor]) -> Tensor {
 
                 // fit shape
                 if x.shape() != gx.shape() {
-                    gx = call!(
-                        Sum::new(sum_axes_to_desire(gx.shape(), x.shape()), false),
-                        gx
-                    );
+                    gx = gx.sum(sum_axes_to_desire(gx.shape(), x.shape()), false);
                 }
 
                 gx

@@ -16,11 +16,11 @@ pub fn mul(a: &Tensor, b: &Tensor) -> Tensor {
 
             // fit shape
             if xs[0].shape() != gx0.shape() {
-                gx0 = gx0.sum(sum_axes_to_desire(gx0.shape(), xs[0].shape()), true);
+                gx0 = gx0.sum(sum_axes_to_desire(gx0.shape(), xs[0].shape()), false);
             }
 
             if xs[1].shape() != gx1.shape() {
-                gx1 = gx1.sum(sum_axes_to_desire(gx1.shape(), xs[0].shape()), true);
+                gx1 = gx1.sum(sum_axes_to_desire(gx1.shape(), xs[1].shape()), false);
             }
 
             vec![gx0, gx1]
@@ -64,7 +64,7 @@ pub fn multi_mul(xs: &[Tensor]) -> Tensor {
 
                 // fit shape
                 if x.shape() != g.shape() {
-                    g = call!(Sum::new(sum_axes_to_desire(g.shape(), x.shape()), true), g);
+                    g = call!(Sum::new(sum_axes_to_desire(g.shape(), x.shape()), false), g);
                     // TODO: https://github.com/oreilly-japan/deep-learning-from-scratch-3/blob/06419d7fb2e7ea19aa3719efc27795edbdc41a1f/dezero/utils.py#L125
                 }
 

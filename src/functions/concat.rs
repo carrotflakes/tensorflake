@@ -33,7 +33,7 @@ pub fn concat(xs: &[Tensor], axis: usize) -> Tensor {
                         .collect::<Vec<SliceInfoElem>>(),
                 )
                 .unwrap();
-                let v = call!(Slice::new(slice_info), gy);
+                let v = slice(&gy, slice_info);
                 acc += x.shape()[axis];
                 v
             })

@@ -4,6 +4,54 @@ use ndarray::{IxDyn, SliceArg};
 
 use crate::*;
 
+pub fn slice<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static>(
+    x: &Tensor,
+    slice_arg: I,
+) -> Tensor {
+    let y = (&**x).slice(slice_arg.clone());
+    let y = Tensor::new(y.into_ndarray());
+
+    chain(
+        &[x.clone()],
+        &[y.clone()],
+        false,
+        "slice",
+        move |xs, ys, gys| {
+            let x = &*xs[0];
+            let mut gx = NDArray::zeros(x.shape()); // TODO: Too large tensor!
+            gx.slice_mut(slice_arg.clone())
+                .assign(&(*gys[0]).reshape(ys[0].shape()));
+            vec![Tensor::new(gx)]
+        },
+    );
+
+    y
+    // Slice::new(slice_arg.clone()).forward(&[x.clone()]).pop().unwrap()
+}
+
+pub fn slices<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static>(
+    x: &Tensor,
+    slice_args: Vec<I>,
+) -> Vec<Tensor> {
+    let xa = &**x;
+    let ys: Vec<_> = slice_args
+        .iter()
+        .map(|slice_arg| xa.slice(slice_arg.clone()).into_ndarray().into())
+        .collect();
+
+    chain(&[x.clone()], &ys, false, "slices", move |xs, ys, gys| {
+        let x = &*xs[0];
+        let mut gx = NDArray::zeros(x.shape());
+        for i in 0..xs.len() {
+            gx.slice_mut(slice_args[i].clone())
+                .add_assign(&(*gys[i]).reshape(ys[i].shape()));
+        }
+        vec![Tensor::new(gx)]
+    });
+
+    ys
+}
+
 pub struct Slice<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> {
     slice_arg: I,
 }

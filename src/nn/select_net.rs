@@ -2,7 +2,7 @@ use crate::{functions::*, ndarray_util::as_2d, *};
 
 use ndarray::s;
 
-use super::{activations::Softmax, Linear};
+use super::Linear;
 
 pub struct SelectNet {
     pub output_size: usize,
@@ -40,7 +40,7 @@ impl SelectNet {
     pub fn call(&self, x: Tensor, train: bool) -> (Tensor, Tensor) {
         let select = self.select_layer.call(x.clone(), train);
         let x = as_2d(&x);
-        let softmax = call!(Softmax, select);
+        let softmax = nn::activations::softmax(&select);
 
         let mut ys = vec![];
         for i in 0..x.shape()[0] {
@@ -56,24 +56,21 @@ impl SelectNet {
             for (j, _) in &select {
                 let layer = &self.layers[*j];
                 let ly = layer.call(Tensor::new(x.slice(s![i..=i, ..]).into_ndarray()), train);
-                lys.push(call!(Mul, ly, call!(Slice::new(s![i, *j]), softmax)));
+                lys.push(ly * softmax.slice(s![i, *j]));
             }
-            let lys = Add.call(lys).pop().unwrap();
+            let lys = multi_add(&lys);
             ys.push(lys);
         }
 
-        let y = Concat::new(1).call(ys).pop().unwrap();
+        let y = concat(&ys, 1);
         // reshape to original shape
-        let y = call!(
-            Reshape::new(
-                x.shape()
-                    .iter()
-                    .take(x.ndim() - 1)
-                    .chain([self.output_size].iter())
-                    .copied()
-                    .collect::<Vec<_>>()
-            ),
-            y
+        let y = y.reshape(
+            x.shape()
+                .iter()
+                .take(x.ndim() - 1)
+                .chain([self.output_size].iter())
+                .copied()
+                .collect::<Vec<_>>(),
         );
 
         (y, softmax)
@@ -100,7 +97,7 @@ fn test() {
     let select_net = SelectNet::new(2, 3, 10, &mut param_gen(), &mut param_gen());
 
     let x = backprop(array![[0.1, 0.2], [0.0, 0.0], [0.0, 100.0]].into_ndarray());
-    let y = select_net.build().call(x.clone(), true);
+    let y = select_net.call(x.clone(), true);
     dbg!(&*y.0);
     // dbg!(&*y[1]);
     let t = array![[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
@@ -111,6 +108,8 @@ fn test() {
     // export_dot::export_dot(&[loss.clone()], &format!("select_net.dot")).unwrap();
     optimize(&loss);
 
-    let y = select_net.build().call(x.clone(), true);
-    dbg!(&*y.0);
+    // export_dot(&[loss.clone()], "select_net.dot").unwrap();
+
+    let y2 = select_net.build().call(x.clone(), true);
+    assert_ne!(&*y.0, &*y2.0);
 }
