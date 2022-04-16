@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use crate::{FunctionCall, NDArray};
+use super::{FunctionCall, NDArray};
 
 #[derive(Clone)]
 pub(crate) struct TensorAttrs {

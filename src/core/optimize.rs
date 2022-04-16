@@ -1,4 +1,4 @@
-use crate::*;
+use super::{gradients, graph, NDArray, Param, Tensor};
 
 pub fn optimize(loss: &Tensor) {
     let mut ga = GradientsAccumulator::new();

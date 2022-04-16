@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use crate::*;
+use super::{Backward, FunctionCall, NDArray, Optimizer, Tensor};
 
 pub trait ParamInnerT: Sync + Send + 'static {
     fn tensor(&self) -> Tensor;

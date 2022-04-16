@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{backprop, FunctionCall, NDArray, Tensor};
+use super::{backprop, FunctionCall, NDArray, Tensor};
 
 pub fn gradients(ys: &[Tensor], xs: &[Tensor], create_graph: bool) -> Vec<Tensor> {
     let mut grads = HashMap::new();

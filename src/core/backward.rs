@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{FunctionCall, Tensor};
+use super::{FunctionCall, Tensor};
 
 pub trait Function: Sync + Send + 'static {
     fn forward(&self, xs: &[Tensor]) -> Vec<Tensor>;

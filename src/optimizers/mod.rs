@@ -12,17 +12,8 @@ pub use momentum_sgd::MomentumSGDOptimizer;
 pub use sgd::SGDOptimizer;
 pub use with_regularization::WithRegularization;
 
-use crate::{NDArray, Tensor};
-
-pub trait Optimizer: Clone + Sync + Send + 'static {
-    type State: Sync + Send + 'static;
-
-    fn new_state(&self, shape: &[usize]) -> Self::State;
-    fn update(&mut self, tensor: &mut Tensor, state: &mut Self::State, grad: &NDArray);
-}
-
 #[cfg(test)]
-fn test_optimizer(optimizer: impl Optimizer) {
+fn test_optimizer(optimizer: impl crate::Optimizer) {
     use crate::*;
 
     let px = crate::Param::new(scalar(0.0), optimizer);
