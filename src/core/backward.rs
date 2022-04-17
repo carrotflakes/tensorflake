@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{borrow::Cow, sync::Arc};
 
 use super::{FunctionCall, Tensor};
 
@@ -35,7 +35,7 @@ pub trait Function: Sync + Send + 'static {
 pub trait Backward: Sync + Send {
     fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor>;
 
-    fn get_function_name(&self) -> &'static str {
+    fn get_function_name(&self) -> Cow<'static, str> {
         let name = std::any::type_name::<Self>();
         if name.starts_with("tensorflake::functions::") {
             name.split("::").last().unwrap()
@@ -44,6 +44,7 @@ pub trait Backward: Sync + Send {
         } else {
             name
         }
+        .into()
     }
 
     fn get_param(&self) -> Option<crate::Param> {
@@ -71,8 +72,8 @@ impl<F: Fn(&Vec<Tensor>, &Vec<Tensor>, &Vec<Tensor>) -> Vec<Tensor> + Sync + Sen
         (self.f)(xs, ys, gys)
     }
 
-    fn get_function_name(&self) -> &'static str {
-        self.name
+    fn get_function_name(&self) -> Cow<'static, str> {
+        self.name.into()
     }
 }
 

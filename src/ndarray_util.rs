@@ -188,3 +188,7 @@ fn test_map_axes_keep_dim() {
     let y = map_axes_keep_dim(&x, &[1, 3], |x| x.mean_axis(Axis(1)).unwrap());
     assert_eq!(y.shape(), &[2, 1, 4, 1, 6]);
 }
+
+pub fn ndarray_summary(a: &NDArray) -> String {
+    format!("shape: {:?}\nmean: {:.4}\nvar: {:.4}", a.shape(), a.mean().unwrap(), a.var(1.0))
+}

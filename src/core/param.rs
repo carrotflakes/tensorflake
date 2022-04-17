@@ -1,4 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    borrow::Cow,
+    sync::{Arc, Mutex},
+};
 
 use super::{Backward, FunctionCall, NDArray, Optimizer, Tensor};
 
@@ -6,6 +9,7 @@ pub trait ParamInnerT: Sync + Send + 'static {
     fn tensor(&self) -> Tensor;
     fn set(&mut self, tensor: Tensor);
     fn update(&mut self, grad: &NDArray);
+    fn name(&self) -> Cow<'static, str>;
 
     fn create_graph(&self) -> bool {
         true
@@ -14,6 +18,7 @@ pub trait ParamInnerT: Sync + Send + 'static {
 
 struct ParamInner<T: Optimizer + Clone> {
     tensor: Tensor,
+    name: Cow<'static, str>,
     optimizer: T,
     state: T::State,
 }
@@ -31,10 +36,15 @@ impl<T: Optimizer + Clone> ParamInnerT for ParamInner<T> {
         self.optimizer
             .update(&mut self.tensor, &mut self.state, grad);
     }
+
+    fn name(&self) -> Cow<'static, str> {
+        self.name.clone()
+    }
 }
 
 struct ParamInnerShared<T: Optimizer + Clone> {
     tensor: Tensor,
+    name: Cow<'static, str>,
     optimizer: Arc<Mutex<T>>,
     state: T::State,
 }
@@ -52,10 +62,15 @@ impl<T: Optimizer + Clone> ParamInnerT for ParamInnerShared<T> {
         let mut optimizer = self.optimizer.lock().unwrap().clone();
         optimizer.update(&mut self.tensor, &mut self.state, grad);
     }
+
+    fn name(&self) -> Cow<'static, str> {
+        self.name.clone()
+    }
 }
 
 struct ParamInnerFixed {
     tensor: Tensor,
+    name: Cow<'static, str>,
 }
 
 impl ParamInnerT for ParamInnerFixed {
@@ -71,6 +86,10 @@ impl ParamInnerT for ParamInnerFixed {
         drop(grad);
     }
 
+    fn name(&self) -> Cow<'static, str> {
+        self.name.clone()
+    }
+
     fn create_graph(&self) -> bool {
         false
     }
@@ -81,9 +100,14 @@ pub struct Param {
 }
 
 impl Param {
-    pub fn new(ndarray: NDArray, optimizer: impl Optimizer + Clone) -> Param {
+    pub fn new(
+        ndarray: NDArray,
+        name: Cow<'static, str>,
+        optimizer: impl Optimizer + Clone,
+    ) -> Param {
         Param {
             inner: Arc::new(Mutex::new(ParamInner {
+                name,
                 state: optimizer.new_state(&ndarray.shape()),
                 optimizer,
                 tensor: ndarray.into(),
@@ -91,10 +115,15 @@ impl Param {
         }
     }
 
-    pub fn new_shared<T: Optimizer + Clone>(ndarray: NDArray, optimizer: Arc<Mutex<T>>) -> Param {
+    pub fn new_shared<T: Optimizer + Clone>(
+        ndarray: NDArray,
+        name: Cow<'static, str>,
+        optimizer: Arc<Mutex<T>>,
+    ) -> Param {
         let state = optimizer.lock().unwrap().new_state(&ndarray.shape());
         Param {
             inner: Arc::new(Mutex::new(ParamInnerShared {
+                name,
                 state,
                 optimizer,
                 tensor: ndarray.into(),
@@ -102,10 +131,11 @@ impl Param {
         }
     }
 
-    pub fn new_fixed(ndarray: NDArray) -> Param {
+    pub fn new_fixed(ndarray: NDArray, name: Cow<'static, str>) -> Param {
         Param {
             inner: Arc::new(Mutex::new(ParamInnerFixed {
                 tensor: ndarray.into(),
+                name,
             })),
         }
     }
@@ -177,7 +207,7 @@ impl Backward for Param {
         })
     }
 
-    fn get_function_name(&self) -> &'static str {
-        "Param"
+    fn get_function_name(&self) -> Cow<'static, str> {
+        self.inner.lock().unwrap().name()
     }
 }

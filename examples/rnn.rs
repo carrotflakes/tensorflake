@@ -1,14 +1,13 @@
 mod data;
 
 use data::arith;
-use ndarray::prelude::*;
 use ndarray_rand::{
     rand::{prelude::SliceRandom, SeedableRng},
     rand_distr::Uniform,
-    RandomExt,
 };
 use tensorflake::{
     functions::*,
+    initializers::{Initializer, InitializerWithOptimizer},
     losses::softmax_cross_entropy,
     ndarray_util::{argmax, onehot},
     nn::*,
@@ -79,40 +78,31 @@ pub struct Model {
 
 impl Model {
     pub fn new(vocab_size: usize) -> Self {
-        let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
-        let param_gen = {
-            let rng = rng.clone();
-            move || {
-                let mut rng = rng.clone();
-                move |shape: &[usize]| -> Param {
-                    let t =
-                        Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                    Param::new(t, optimizers::SGDOptimizer::new(0.01))
-                    // AdamOptimizee::new(t)
-                }
-            }
-        };
+        let init = InitializerWithOptimizer::new(
+            Uniform::new(0., 0.01),
+            optimizers::SGDOptimizer::new(0.01),
+        );
         let state_size = 200;
         Self {
             vocab_size,
-            initial: param_gen()(&[1, state_size]),
+            initial: init.scope("initial").initialize(&[1, state_size]),
             enb: Linear::new(
                 vocab_size,
                 state_size,
-                &mut param_gen(),
-                Some(&mut param_gen()),
+                init.scope("enb"),
+                Some(init.scope("enb")),
             ),
             linear: Linear::new(
                 state_size,
                 state_size,
-                &mut param_gen(),
-                Some(&mut param_gen()),
+                init.scope("linear"),
+                Some(init.scope("linear")),
             ),
             output: Linear::new(
                 state_size,
                 vocab_size,
-                &mut param_gen(),
-                Some(&mut param_gen()),
+                init.scope("output"),
+                Some(init.scope("output")),
             ),
         }
     }

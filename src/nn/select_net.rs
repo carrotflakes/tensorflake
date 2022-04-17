@@ -1,4 +1,4 @@
-use crate::{functions::*, ndarray_util::as_2d, *};
+use crate::{functions::*, initializers::Initializer, ndarray_util::as_2d, *};
 
 use ndarray::s;
 
@@ -15,14 +15,26 @@ impl SelectNet {
         input: usize,
         output: usize,
         n: usize,
-        w: &mut impl FnMut(&[usize]) -> Param,
-        b: &mut impl FnMut(&[usize]) -> Param,
+        w: impl Initializer,
+        b: impl Initializer,
     ) -> Self {
         Self {
             output_size: output,
-            select_layer: Linear::new(input, n, w, Some(b)),
+            select_layer: Linear::new(
+                input,
+                n,
+                w.scope("select_layer"),
+                Some(b.scope("select_layer")),
+            ),
             layers: (0..n)
-                .map(move |_| Linear::new(input, output, w, Some(b)))
+                .map(|i| {
+                    Linear::new(
+                        input,
+                        output,
+                        w.scope(format!("layer_{}", i)),
+                        Some(b.scope(format!("layer_{}", i))),
+                    )
+                })
                 .collect(),
         }
     }
@@ -80,21 +92,14 @@ impl SelectNet {
 #[test]
 fn test() {
     use ndarray::prelude::*;
-    use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-    let rng = DefaultRng::seed_from_u64(42);
+    use ndarray_rand::rand_distr::Uniform;
 
-    let param_gen = {
-        let rng = rng.clone();
-        move || {
-            let mut rng = rng.clone();
-            move |shape: &[usize]| -> Param {
-                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                Param::new(t, optimizers::AdamOptimizer::new())
-            }
-        }
-    };
+    let init = initializers::InitializerWithOptimizer::new(
+        Uniform::new(-0.01, 0.01),
+        optimizers::AdamOptimizer::new(),
+    );
 
-    let select_net = SelectNet::new(2, 3, 10, &mut param_gen(), &mut param_gen());
+    let select_net = SelectNet::new(2, 3, 10, init.scope("select_net"), init.scope("select_net"));
 
     let x = backprop(array![[0.1, 0.2], [0.0, 0.0], [0.0, 100.0]].into_ndarray());
     let y = select_net.call(x.clone(), true);
@@ -107,8 +112,6 @@ fn test() {
     dbg!(loss[[]]);
     // export_dot::export_dot(&[loss.clone()], &format!("select_net.dot")).unwrap();
     optimize(&loss);
-
-    // export_dot(&[loss.clone()], "select_net.dot").unwrap();
 
     let y2 = select_net.build().call(x.clone(), true);
     assert_ne!(&*y.0, &*y2.0);

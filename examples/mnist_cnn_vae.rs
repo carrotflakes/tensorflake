@@ -2,6 +2,7 @@ mod data;
 
 use ndarray_rand::{rand_distr::Normal, RandomExt};
 use tensorflake::{
+    initializers::Initializer,
     losses::sigmoid_cross_entropy_with_logits,
     nn::{
         activations::{relu, sigmoid},
@@ -92,11 +93,11 @@ pub struct Model {
 impl Model {
     pub fn new() -> Self {
         let optimizer = optimizers::AdamOptimizer::new();
-        let mut init_kernel = initializers::InitializerWithOptimizer::new(
+        let init_kernel = initializers::InitializerWithOptimizer::new(
             Normal::new(0.0, 0.1).unwrap(),
             optimizer.clone(),
         );
-        let mut init_bias = initializers::InitializerWithOptimizer::new(
+        let init_bias = initializers::InitializerWithOptimizer::new(
             Normal::new(0.0, 0.0).unwrap(),
             optimizer.clone(),
         );
@@ -109,8 +110,8 @@ impl Model {
                     [3, 3],
                     [2, 2],
                     [1, 1],
-                    &mut init_kernel,
-                    Some(&mut init_bias),
+                    init_kernel.scope("conv2d_0_w"),
+                    Some(init_bias.scope("conv2d_0_b")),
                 ),
                 Conv2d::new(
                     32,
@@ -118,27 +119,27 @@ impl Model {
                     [3, 3],
                     [2, 2],
                     [1, 1],
-                    &mut init_kernel,
-                    Some(&mut init_bias),
+                    init_kernel.scope("conv2d_1_w"),
+                    Some(init_bias.scope("conv2d_1_b")),
                 ),
             ],
             encoder_linear1: Linear::new(
                 64 * 7 * 7,
                 latent_dim,
-                &mut init_kernel,
-                Some(&mut init_bias),
+                init_kernel.scope("encoder_linear1_w"),
+                Some(init_bias.scope("encoder_linear1_b")),
             ),
             encoder_linear2: Linear::new(
                 64 * 7 * 7,
                 latent_dim,
-                &mut init_kernel,
-                Some(&mut init_bias),
+                init_kernel.scope("encoder_linear2_w"),
+                Some(init_bias.scope("encoder_linear2_b")),
             ),
             decoder_linear: Linear::new(
                 latent_dim,
                 32 * 7 * 7,
-                &mut init_kernel,
-                Some(&mut init_bias),
+                init_kernel.scope("decoder_linear_w"),
+                Some(init_bias.scope("decoder_linear_b")),
             ),
             decoder_convts: [
                 Conv2dTranspose::new(
@@ -148,8 +149,8 @@ impl Model {
                     [2, 2],
                     [1, 1],
                     Some([14, 14]),
-                    &mut init_kernel,
-                    Some(&mut init_bias),
+                    init_kernel.scope("decoder_conv2d_transpose_0_w"),
+                    Some(init_bias.scope("decoder_conv2d_transpose_0_b")),
                 ),
                 Conv2dTranspose::new(
                     32,
@@ -158,8 +159,8 @@ impl Model {
                     [2, 2],
                     [1, 1],
                     Some([28, 28]),
-                    &mut init_kernel,
-                    Some(&mut init_bias),
+                    init_kernel.scope("decoder_conv2d_transpose_1_w"),
+                    Some(init_bias.scope("decoder_conv2d_transpose_1_b")),
                 ),
             ],
             decoder_conv: Conv2d::new(
@@ -168,8 +169,8 @@ impl Model {
                 [3, 3],
                 [1, 1],
                 [1, 1],
-                &mut init_kernel,
-                Some(&mut init_bias),
+                init_kernel.scope("decoder_conv2d_w"),
+                Some(init_bias.scope("decoder_conv2d_b")),
             ),
             // rng: DefaultRng::seed_from_u64(42),
         }

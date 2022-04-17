@@ -24,20 +24,20 @@ impl Conv2d {
         kernel_size: [usize; 2],
         stride: [usize; 2],
         padding: [usize; 2],
-        w: &mut impl Initializer,
-        b: Option<&mut impl Initializer>,
+        w: impl Initializer,
+        b: Option<impl Initializer>,
     ) -> Self {
         Self {
             kernel_size,
             stride,
             padding,
-            w: w.initialize(&[
+            w: w.scope("w").initialize(&[
                 output_channel,
                 input_channel,
                 kernel_size[0],
                 kernel_size[1],
             ]),
-            b: b.map(|b| b.initialize(&[output_channel])),
+            b: b.map(|b| b.scope("b").initialize(&[output_channel])),
         }
     }
 }
@@ -151,8 +151,8 @@ fn test_conv2d() {
         kernel_size: [3, 3],
         stride: [1, 1],
         padding: [1, 1],
-        w: Param::new(w.clone(), optimizers::Fixed),
-        b: Some(Param::new(b.clone(), optimizers::Fixed)),
+        w: Param::new(w.clone(), "w".into(), optimizers::Fixed),
+        b: Some(Param::new(b.clone(), "w".into(), optimizers::Fixed)),
     };
     let y = conv.call(x.clone(), false);
     assert_eq!(y.shape(), &[1, 5, 3, 4]);
@@ -186,21 +186,21 @@ impl Conv2dTranspose {
         stride: [usize; 2],
         padding: [usize; 2],
         out_size: Option<[usize; 2]>,
-        w: &mut impl Initializer,
-        b: Option<&mut impl Initializer>,
+        w: impl Initializer,
+        b: Option<impl Initializer>,
     ) -> Self {
         Self {
             kernel_size,
             stride,
             padding,
             out_size,
-            w: w.initialize(&[
+            w: w.scope("w").initialize(&[
                 output_channel,
                 input_channel,
                 kernel_size[0],
                 kernel_size[1],
             ]),
-            b: b.map(|b| b.initialize(&[input_channel])),
+            b: b.map(|b| b.scope("b").initialize(&[input_channel])),
         }
     }
 }

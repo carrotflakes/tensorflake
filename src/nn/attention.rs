@@ -20,17 +20,37 @@ impl MultiHeadAttention {
         embed_dim: usize,
         num_heads: usize,
         layer_norm_eps: f32,
-        w: &mut impl Initializer,
-        b: &mut impl Initializer,
+        w: impl Initializer,
+        b: impl Initializer,
         opt: impl Optimizer + Clone,
     ) -> Self {
         MultiHeadAttention {
             head_dim: embed_dim / num_heads,
             num_heads,
-            key_proj: Linear::new(embed_dim, embed_dim, w, Some(b)),
-            query_proj: Linear::new(embed_dim, embed_dim, w, Some(b)),
-            value_proj: Linear::new(embed_dim, embed_dim, w, Some(b)),
-            dense: Linear::new(embed_dim, embed_dim, w, Some(b)),
+            key_proj: Linear::new(
+                embed_dim,
+                embed_dim,
+                w.scope("key_proj"),
+                Some(b.scope("key_proj")),
+            ),
+            query_proj: Linear::new(
+                embed_dim,
+                embed_dim,
+                w.scope("query_proj"),
+                Some(b.scope("query_proj")),
+            ),
+            value_proj: Linear::new(
+                embed_dim,
+                embed_dim,
+                w.scope("value_proj"),
+                Some(b.scope("value_proj")),
+            ),
+            dense: Linear::new(
+                embed_dim,
+                embed_dim,
+                w.scope("dense"),
+                Some(b.scope("dense")),
+            ),
             norm: Normalization::new(vec![1], layer_norm_eps, opt),
         }
     }
@@ -106,28 +126,19 @@ impl MultiHeadAttention {
 
 #[test]
 fn test() {
-    use ndarray::prelude::*;
-    use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-    let rng = DefaultRng::seed_from_u64(42);
+    use ndarray_rand::rand_distr::Uniform;
 
-    let param_gen = {
-        let rng = rng.clone();
-        move || {
-            let mut rng = rng.clone();
-            move |shape: &[usize]| -> Param {
-                let t =
-                    Array::random_using(shape, Uniform::new(-0.01, 0.01), &mut rng).into_ndarray();
-                Param::new(t, optimizers::AdamOptimizer::new())
-            }
-        }
-    };
+    let init = initializers::InitializerWithOptimizer::new(
+        Uniform::new(-0.01, 0.01),
+        optimizers::AdamOptimizer::new(),
+    );
 
     let mha = MultiHeadAttention::new(
         64,
         4,
         1e-5,
-        &mut param_gen(),
-        &mut param_gen(),
+        init.scope("mha"),
+        init.scope("mha"),
         optimizers::AdamOptimizer::new(),
     );
 

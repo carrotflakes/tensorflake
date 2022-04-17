@@ -4,6 +4,7 @@ use ndarray_rand::{
     rand_distr::Normal,
 };
 use tensorflake::{
+    initializers::Initializer,
     losses::naive_mean_squared_error,
     nn::{activations::sigmoid, *},
     training::TrainConfig,
@@ -22,17 +23,17 @@ fn main() {
         .collect::<Vec<_>>();
 
     let optimizer = optimizers::SGDOptimizer::new(0.1);
-    let mut init_kernel = initializers::InitializerWithOptimizer::new(
+    let init_kernel = initializers::InitializerWithOptimizer::new(
         Normal::new(0.0, 0.1).unwrap(),
         optimizer.clone(),
     );
-    let mut init_bias = initializers::InitializerWithOptimizer::new(
+    let init_bias = initializers::InitializerWithOptimizer::new(
         Normal::new(0.0, 0.0).unwrap(),
         optimizer.clone(),
     );
 
-    let l1 = Linear::new(1, 10, &mut init_kernel, Some(&mut init_bias));
-    let l2 = Linear::new(10, 1, &mut init_kernel, Some(&mut init_bias));
+    let l1 = Linear::new(1, 10, init_kernel.scope("l1_w"), Some(init_bias.scope("l1_b")));
+    let l2 = Linear::new(10, 1, init_kernel.scope("l2_w"), Some(init_bias.scope("l2_b")));
 
     let start = std::time::Instant::now();
 

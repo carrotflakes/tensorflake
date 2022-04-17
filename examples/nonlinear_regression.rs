@@ -1,6 +1,7 @@
 use ndarray::{array, Array};
 use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
 use tensorflake::{
+    initializers::{Initializer, InitializerWithOptimizer},
     losses::naive_mean_squared_error,
     nn::{
         activations::{naive_sigmoid, sigmoid},
@@ -22,19 +23,11 @@ fn main() {
         ))
     .named("y");
 
-    let param_gen = {
-        let rng = rng.clone();
-        move || {
-            let mut rng = rng.clone();
-            move |shape: &[usize]| -> Param {
-                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                Param::new(t, optimizers::AdamOptimizer::new())
-            }
-        }
-    };
+    let init =
+        InitializerWithOptimizer::new(Uniform::new(0., 0.01), optimizers::AdamOptimizer::new());
 
-    let l1 = Linear::new(1, 10, &mut param_gen(), Some(&mut param_gen()));
-    let l2 = Linear::new(10, 1, &mut param_gen(), Some(&mut param_gen()));
+    let l1 = Linear::new(1, 10, init.scope("l1_w"), Some(init.scope("l1_b")));
+    let l2 = Linear::new(10, 1, init.scope("l2_w"), Some(init.scope("l2_b")));
 
     let start = std::time::Instant::now();
 

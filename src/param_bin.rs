@@ -59,8 +59,8 @@ fn test() {
         NDArray::from_shape_vec(vec![3, 4], (0..12).map(|x| x as f32).collect()).unwrap(),
     ];
     let mut params = vec![
-        Param::new(ndarrays[0].clone(), Fixed),
-        Param::new(ndarrays[1].clone(), Fixed),
+        Param::new(ndarrays[0].clone(), "param_0".into(), Fixed),
+        Param::new(ndarrays[1].clone(), "param_1".into(), Fixed),
     ];
     let path = "/tmp/tensorflake_param_bin_test.bin";
     export_to_file(&params, path);

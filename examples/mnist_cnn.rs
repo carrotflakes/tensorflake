@@ -1,8 +1,8 @@
 mod data;
 
-use ndarray::prelude::*;
-use ndarray_rand::{rand::SeedableRng, rand_distr::Normal, RandomExt};
+use ndarray_rand::rand_distr::Normal;
 use tensorflake::{
+    initializers::{Initializer, InitializerWithOptimizer},
     losses::softmax_cross_entropy,
     nn::{activations::relu, naive_max_pooling, Conv2d, Dropout, Layer, Linear},
     training::{TrainConfig, UpdateStrategy},
@@ -56,18 +56,11 @@ pub struct Model {
 
 impl Model {
     pub fn new() -> Self {
-        let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
-        let param_gen = {
-            let rng = rng.clone();
-            move || {
-                let mut rng = rng.clone();
-                move |shape: &[usize]| -> Param {
-                    let t = Array::random_using(shape, Normal::new(0.0, 0.1).unwrap(), &mut rng)
-                        .into_ndarray();
-                    Param::new(t, optimizers::AdamOptimizer::new())
-                }
-            }
-        };
+        let init = InitializerWithOptimizer::new(
+            Normal::new(0.0, 0.1).unwrap(),
+            optimizers::AdamOptimizer::new(),
+        );
+
         Self {
             conv1: Conv2d::new(
                 1,
@@ -76,8 +69,8 @@ impl Model {
                 // [1, 1],
                 [2, 2],
                 [1, 1],
-                &mut param_gen(),
-                Some(&mut param_gen()),
+                init.scope("conv1_w"),
+                Some(init.scope("conv1_b")),
             ),
             conv2: Conv2d::new(
                 10,
@@ -85,10 +78,15 @@ impl Model {
                 [3, 3],
                 [2, 2],
                 [1, 1],
-                &mut param_gen(),
-                Some(&mut param_gen()),
+                init.scope("conv2_w"),
+                Some(init.scope("conv2_b")),
             ),
-            linear: Linear::new(10 * 7 * 7, 10, &mut param_gen(), Some(&mut param_gen())),
+            linear: Linear::new(
+                10 * 7 * 7,
+                10,
+                init.scope("linear_w"),
+                Some(init.scope("linear_b")),
+            ),
         }
     }
 
@@ -122,18 +120,11 @@ pub struct BigModel {
 
 impl BigModel {
     pub fn new() -> Self {
-        let rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
-        let param_gen = {
-            let rng = rng.clone();
-            move || {
-                let mut rng = rng.clone();
-                move |shape: &[usize]| -> Param {
-                    let t = Array::random_using(shape, Normal::new(0.0, 0.1).unwrap(), &mut rng)
-                        .into_ndarray();
-                    Param::new(t, optimizers::AdamOptimizer::new())
-                }
-            }
-        };
+        let init = InitializerWithOptimizer::new(
+            Normal::new(0.0, 0.1).unwrap(),
+            optimizers::AdamOptimizer::new(),
+        );
+
         Self {
             conv1: Conv2d::new(
                 1,
@@ -141,8 +132,8 @@ impl BigModel {
                 [3, 3],
                 [1, 1],
                 [0, 0],
-                &mut param_gen(),
-                Some(&mut param_gen()),
+                init.scope("conv1_w"),
+                Some(init.scope("conv1_b")),
             ),
             conv2: Conv2d::new(
                 32,
@@ -150,11 +141,21 @@ impl BigModel {
                 [3, 3],
                 [1, 1],
                 [0, 0],
-                &mut param_gen(),
-                Some(&mut param_gen()),
+                init.scope("conv2_w"),
+                Some(init.scope("conv2_b")),
             ),
-            linear1: Linear::new(64 * 12 * 12, 128, &mut param_gen(), Some(&mut param_gen())),
-            linear2: Linear::new(128, 10, &mut param_gen(), Some(&mut param_gen())),
+            linear1: Linear::new(
+                64 * 12 * 12,
+                128,
+                init.scope("linear1_w"),
+                Some(init.scope("linear1_b")),
+            ),
+            linear2: Linear::new(
+                128,
+                10,
+                init.scope("linear2_w"),
+                Some(init.scope("linear2_b")),
+            ),
             dropout: Dropout::new(0.5, 42),
         }
     }

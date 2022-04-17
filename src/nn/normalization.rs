@@ -15,8 +15,8 @@ impl Normalization {
     pub fn new(axes: Vec<usize>, eps: f32, optimizer: impl Optimizer + Clone) -> Self {
         Self {
             axes,
-            gamma: Param::new(scalar(1.0), optimizer.clone()),
-            beta: Param::new(scalar(0.0), optimizer.clone()),
+            gamma: Param::new(scalar(1.0), "normalization".into(), optimizer.clone()),
+            beta: Param::new(scalar(0.0), "normalization".into(), optimizer.clone()),
             eps,
         }
     }

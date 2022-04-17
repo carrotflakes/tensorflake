@@ -17,25 +17,37 @@ impl Gru {
     pub fn new(
         input_size: usize,
         state_size: usize,
-        kernel: &mut impl initializers::Initializer,
+        kernel: impl initializers::Initializer,
     ) -> Self {
         Self {
             input_size,
             state_size,
             ws: [
-                kernel.initialize(&[input_size, state_size]),
-                kernel.initialize(&[input_size, state_size]),
-                kernel.initialize(&[input_size, state_size]),
+                kernel
+                    .scope(format!("w_{}", 0))
+                    .initialize(&[input_size, state_size]),
+                kernel
+                    .scope(format!("w_{}", 1))
+                    .initialize(&[input_size, state_size]),
+                kernel
+                    .scope(format!("w_{}", 2))
+                    .initialize(&[input_size, state_size]),
             ],
             us: [
-                kernel.initialize(&[state_size, state_size]),
-                kernel.initialize(&[state_size, state_size]),
-                kernel.initialize(&[state_size, state_size]),
+                kernel
+                    .scope(format!("u_{}", 0))
+                    .initialize(&[state_size, state_size]),
+                kernel
+                    .scope(format!("u_{}", 1))
+                    .initialize(&[state_size, state_size]),
+                kernel
+                    .scope(format!("u_{}", 2))
+                    .initialize(&[state_size, state_size]),
             ],
             bs: [
-                kernel.initialize(&[state_size]),
-                kernel.initialize(&[state_size]),
-                kernel.initialize(&[state_size]),
+                kernel.scope(format!("b_{}", 0)).initialize(&[state_size]),
+                kernel.scope(format!("b_{}", 1)).initialize(&[state_size]),
+                kernel.scope(format!("b_{}", 2)).initialize(&[state_size]),
             ],
         }
     }

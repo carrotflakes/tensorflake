@@ -16,7 +16,7 @@ pub use with_regularization::WithRegularization;
 fn test_optimizer(optimizer: impl crate::Optimizer + Clone) {
     use crate::*;
 
-    let px = crate::Param::new(scalar(0.0), optimizer);
+    let px = crate::Param::new(scalar(0.0), "param".into(), optimizer);
 
     let loss_fn = || {
         let x = px.get_tensor();

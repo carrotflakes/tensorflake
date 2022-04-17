@@ -9,6 +9,7 @@ use ndarray_rand::{
 };
 use tensorflake::{
     functions::*,
+    initializers::Initializer,
     losses::softmax_cross_entropy,
     ndarray_util::argmax,
     nn::{
@@ -42,24 +43,24 @@ fn main() {
     let norm =
         normalization::Normalization::new(vec![0, 1], 0.001, optimizers::AdamOptimizer::new());
 
-    let mut init_kernel = initializers::InitializerWithSharedOptimizer::new(
+    let init_kernel = initializers::InitializerWithSharedOptimizer::new(
         Normal::new(0., 0.1).unwrap(),
         optimizer.clone(),
     );
-    let mut init_bias = initializers::InitializerWithSharedOptimizer::new(
+    let init_bias = initializers::InitializerWithSharedOptimizer::new(
         Normal::new(0., 0.0).unwrap(),
         optimizer.clone(),
     );
 
     let embedding_size = 64;
     let state_size = 128;
-    let embedding = Embedding::new(embedding_size, vocab_size, &mut init_kernel);
-    let model = Gru::new(embedding_size, state_size, &mut init_kernel);
+    let embedding = Embedding::new(embedding_size, vocab_size, init_kernel.scope("embedding"));
+    let model = Gru::new(embedding_size, state_size, init_kernel.scope("gru"));
     let linear = Linear::new(
         state_size,
         vocab_size,
-        &mut init_kernel,
-        Some(&mut init_bias),
+        init_kernel.scope("out_proj_w"),
+        Some(init_bias.scope("out_proj_b")),
     );
     // let output_fn = |x: Tensor| linear.call(x, true);
     let output_fn = |x: Tensor| linear.call(norm.call(x, true), true);

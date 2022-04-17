@@ -9,19 +9,15 @@ use ndarray_rand::{
 use crate::{DefaultRng, NDArray, Optimizer, Param};
 
 pub trait Initializer {
-    fn initialize(&mut self, shape: &[usize]) -> Param;
-}
-
-impl<F: FnMut(&[usize]) -> Param> Initializer for F {
-    fn initialize(&mut self, shape: &[usize]) -> Param {
-        (self)(shape)
-    }
+    fn initialize(&self, shape: &[usize]) -> Param;
+    fn scope(&self, name: impl ToString) -> Self;
 }
 
 pub struct InitializerWithOptimizer<D: Distribution<f32> + Clone, O: Optimizer + Clone> {
     pub distribution: D,
     pub optimizer: O,
-    pub rng: DefaultRng,
+    pub rng: Arc<Mutex<DefaultRng>>,
+    pub path: Vec<String>,
 }
 
 impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> InitializerWithOptimizer<D, O> {
@@ -29,7 +25,8 @@ impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> InitializerWithOptimize
         Self {
             distribution,
             optimizer,
-            rng: DefaultRng::seed_from_u64(42),
+            rng: Arc::new(Mutex::new(DefaultRng::seed_from_u64(42))),
+            path: Default::default(),
         }
     }
 }
@@ -37,20 +34,28 @@ impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> InitializerWithOptimize
 impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> Initializer
     for InitializerWithOptimizer<D, O>
 {
-    fn initialize(&mut self, shape: &[usize]) -> Param {
-        let t = NDArray::random_using(shape, self.distribution.clone(), &mut self.rng);
-        Param::new(t, self.optimizer.clone())
+    fn initialize(&self, shape: &[usize]) -> Param {
+        let mut rng = self.rng.lock().unwrap();
+        let t = NDArray::random_using(shape, self.distribution.clone(), &mut *rng);
+        Param::new(t, self.path.join(":").into(), self.optimizer.clone())
+    }
+
+    fn scope(&self, name: impl ToString) -> Self {
+        let mut i = self.clone();
+        i.path.push(name.to_string());
+        i
     }
 }
 
 impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> Clone for InitializerWithOptimizer<D, O> {
     fn clone(&self) -> Self {
-        let mut rng = self.rng.clone();
-        rng.gen::<u32>();
+        let rng = self.rng.clone();
+        rng.lock().unwrap().gen::<u32>();
         Self {
             distribution: self.distribution.clone(),
             optimizer: self.optimizer.clone(),
             rng,
+            path: self.path.clone(),
         }
     }
 }
@@ -58,7 +63,8 @@ impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> Clone for InitializerWi
 pub struct InitializerWithSharedOptimizer<D: Distribution<f32> + Clone, O: Optimizer + Clone> {
     pub distribution: D,
     pub optimizer: Arc<Mutex<O>>,
-    pub rng: DefaultRng,
+    pub rng: Arc<Mutex<DefaultRng>>,
+    pub path: Vec<String>,
 }
 
 impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> InitializerWithSharedOptimizer<D, O> {
@@ -66,7 +72,8 @@ impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> InitializerWithSharedOp
         Self {
             distribution,
             optimizer,
-            rng: DefaultRng::seed_from_u64(42),
+            rng: Arc::new(Mutex::new(DefaultRng::seed_from_u64(42))),
+            path: Default::default(),
         }
     }
 }
@@ -74,9 +81,16 @@ impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> InitializerWithSharedOp
 impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> Initializer
     for InitializerWithSharedOptimizer<D, O>
 {
-    fn initialize(&mut self, shape: &[usize]) -> Param {
-        let t = NDArray::random_using(shape, self.distribution.clone(), &mut self.rng);
-        Param::new_shared(t, self.optimizer.clone())
+    fn initialize(&self, shape: &[usize]) -> Param {
+        let mut rng = self.rng.lock().unwrap();
+        let t = NDArray::random_using(shape, self.distribution.clone(), &mut *rng);
+        Param::new_shared(t, self.path.join(":").into(), self.optimizer.clone())
+    }
+
+    fn scope(&self, name: impl ToString) -> Self {
+        let mut i = self.clone();
+        i.path.push(name.to_string());
+        i
     }
 }
 
@@ -84,12 +98,13 @@ impl<D: Distribution<f32> + Clone, O: Optimizer + Clone> Clone
     for InitializerWithSharedOptimizer<D, O>
 {
     fn clone(&self) -> Self {
-        let mut rng = self.rng.clone();
-        rng.gen::<u32>();
+        let rng = self.rng.clone();
+        rng.lock().unwrap().gen::<u32>();
         Self {
             distribution: self.distribution.clone(),
             optimizer: self.optimizer.clone(),
             rng,
+            path: self.path.clone(),
         }
     }
 }

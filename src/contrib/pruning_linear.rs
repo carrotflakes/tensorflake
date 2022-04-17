@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     ops::AddAssign,
     sync::{Arc, Mutex},
 };
@@ -38,8 +39,16 @@ impl PuningLinear {
     pub fn build(&self) -> Self {
         Self {
             output_size: self.output_size,
-            w: Param::new((*self.w.get_tensor()).clone(), Fixed),
-            b: Param::new((*self.b.get_tensor()).clone(), Fixed),
+            w: Param::new(
+                (*self.w.get_tensor()).clone(),
+                self.w.get_function_name(),
+                Fixed,
+            ),
+            b: Param::new(
+                (*self.b.get_tensor()).clone(),
+                self.w.get_function_name(),
+                Fixed,
+            ),
             pruned_w: Arc::new(Mutex::new(self.pruned_w.lock().unwrap().clone())),
         }
     }
@@ -91,7 +100,7 @@ pub fn pruning_linear_forward(
         move |xs, _ys, gys| {
             let x = &xs[0];
             let w = &xs[1];
-            let gx = gys[0].matmul(&w.mat_t());// Producing dense matrix
+            let gx = gys[0].matmul(&w.mat_t()); // Producing dense matrix
             let gw = x.mat_t().matmul(&gys[0]);
             vec![gx.into(), gw]
         },
@@ -119,6 +128,10 @@ impl ParamInnerT for ParamInnerShared {
 
         let pruned_w = prune(&self.tensor());
         *self.pruned_w.lock().unwrap() = Arc::new(pruned_w);
+    }
+
+    fn name(&self) -> Cow<'static, str> {
+        self.param.get_function_name()
     }
 }
 

@@ -10,8 +10,8 @@ impl Linear {
     pub fn new(
         input: usize,
         output: usize,
-        w: &mut impl Initializer,
-        b: Option<&mut impl Initializer>,
+        w: impl Initializer,
+        b: Option<impl Initializer>,
     ) -> Self {
         Self {
             w: w.initialize(&[input, output]),
@@ -21,11 +21,15 @@ impl Linear {
 
     pub fn build(&self) -> Self {
         Self {
-            w: Param::new((*self.w.get_tensor()).clone(), Fixed),
+            w: Param::new(
+                (*self.w.get_tensor()).clone(),
+                self.w.get_function_name(),
+                Fixed,
+            ),
             b: self
                 .b
                 .as_ref()
-                .map(|b| Param::new((*b.get_tensor()).clone(), Fixed)),
+                .map(|b| Param::new((*b.get_tensor()).clone(), self.w.get_function_name(), Fixed)),
         }
     }
 }

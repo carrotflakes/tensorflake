@@ -1,13 +1,9 @@
 use std::sync::{Arc, Mutex};
 
 use image::GenericImageView;
-use ndarray::prelude::*;
-use ndarray_rand::{
-    rand::{Rng, SeedableRng},
-    rand_distr::Uniform,
-    RandomExt,
-};
+use ndarray_rand::rand_distr::Uniform;
 use tensorflake::{
+    initializers::{Initializer, InitializerWithSharedOptimizer},
     losses::*,
     nn::*,
     training::{TrainConfig, UpdateStrategy},
@@ -20,23 +16,12 @@ fn main() {
         .decode()
         .unwrap();
 
-    let optimizer = Arc::new(Mutex::new(optimizers::AdamOptimizer::new()));
-    let mut rng = rand_isaac::Isaac64Rng::seed_from_u64(42);
-    let param_gen = {
-        rng.gen::<u32>();
-        let rng = rng.clone();
-        let optimizer = optimizer.clone();
-        move || {
-            let mut rng = rng.clone();
-            let optimizer = optimizer.clone();
-            move |shape: &[usize]| -> Param {
-                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                Param::new_shared(t, optimizer.clone())
-            }
-        }
-    };
+    let init = InitializerWithSharedOptimizer::new(
+        Uniform::new(0., 0.01),
+        Arc::new(Mutex::new(optimizers::AdamOptimizer::new())),
+    );
 
-    let model = Model::new(&mut param_gen(), &mut param_gen());
+    let model = Model::new(init.scope("coin"), init.scope("coin"));
     // param_bin::import_from_file(&mut model.all_params(), "coin_50.bin");
     // gen_image([img.height(), img.width()], &model, "coin_final.png");
     // return;
@@ -107,18 +92,15 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(
-        w: &mut impl FnMut(&[usize]) -> Param,
-        b: &mut impl FnMut(&[usize]) -> Param,
-    ) -> Self {
+    pub fn new(w: impl Initializer, b: impl Initializer) -> Self {
         Self {
             mlp: MLP::new(
                 &[2, 28, 28, 28, 28, 28, 28, 28, 28, 28, 3],
                 // Some(Dropout::new(0.2, 42)),
                 None,
                 |x| x.sin(),
-                w,
-                b,
+                w.scope("mlp_w"),
+                b.scope("mlp_b"),
             ),
             activation: Box::new(|x| activations::sigmoid(&x)),
         }

@@ -12,13 +12,21 @@ impl MLP {
         sizes: &[usize],
         dropout: Option<Dropout>,
         activation: impl Fn(Tensor) -> Tensor + Sync + Send + 'static,
-        w: &mut impl Initializer,
-        b: &mut impl Initializer,
+        w: impl Initializer,
+        b: impl Initializer,
     ) -> Self {
         Self {
             linears: sizes
                 .windows(2)
-                .map(|x| Linear::new(x[0], x[1], w, Some(b)))
+                .enumerate()
+                .map(|(i, x)| {
+                    Linear::new(
+                        x[0],
+                        x[1],
+                        w.scope(format!("linear_{}", i)),
+                        Some(b.scope(format!("linear_{}", i))),
+                    )
+                })
                 .collect(),
             dropout,
             activation: Box::new(activation),
@@ -53,26 +61,19 @@ impl Layer for MLP {
 #[test]
 fn test() {
     use ndarray::prelude::*;
-    use ndarray_rand::{rand::SeedableRng, rand_distr::Uniform, RandomExt};
-    let rng = DefaultRng::seed_from_u64(42);
+    use ndarray_rand::rand_distr::Uniform;
 
-    let param_gen = {
-        let rng = rng.clone();
-        move || {
-            let mut rng = rng.clone();
-            move |shape: &[usize]| -> Param {
-                let t = Array::random_using(shape, Uniform::new(0., 0.01), &mut rng).into_ndarray();
-                Param::new(t, optimizers::AdamOptimizer::new())
-            }
-        }
-    };
+    let init = initializers::InitializerWithOptimizer::new(
+        Uniform::new(-0.01, 0.01),
+        optimizers::AdamOptimizer::new(),
+    );
 
     let mlp = MLP::new(
         &[2, 3, 1],
         None,
         |x| activations::sigmoid(&x),
-        &mut param_gen(),
-        &mut param_gen(),
+        init.scope("mlp"),
+        init.scope("mlp"),
     );
 
     let x = Tensor::new(array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_ndarray());

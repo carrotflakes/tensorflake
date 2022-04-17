@@ -68,6 +68,7 @@ fn test() {
 
     let p = Param::new(
         ndarray::array![1., 2., 3.].into_ndarray(),
+        "param".into(),
         optimizers::SGDOptimizer::new(1.0),
     );
     let l1 = L1::new(1.0);
@@ -80,6 +81,7 @@ fn test() {
 
     let p = Param::new(
         ndarray::array![1., 2., 3.].into_ndarray(),
+        "param".into(),
         optimizers::SGDOptimizer::new(1.0),
     );
     let l2 = L2::new(0.25);

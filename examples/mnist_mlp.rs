@@ -3,6 +3,7 @@ mod flush_denormals;
 
 use ndarray_rand::rand_distr::Normal;
 use tensorflake::{
+    initializers::Initializer,
     losses::softmax_cross_entropy,
     nn::{activations::Relu, *},
     training::TrainConfig,
@@ -15,11 +16,11 @@ fn main() {
 
     let optimizer = optimizers::SGDOptimizer::new(0.01);
     // let optimizer = optimizers::WithRegularization::new(optimizer, regularizers::L1::new(0.001));
-    let mut init_kernel = initializers::InitializerWithOptimizer::new(
+    let init_kernel = initializers::InitializerWithOptimizer::new(
         Normal::new(0.0, 0.1).unwrap(),
         optimizer.clone(),
     );
-    let mut init_bias = initializers::InitializerWithOptimizer::new(
+    let init_bias = initializers::InitializerWithOptimizer::new(
         Normal::new(0.0, 0.0).unwrap(),
         optimizer.clone(),
     );
@@ -28,8 +29,8 @@ fn main() {
         &[28 * 28, 128, 10],
         Some(Dropout::new(0.2, 42)),
         |x| Relu.call(vec![x]).pop().unwrap(),
-        &mut init_kernel,
-        &mut init_bias,
+        init_kernel.scope("mlp_w"),
+        init_bias.scope("mlp_b"),
     );
 
     let start = std::time::Instant::now();
