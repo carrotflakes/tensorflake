@@ -15,4 +15,7 @@ pub unsafe fn flush_denormals() {
     _mm_setcsr(mxcsr);
 }
 
-fn main() {}
+#[allow(dead_code)]
+fn main() {
+    unsafe { flush_denormals() };
+}
