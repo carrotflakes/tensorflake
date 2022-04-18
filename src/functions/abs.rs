@@ -1,7 +1,7 @@
 use crate::*;
 
-pub fn abs(x: &Tensor) -> Tensor {
-    let y = Tensor::new(x.map(|x| x.abs()).into_ndarray());
+pub fn abs(x: &Computed) -> Computed {
+    let y = Computed::new(x.map(|x| x.abs()).into_ndarray());
 
     chain(
         &[x.clone()],
@@ -11,7 +11,7 @@ pub fn abs(x: &Tensor) -> Tensor {
         move |xs, _, gys| {
             vec![
                 &gys[0]
-                    * &Tensor::new(
+                    * &Computed::new(
                         xs[0]
                             .map(|x| if *x >= 0.0 { 1.0 } else { -1.0 })
                             .into_ndarray(),

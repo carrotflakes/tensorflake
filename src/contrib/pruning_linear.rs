@@ -55,8 +55,8 @@ impl PuningLinear {
 }
 
 impl Layer for PuningLinear {
-    type Input = Tensor;
-    type Output = Tensor;
+    type Input = Computed;
+    type Output = Computed;
 
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output {
         pruning_linear_forward(
@@ -73,11 +73,11 @@ impl Layer for PuningLinear {
 }
 
 pub fn pruning_linear_forward(
-    x: &Tensor,
-    w: &Tensor,
-    b: &Tensor,
+    x: &Computed,
+    w: &Computed,
+    b: &Computed,
     pruned_w: Arc<Vec<(usize, usize, f32)>>,
-) -> Tensor {
+) -> Computed {
     let xa = (**x).to_owned().into_dimensionality::<Ix2>().unwrap();
     let mut y = (**b)
         .to_owned()
@@ -90,7 +90,7 @@ pub fn pruning_linear_forward(
         y.slice_mut(s![.., j])
             .add_assign(&(xa.slice(s![.., i]).to_owned() * v));
     }
-    let y = Tensor::new(y.into_ndarray());
+    let y = Computed::new(y.into_ndarray());
 
     chain(
         &[x.clone(), w.clone()],
@@ -115,11 +115,11 @@ struct ParamInnerShared {
 }
 
 impl ParamInnerT for ParamInnerShared {
-    fn tensor(&self) -> Tensor {
+    fn tensor(&self) -> Computed {
         self.param.get_tensor()
     }
 
-    fn set(&mut self, tensor: Tensor) {
+    fn set(&mut self, tensor: Computed) {
         self.param.set((*tensor).clone());
     }
 
@@ -135,7 +135,7 @@ impl ParamInnerT for ParamInnerShared {
     }
 }
 
-pub fn prune(x: &Tensor) -> Vec<(usize, usize, f32)> {
+pub fn prune(x: &Computed) -> Vec<(usize, usize, f32)> {
     x.axis_iter(Axis(0))
         .enumerate()
         .flat_map(|a| {

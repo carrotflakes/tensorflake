@@ -81,7 +81,7 @@ fn test() {
     );
     let l1 = nn::Linear::new(2, 3, init.clone(), Some(init.clone()));
     let l2 = nn::Linear::new(3, 2, init.clone(), Some(init.clone()));
-    let fnn: &dyn Layer<Input = Tensor, Output = Tensor> =
+    let fnn: &dyn Layer<Input = Computed, Output = Computed> =
         &l1.then_fn(&nn::activations::relu).then(l2);
     let y = fnn.call(backprop(NDArray::ones(&[1, 2][..])), false);
     assert_eq!(y.shape(), &[1, 2]);

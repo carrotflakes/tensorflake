@@ -4,14 +4,14 @@ use crate::{initializers::Initializer, *};
 pub struct MLP {
     pub linears: Vec<Linear>,
     pub dropout: Option<Dropout>,
-    pub activation: Box<dyn Fn(Tensor) -> Tensor + Sync + Send>,
+    pub activation: Box<dyn Fn(Computed) -> Computed + Sync + Send>,
 }
 
 impl MLP {
     pub fn new(
         sizes: &[usize],
         dropout: Option<Dropout>,
-        activation: impl Fn(Tensor) -> Tensor + Sync + Send + 'static,
+        activation: impl Fn(Computed) -> Computed + Sync + Send + 'static,
         w: impl Initializer,
         b: impl Initializer,
     ) -> Self {
@@ -35,8 +35,8 @@ impl MLP {
 }
 
 impl Layer for MLP {
-    type Input = Tensor;
-    type Output = Tensor;
+    type Input = Computed;
+    type Output = Computed;
 
     fn call(&self, x: Self::Input, train: bool) -> Self::Output {
         let mut y = x.clone();
@@ -76,7 +76,7 @@ fn test() {
         init.scope("mlp"),
     );
 
-    let x = Tensor::new(array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_ndarray());
+    let x = Computed::new(array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_ndarray());
 
     let y = mlp.call(x, true);
     // dbg!(&*y);

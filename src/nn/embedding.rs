@@ -16,7 +16,7 @@ impl Embedding {
 
 impl Layer for Embedding {
     type Input = Vec<usize>;
-    type Output = Tensor;
+    type Output = Computed;
 
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output {
         let w = self.weights.get_tensor();

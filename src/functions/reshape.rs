@@ -1,8 +1,8 @@
 use crate::*;
 
-pub fn reshape(x: &Tensor, shape: impl Into<Vec<usize>>) -> Tensor {
+pub fn reshape(x: &Computed, shape: impl Into<Vec<usize>>) -> Computed {
     let shape = shape.into();
-    let y = Tensor::new((**x).reshape(shape.as_slice()));
+    let y = Computed::new((**x).reshape(shape.as_slice()));
 
     chain(
         &[x.clone()],
@@ -33,7 +33,7 @@ impl Reshape {
 }
 
 impl Function for Reshape {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 1);
 
         vec![(*xs[0]).reshape(self.shape.as_slice()).into()]
@@ -41,16 +41,16 @@ impl Function for Reshape {
 
     fn backward(
         &self,
-        xs: &Vec<crate::Tensor>,
-        ys: &Vec<Tensor>,
-        gys: &Vec<crate::Tensor>,
-    ) -> Vec<crate::Tensor> {
+        xs: &Vec<crate::Computed>,
+        ys: &Vec<Computed>,
+        gys: &Vec<crate::Computed>,
+    ) -> Vec<crate::Computed> {
         #![allow(unused_variables)]
 
         vec![gys[0].reshape(self.original_shape.as_slice())]
     }
 
-    fn into_backward(mut self, xs: &Vec<crate::Tensor>) -> Box<dyn crate::Backward>
+    fn into_backward(mut self, xs: &Vec<crate::Computed>) -> Box<dyn crate::Backward>
     where
         Self: Sized + 'static,
     {

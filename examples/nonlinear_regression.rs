@@ -15,10 +15,10 @@ fn main() {
     let n = 100;
 
     let x =
-        Tensor::new(Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_ndarray())
+        Computed::new(Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_ndarray())
             .named("x");
-    let y = ((&x * &Tensor::new(scalar(2.0 * 3.14))).sin()
-        + Tensor::new(
+    let y = ((&x * &Computed::new(scalar(2.0 * 3.14))).sin()
+        + Computed::new(
             Array::random_using((n, 1), Uniform::new(0.0, 1.0), &mut rng).into_ndarray(),
         ))
     .named("y");
@@ -57,7 +57,7 @@ fn main() {
         optimize(&loss);
     }
     for i in 0..20 {
-        let x = Tensor::new(array![[i as f32 / 20.0]].into_ndarray());
+        let x = Computed::new(array![[i as f32 / 20.0]].into_ndarray());
         let h = l1.call(x.clone(), false);
         let h = naive_sigmoid(h).named("hidden");
         let y_ = l2.call(h, false);
@@ -66,7 +66,7 @@ fn main() {
     println!("elapsed: {:?}", start.elapsed());
 }
 
-fn graph(vars: &[Tensor], name: impl ToString) {
+fn graph(vars: &[Computed], name: impl ToString) {
     let f = std::fs::File::create(name.to_string() + ".dot").unwrap();
     let mut w = std::io::BufWriter::new(f);
     tensorflake::export_dot::write_dot(&mut w, vars, &mut |v| {

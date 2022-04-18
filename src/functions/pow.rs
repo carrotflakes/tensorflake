@@ -1,8 +1,8 @@
 use super::Mul;
 use crate::*;
 
-pub fn pow(x: &Tensor, a: f32) -> Tensor {
-    let y = Tensor::new((**x).map(|x| x.powf(a)).into_ndarray());
+pub fn pow(x: &Computed, a: f32) -> Computed {
+    let y = Computed::new((**x).map(|x| x.powf(a)).into_ndarray());
 
     chain(
         &[x.clone()],
@@ -10,7 +10,7 @@ pub fn pow(x: &Tensor, a: f32) -> Tensor {
         false,
         "pow",
         move |xs, _ys, gys| {
-            let gx = &gys[0] * &xs[0].pow(a - 1.0) * Tensor::new(scalar(a));
+            let gx = &gys[0] * &xs[0].pow(a - 1.0) * Computed::new(scalar(a));
             vec![gx]
         },
     );
@@ -27,13 +27,13 @@ impl Pow {
 }
 
 impl Function for Pow {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 1);
 
         vec![xs[0].map(|x| x.powf(self.0)).into_ndarray().into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         Mul.call(vec![
@@ -42,7 +42,7 @@ impl Function for Pow {
                 .pop()
                 .unwrap(),
             gys[0].clone(),
-            Tensor::new(scalar(self.0)),
+            Computed::new(scalar(self.0)),
         ])
     }
 }

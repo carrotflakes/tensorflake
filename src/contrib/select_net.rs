@@ -3,15 +3,15 @@ use crate::{functions::*, ndarray_util::as_2d, *};
 use ndarray::s;
 
 pub struct SelectNet<
-    S: Layer<Input = Tensor, Output = Tensor>,
-    L: Layer<Input = Tensor, Output = Tensor>,
+    S: Layer<Input = Computed, Output = Computed>,
+    L: Layer<Input = Computed, Output = Computed>,
 > {
     pub output_size: usize,
     pub select_layer: S,
     pub layers: Vec<L>,
 }
 
-impl<S: Layer<Input = Tensor, Output = Tensor>, L: Layer<Input = Tensor, Output = Tensor>>
+impl<S: Layer<Input = Computed, Output = Computed>, L: Layer<Input = Computed, Output = Computed>>
     SelectNet<S, L>
 {
     pub fn new(
@@ -28,7 +28,7 @@ impl<S: Layer<Input = Tensor, Output = Tensor>, L: Layer<Input = Tensor, Output 
         }
     }
 
-    pub fn _call(&self, x: Tensor, train: bool) -> (Tensor, Tensor) {
+    pub fn _call(&self, x: Computed, train: bool) -> (Computed, Computed) {
         let select = self.select_layer.call(x.clone(), train);
         let x = as_2d(&x);
         let softmax = nn::activations::softmax(&select);
@@ -46,7 +46,7 @@ impl<S: Layer<Input = Tensor, Output = Tensor>, L: Layer<Input = Tensor, Output 
             let mut lys = Vec::new();
             for (j, _) in &select {
                 let layer = &self.layers[*j];
-                let ly = layer.call(Tensor::new(x.slice(s![i..=i, ..]).into_ndarray()), train);
+                let ly = layer.call(Computed::new(x.slice(s![i..=i, ..]).into_ndarray()), train);
                 lys.push(ly * softmax.slice(s![i, *j]));
             }
             let lys = multi_add(&lys);
@@ -68,11 +68,11 @@ impl<S: Layer<Input = Tensor, Output = Tensor>, L: Layer<Input = Tensor, Output 
     }
 }
 
-impl<S: Layer<Input = Tensor, Output = Tensor>, L: Layer<Input = Tensor, Output = Tensor>> Layer
+impl<S: Layer<Input = Computed, Output = Computed>, L: Layer<Input = Computed, Output = Computed>> Layer
     for SelectNet<S, L>
 {
-    type Input = Tensor;
-    type Output = Tensor;
+    type Input = Computed;
+    type Output = Computed;
 
     fn call(&self, input: Self::Input, train: bool) -> Self::Output {
         self._call(input, train).0

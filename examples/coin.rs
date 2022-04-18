@@ -63,8 +63,8 @@ fn main() {
                 .collect();
             let x = NDArray::from_shape_vec(&[batch.len(), 2][..], x).unwrap();
             let t = NDArray::from_shape_vec(&[batch.len(), 3][..], t).unwrap();
-            let x = Tensor::new(x.clone());
-            let t = Tensor::new(t.clone());
+            let x = Computed::new(x.clone());
+            let t = Computed::new(t.clone());
 
             let y = model.call(x.clone(), ctx.train);
             let loss = naive_mean_squared_error(t.clone(), y.clone());
@@ -89,7 +89,7 @@ fn main() {
 
 pub struct Model {
     pub mlp: MLP,
-    pub activation: Box<dyn Fn(Tensor) -> Tensor + Sync + Send>,
+    pub activation: Box<dyn Fn(Computed) -> Computed + Sync + Send>,
 }
 
 impl Model {
@@ -109,8 +109,8 @@ impl Model {
 }
 
 impl Layer for Model {
-    type Input = Tensor;
-    type Output = Tensor;
+    type Input = Computed;
+    type Output = Computed;
 
     fn call(&self, x: Self::Input, train: bool) -> Self::Output {
         let y = self.mlp.call(x, train);
@@ -122,7 +122,7 @@ impl Layer for Model {
     }
 }
 
-fn gen_image(size: [u32; 2], layer: &impl Layer<Input = Tensor, Output = Tensor>, path: &str) {
+fn gen_image(size: [u32; 2], layer: &impl Layer<Input = Computed, Output = Computed>, path: &str) {
     let mut img = image::ImageBuffer::new(size[1], size[0]);
     let ps = (0..size[0])
         .flat_map(|y| (0..size[1]).map(move |x| (y, x)))

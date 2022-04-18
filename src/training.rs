@@ -238,13 +238,13 @@ impl TrainContext {
         }
     }
 
-    pub fn finish_batch(&mut self, loss: &Tensor, n: usize) {
+    pub fn finish_batch(&mut self, loss: &Computed, n: usize) {
         self.optimize(loss);
         self.count(n);
         self.add_metric(metrics::Loss::new(loss[[]], n));
     }
 
-    pub fn optimize(&mut self, loss: &Tensor) {
+    pub fn optimize(&mut self, loss: &Computed) {
         if self.train {
             self.gradients_accumulator.compute(loss);
         }
@@ -331,7 +331,7 @@ fn test() {
     .build()
     .fit(|batch, ctx| {
         std::thread::sleep(std::time::Duration::from_millis(10));
-        let loss = Tensor::new(scalar(0.0));
+        let loss = Computed::new(scalar(0.0));
         ctx.finish_batch(&loss, batch.len());
         ctx.add_metric(metrics::Loss::new(loss[[]], batch.len()));
     })

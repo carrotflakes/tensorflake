@@ -33,9 +33,9 @@ impl<'a, D: Dimension> IntoNDArray for ArrayBase<CowRepr<'a, f32>, D> {
     }
 }
 
-pub fn as_2d(tensor: &NDArray) -> ArrayBase<ViewRepr<&f32>, Dim<[usize; 2]>> {
-    let shape = tensor.shape();
-    tensor
+pub fn as_2d(array: &NDArray) -> ArrayBase<ViewRepr<&f32>, Dim<[usize; 2]>> {
+    let shape = array.shape();
+    array
         .view()
         .into_shape([
             shape.iter().take(shape.len() - 1).product(),
@@ -190,5 +190,10 @@ fn test_map_axes_keep_dim() {
 }
 
 pub fn ndarray_summary(a: &NDArray) -> String {
-    format!("shape: {:?}\nmean: {:.4}\nvar: {:.4}", a.shape(), a.mean().unwrap(), a.var(1.0))
+    format!(
+        "shape: {:?}\nmean: {:.4}\nvar: {:.4}",
+        a.shape(),
+        a.mean().unwrap(),
+        a.var(1.0)
+    )
 }

@@ -32,17 +32,17 @@ fn test_matyas() {
     let a = backprop(scalar(1.0));
     let b = backprop(scalar(1.0));
 
-    let y = Tensor::new(scalar(0.26)) * (a.pow(2.0) + b.pow(2.0))
-        - Tensor::new(scalar(0.48)) * a.clone() * b.clone();
+    let y = Computed::new(scalar(0.26)) * (a.pow(2.0) + b.pow(2.0))
+        - Computed::new(scalar(0.48)) * a.clone() * b.clone();
 
     let grads = gradients(&[y], &vec![a.clone(), b.clone()], false);
     assert!((&*grads[0] - 0.04).iter().next().unwrap().abs() < 1e-6);
     assert!((&*grads[1] - 0.04).iter().next().unwrap().abs() < 1e-6);
 }
 
-fn rosenbrock(a: Tensor, b: Tensor) -> Tensor {
-    Tensor::new(scalar(100.0)) * (b - a.pow(2.0)).pow(2.0)
-        + (a.clone() - Tensor::new(scalar(1.0))).pow(2.0)
+fn rosenbrock(a: Computed, b: Computed) -> Computed {
+    Computed::new(scalar(100.0)) * (b - a.pow(2.0)).pow(2.0)
+        + (a.clone() - Computed::new(scalar(1.0))).pow(2.0)
 }
 
 #[test]
@@ -80,7 +80,7 @@ fn test_rosenbrock_sgd() {
 fn test_second_order_differentia() {
     let x = backprop(scalar(2.0));
 
-    let y = x.pow(4.0) - Tensor::new(scalar(2.0)) * x.pow(2.0);
+    let y = x.pow(4.0) - Computed::new(scalar(2.0)) * x.pow(2.0);
     assert_eq!(*y, scalar(8.0));
 
     let grads = gradients(&vec![y.clone()], &vec![x.clone()], true);

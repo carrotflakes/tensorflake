@@ -5,11 +5,11 @@ use ndarray::{azip, Array, Axis};
 
 use crate::*;
 
-pub fn simple_gate(x: &Tensor, axis: usize) -> Tensor {
+pub fn simple_gate(x: &Computed, axis: usize) -> Computed {
     let (a, b) = x.view().split_at(Axis(axis), x.shape()[axis] / 2);
     let mut y = NDArray::zeros(a.shape());
     azip!((a in &a, b in &b, c in &mut y) *c = a * b);
-    let y = Tensor::new(y);
+    let y = Computed::new(y);
 
     chain(
         &[x.clone()],

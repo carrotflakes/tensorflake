@@ -28,7 +28,7 @@ impl Im2col {
 }
 
 impl Function for Im2col {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert_eq!(xs.len(), 1);
         vec![im2col(
             &*xs[0],
@@ -40,7 +40,7 @@ impl Function for Im2col {
         .into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         drop(ys);
         Col2im::new(
             xs[0].shape().try_into().unwrap(),
@@ -80,7 +80,7 @@ impl Col2im {
 }
 
 impl Function for Col2im {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert_eq!(xs.len(), 1);
         vec![col2im(
             &*xs[0],
@@ -93,7 +93,7 @@ impl Function for Col2im {
         .into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         drop(xs);
         drop(ys);
         Im2col::new(self.kernel_size, self.stride, self.padding, self.to_matrix).call(gys.clone())

@@ -1,10 +1,10 @@
 use crate::functions::*;
 use crate::*;
 
-pub fn matmul_add(x0: &Tensor, x1: &Tensor, x2: &Tensor) -> Tensor {
+pub fn matmul_add(x0: &Computed, x1: &Computed, x2: &Computed) -> Computed {
     let y = matmul::forward(&x0, &x1);
     let y = y + &**x2;
-    let y = Tensor::new(y);
+    let y = Computed::new(y);
 
     chain(
         &[x0.clone(), x1.clone(), x2.clone()],

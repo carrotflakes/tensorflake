@@ -54,12 +54,12 @@ impl Lstm {
 }
 
 impl Cell for Lstm {
-    type State = [Tensor; 2];
+    type State = [Computed; 2];
 
     fn initial_state(&self, batch_size: usize) -> Self::State {
         [
-            Tensor::new(NDArray::zeros(&[batch_size, self.state_size][..])),
-            Tensor::new(NDArray::zeros(&[batch_size, self.state_size][..])),
+            Computed::new(NDArray::zeros(&[batch_size, self.state_size][..])),
+            Computed::new(NDArray::zeros(&[batch_size, self.state_size][..])),
         ]
     }
 
@@ -67,7 +67,7 @@ impl Cell for Lstm {
         self.input_size
     }
 
-    fn step(&self, x: Tensor, state: Self::State) -> (Self::State, Tensor) {
+    fn step(&self, x: Computed, state: Self::State) -> (Self::State, Computed) {
         let [c, h] = state;
         let f = sigmoid(
             &(x.matmul(&self.ws[0].get_tensor())

@@ -7,13 +7,13 @@ use crate::ndarray_util::onehot;
 use crate::nn::activations::{relu, softmax, Softmax};
 use crate::*;
 
-pub fn naive_mean_squared_error(x0: Tensor, x1: Tensor) -> Tensor {
+pub fn naive_mean_squared_error(x0: Computed, x1: Computed) -> Computed {
     let x = (x0 - x1).pow(2.0);
     x.sum(Vec::from_iter(0..x.ndim()), false)
-        / Tensor::new(scalar(x.shape().iter().product::<usize>() as f32))
+        / Computed::new(scalar(x.shape().iter().product::<usize>() as f32))
 }
 
-pub fn softmax_cross_entropy(t: Vec<usize>, x: &Tensor) -> Tensor {
+pub fn softmax_cross_entropy(t: Vec<usize>, x: &Computed) -> Computed {
     let n = x.shape().iter().take(x.ndim() - 1).product();
     let log_z = log_sum_exp(&*x);
     let log_p = x.to_shape((n, x.shape()[x.ndim() - 1])).unwrap();
@@ -21,7 +21,7 @@ pub fn softmax_cross_entropy(t: Vec<usize>, x: &Tensor) -> Tensor {
     for i in 0..n {
         y -= log_p[[i, t[i]]] - log_z[i];
     }
-    let y = Tensor::new(scalar(y / n as f32));
+    let y = Computed::new(scalar(y / n as f32));
 
     chain(
         &[x.clone()],
@@ -31,9 +31,9 @@ pub fn softmax_cross_entropy(t: Vec<usize>, x: &Tensor) -> Tensor {
         move |xs, _ys, gys| {
             let n: usize = xs[0].shape().iter().take(xs[0].ndim() - 1).product();
             let class_num = xs[0].shape()[xs[0].ndim() - 1];
-            let gy = &gys[0] * &Tensor::new(scalar(1.0 / n as f32));
+            let gy = &gys[0] * &Computed::new(scalar(1.0 / n as f32));
             let y = softmax(&xs[0]);
-            let t_onehot = Tensor::new(
+            let t_onehot = Computed::new(
                 onehot(&Array1::from(t.clone()), class_num)
                     .into_shape(y.shape())
                     .unwrap(),
@@ -56,7 +56,7 @@ impl SoftmaxCrossEntropy {
 }
 
 impl Function for SoftmaxCrossEntropy {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert_eq!(xs.len(), 1);
         let x = &*xs[0];
 
@@ -67,17 +67,17 @@ impl Function for SoftmaxCrossEntropy {
         for i in 0..n {
             y -= log_p[[i, self.t[i]]] - log_z[i];
         }
-        vec![Tensor::new(scalar(y / n as f32))]
+        vec![Computed::new(scalar(y / n as f32))]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         let n: usize = xs[0].shape().iter().take(xs[0].ndim() - 1).product();
         let class_num = xs[0].shape()[xs[0].ndim() - 1];
-        let gy = call!(Mul, gys[0], Tensor::new(scalar(1.0 / n as f32)));
+        let gy = call!(Mul, gys[0], Computed::new(scalar(1.0 / n as f32)));
         let y = call!(Softmax, xs[0]);
-        let t_onehot = Tensor::new(
+        let t_onehot = Computed::new(
             onehot(&Array1::from(self.t.clone()), class_num)
                 .into_shape(y.shape())
                 .unwrap(),
@@ -97,8 +97,8 @@ fn test_softmax_cross_entropy() {
     dbg!(&*grads[0]);
 }
 
-pub fn sigmoid_cross_entropy_with_logits(labels: &Tensor, logits: &Tensor) -> Tensor {
-    relu(logits) - logits * labels + (Tensor::new(scalar(1.0)) + (-logits.abs()).exp()).log()
+pub fn sigmoid_cross_entropy_with_logits(labels: &Computed, logits: &Computed) -> Computed {
+    relu(logits) - logits * labels + (Computed::new(scalar(1.0)) + (-logits.abs()).exp()).log()
 }
 
 // max(x) + log(sum(exp(x - max(x))))

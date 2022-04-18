@@ -1,8 +1,8 @@
 use super::{Mul, Neg};
 use crate::*;
 
-pub fn sin(x: &Tensor) -> Tensor {
-    let y = Tensor::new((**x).map(|x| x.sin()).into_ndarray());
+pub fn sin(x: &Computed) -> Computed {
+    let y = Computed::new((**x).map(|x| x.sin()).into_ndarray());
 
     chain(
         &[x.clone()],
@@ -18,8 +18,8 @@ pub fn sin(x: &Tensor) -> Tensor {
     y
 }
 
-pub fn cos(x: &Tensor) -> Tensor {
-    let y = Tensor::new((**x).map(|x| x.cos()).into_ndarray());
+pub fn cos(x: &Computed) -> Computed {
+    let y = Computed::new((**x).map(|x| x.cos()).into_ndarray());
 
     chain(
         &[x.clone()],
@@ -38,13 +38,13 @@ pub fn cos(x: &Tensor) -> Tensor {
 pub struct Sin;
 
 impl Function for Sin {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 1);
 
         vec![xs[0].map(|x| x.sin()).into_ndarray().into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         Mul.call(vec![gys[0].clone(), Cos.call(xs.clone()).pop().unwrap()])
@@ -54,13 +54,13 @@ impl Function for Sin {
 pub struct Cos;
 
 impl Function for Cos {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 1);
 
         vec![xs[0].map(|x| x.cos()).into_ndarray().into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         Mul.call(vec![

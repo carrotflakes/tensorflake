@@ -3,8 +3,8 @@ use crate::{
     *,
 };
 
-pub fn sub(lhs: &Tensor, rhs: &Tensor) -> Tensor {
-    let y = Tensor::new((&**lhs - &**rhs).into_ndarray());
+pub fn sub(lhs: &Computed, rhs: &Computed) -> Computed {
+    let y = Computed::new((&**lhs - &**rhs).into_ndarray());
 
     chain(
         &[lhs.clone(), rhs.clone()],
@@ -34,13 +34,13 @@ pub fn sub(lhs: &Tensor, rhs: &Tensor) -> Tensor {
 pub struct Sub;
 
 impl Function for Sub {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 2);
 
         vec![(&*xs[0] - &*xs[1]).into_ndarray().into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         let mut gx0 = gys[0].clone();

@@ -1,9 +1,9 @@
 use crate::*;
 
-pub fn transpose(x: &Tensor, axes: impl Into<Vec<usize>>) -> Tensor {
+pub fn transpose(x: &Computed, axes: impl Into<Vec<usize>>) -> Computed {
     let axes = axes.into();
 
-    let y = Tensor::new(x.view().permuted_axes(&*axes).into_ndarray());
+    let y = Computed::new(x.view().permuted_axes(&*axes).into_ndarray());
 
     chain(
         &[x.clone()],
@@ -36,7 +36,7 @@ impl Transpose {
 }
 
 impl Function for Transpose {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 1);
 
         vec![xs[0]
@@ -46,7 +46,7 @@ impl Function for Transpose {
             .into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         Transpose::new(

@@ -55,7 +55,7 @@ impl MultiHeadAttention {
         }
     }
 
-    pub fn call(&self, x: &Tensor, attn_mask: &Tensor, train: bool) -> Tensor {
+    pub fn call(&self, x: &Computed, attn_mask: &Computed, train: bool) -> Computed {
         // (N, L, E) -> (N, L, num_heads * head_dim)
         let query = self.query_proj.call(x.clone(), train);
         let key = self.key_proj.call(x.clone(), train);
@@ -69,7 +69,7 @@ impl MultiHeadAttention {
         // Calculate the attention scores
         // (N, num_heads, L, head_dim) * (N, num_head, head_dim, L) -> (N, num_head, L, L)
         let attention =
-            query.matmul(&key.mat_t()) / Tensor::new(scalar((self.head_dim as f32).sqrt()));
+            query.matmul(&key.mat_t()) / Computed::new(scalar((self.head_dim as f32).sqrt()));
 
         // Apply softmax to the attention scores
         let attention = Softmax
@@ -88,7 +88,7 @@ impl MultiHeadAttention {
         self.norm.call(&y + x, train)
     }
 
-    fn separate_heads(&self, features: Tensor) -> Tensor {
+    fn separate_heads(&self, features: Computed) -> Computed {
         // (N, L, num_heads * head_dim) -> (N, L, num_heads, head_dim)
         let batch_size = features.shape()[0];
         let input_len = features.shape()[1];
@@ -99,7 +99,7 @@ impl MultiHeadAttention {
         features.transpose(vec![0, 2, 1, 3])
     }
 
-    fn merge_heads(&self, features: Tensor) -> Tensor {
+    fn merge_heads(&self, features: Computed) -> Computed {
         // (N, num_heads, L, head_dim) -> (N, L, num_heads, head_dim)
         let features = features.transpose(vec![0, 2, 1, 3]);
 
@@ -111,7 +111,7 @@ impl MultiHeadAttention {
         features.reshape([batch_size, input_len, self.num_heads * self.head_dim])
     }
 
-    fn extend_mask(&self, mask: &Tensor) -> Tensor {
+    fn extend_mask(&self, mask: &Computed) -> Computed {
         // (N, L) -> (N, 1, 1, L)
 
         let batch_size = mask.shape()[0];
@@ -120,7 +120,7 @@ impl MultiHeadAttention {
         let extended_mask = mask.reshape([batch_size, 1, 1, input_len]);
 
         // Adding -1e5 makes masked locations zeroed out during softmax
-        (Tensor::new(scalar(1.0)) - extended_mask) * Tensor::new(scalar(-1e5))
+        (Computed::new(scalar(1.0)) - extended_mask) * Computed::new(scalar(-1e5))
     }
 }
 
@@ -142,7 +142,7 @@ fn test() {
         optimizers::AdamOptimizer::new(),
     );
 
-    let x = Tensor::new(
+    let x = Computed::new(
         NDArray::from_shape_vec(
             &[3, 8, 64][..],
             (0..64 * 8 * 3)
@@ -151,7 +151,7 @@ fn test() {
         )
         .unwrap(),
     );
-    let attn_mask = Tensor::new(
+    let attn_mask = Computed::new(
         NDArray::from_shape_vec(&[3, 8][..], (0..8 * 3).map(|_| 1.0).collect::<Vec<_>>()).unwrap(),
     );
 

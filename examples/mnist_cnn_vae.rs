@@ -32,7 +32,7 @@ fn main() {
     .build();
     while !train.is_end() {
         train.fit_one_epoch(|batch, ctx| {
-            let x = Tensor::new(
+            let x = Computed::new(
                 NDArray::from_shape_vec(
                     &[batch.len(), 1, 28, 28][..],
                     batch
@@ -46,9 +46,9 @@ fn main() {
             let ys = model.call(&x, ctx.train);
             let cross_ent = sigmoid_cross_entropy_with_logits(&x, &ys[0]);
             let reconstruct_loss = cross_ent.sum(vec![0, 1, 2, 3], false)
-                * Tensor::new(scalar(1.0 / batch.len() as f32));
+                * Computed::new(scalar(1.0 / batch.len() as f32));
             let kl_loss =
-                -log_normal_pdf(&ys[1], &Tensor::new(scalar(0.0)), &Tensor::new(scalar(0.0)))
+                -log_normal_pdf(&ys[1], &Computed::new(scalar(0.0)), &Computed::new(scalar(0.0)))
                     + log_normal_pdf(&ys[1], &ys[2], &ys[3]);
             let loss = reconstruct_loss + kl_loss;
             // graph(&[loss.clone()], "vae");
@@ -57,7 +57,7 @@ fn main() {
         });
 
         // generate images
-        let x = Tensor::new(
+        let x = Computed::new(
             NDArray::from_shape_vec(
                 &[32, 1, 28, 28][..],
                 mnist
@@ -176,7 +176,7 @@ impl Model {
         }
     }
 
-    pub fn encode(&self, x: &Tensor, train: bool) -> Tensor {
+    pub fn encode(&self, x: &Computed, train: bool) -> Computed {
         let mut x = x.clone();
         for conv in &self.encoder_convs {
             x = conv.call(x, train);
@@ -187,7 +187,7 @@ impl Model {
         x
     }
 
-    pub fn decode(&self, x: &Tensor, train: bool) -> Tensor {
+    pub fn decode(&self, x: &Computed, train: bool) -> Computed {
         let mut x = relu(&self.decoder_linear.call(x.clone(), train));
         x = x.reshape(vec![x.shape()[0], 32, 7, 7]);
 
@@ -199,12 +199,12 @@ impl Model {
         x
     }
 
-    pub fn call(&self, x: &Tensor, train: bool) -> [Tensor; 4] {
+    pub fn call(&self, x: &Computed, train: bool) -> [Computed; 4] {
         let mut x = self.encode(&x, train);
 
         let mean = self.encoder_linear1.call(x.clone(), train).named("mean");
         let log_var = self.encoder_linear2.call(x.clone(), train).named("log_var");
-        let noise = Tensor::new(NDArray::random(
+        let noise = Computed::new(NDArray::random(
             mean.shape(),
             Normal::new(0.0, 1.0).unwrap(),
         ));
@@ -229,17 +229,17 @@ impl Model {
     }
 }
 
-fn log_normal_pdf(sample: &Tensor, mean: &Tensor, log_var: &Tensor) -> Tensor {
+fn log_normal_pdf(sample: &Computed, mean: &Computed, log_var: &Computed) -> Computed {
     let log2pi = (2.0 * std::f32::consts::PI).ln();
-    (Tensor::new(scalar(-0.5))
+    (Computed::new(scalar(-0.5))
         * ((sample - mean).pow(2.0) * (-log_var).exp()
             + log_var.clone()
-            + Tensor::new(scalar(log2pi))))
+            + Computed::new(scalar(log2pi))))
     .sum(Vec::from_iter(0..sample.ndim()), false)
-        * Tensor::new(scalar(1.0 / sample.len() as f32))
+        * Computed::new(scalar(1.0 / sample.len() as f32))
 }
 
-fn save_iamges(data: &Tensor, path: &str) {
+fn save_iamges(data: &Computed, path: &str) {
     let mut img = image::ImageBuffer::new(data.shape()[3] as u32 * 8, data.shape()[2] as u32 * 8);
 
     for i in 0..data.shape()[0] {
@@ -261,7 +261,7 @@ fn save_iamges(data: &Tensor, path: &str) {
 }
 
 #[allow(dead_code)]
-fn graph(vars: &[Tensor], name: impl ToString) {
+fn graph(vars: &[Computed], name: impl ToString) {
     let f = std::fs::File::create(name.to_string() + ".dot").unwrap();
     let mut w = std::io::BufWriter::new(f);
     tensorflake::export_dot::write_dot(&mut w, vars, &mut |v| {

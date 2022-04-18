@@ -1,9 +1,9 @@
 use crate::*;
 
 pub trait Regularizer: Sync + Send + 'static {
-    fn loss(&self, x: &Tensor) -> Tensor;
+    fn loss(&self, x: &Computed) -> Computed;
 
-    fn grad(&self, x: &Tensor) -> Tensor {
+    fn grad(&self, x: &Computed) -> Computed {
         let loss = self.loss(x);
         gradients(&[loss], &[x.clone()], false).pop().unwrap()
     }
@@ -21,7 +21,7 @@ impl L1 {
 }
 
 impl Regularizer for L1 {
-    fn loss(&self, input: &Tensor) -> Tensor {
+    fn loss(&self, input: &Computed) -> Computed {
         input.abs().sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l1).into()
     }
 }
@@ -38,7 +38,7 @@ impl L2 {
 }
 
 impl Regularizer for L2 {
-    fn loss(&self, input: &Tensor) -> Tensor {
+    fn loss(&self, input: &Computed) -> Computed {
         input.pow(2.0).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l2).into()
     }
 }
@@ -56,7 +56,7 @@ impl L1L2 {
 }
 
 impl Regularizer for L1L2 {
-    fn loss(&self, input: &Tensor) -> Tensor {
+    fn loss(&self, input: &Computed) -> Computed {
         input.abs().sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l1).into()
             + input.pow(2.0).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l2).into()
     }

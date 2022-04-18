@@ -46,7 +46,7 @@ fn main() {
     }
     .build()
     .fit(|batch, ctx| {
-        let x = Tensor::new(
+        let x = Computed::new(
             NDArray::from_shape_vec(
                 &[batch.len(), 28 * 28][..],
                 batch

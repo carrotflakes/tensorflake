@@ -1,15 +1,15 @@
 use std::sync::{Arc, Weak};
 
-use super::{tensor::TensorInner, Backward, Tensor};
+use super::{tensor::ComputedInner, Backward, Computed};
 
 pub struct FunctionCall {
     pub(crate) backward: Box<dyn Backward>,
-    pub(crate) xs: Vec<Tensor>,
-    pub(crate) ys: Vec<Weak<TensorInner>>,
+    pub(crate) xs: Vec<Computed>,
+    pub(crate) ys: Vec<Weak<ComputedInner>>,
 }
 
 impl FunctionCall {
-    pub fn new(backward: Box<dyn Backward>, xs: Vec<Tensor>, ys: &[Tensor]) -> Self {
+    pub fn new(backward: Box<dyn Backward>, xs: Vec<Computed>, ys: &[Computed]) -> Self {
         Self {
             backward,
             xs,
@@ -17,10 +17,10 @@ impl FunctionCall {
         }
     }
 
-    pub fn get_ys(&self) -> Vec<Tensor> {
+    pub fn get_ys(&self) -> Vec<Computed> {
         self.ys
             .iter()
-            .map(|y| Tensor {
+            .map(|y| Computed {
                 inner: y.upgrade().unwrap(),
             })
             .collect()

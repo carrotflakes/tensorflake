@@ -35,8 +35,8 @@ impl Linear {
 }
 
 impl Layer for Linear {
-    type Input = Tensor;
-    type Output = Tensor;
+    type Input = Computed;
+    type Output = Computed;
 
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output {
         if let Some(b) = &self.b {

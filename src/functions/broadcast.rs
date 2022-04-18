@@ -2,9 +2,9 @@ use crate::*;
 
 use super::Sum;
 
-pub fn broadcast(x: &Tensor, shape: impl Into<Vec<usize>>) -> Tensor {
+pub fn broadcast(x: &Computed, shape: impl Into<Vec<usize>>) -> Computed {
     let shape = shape.into();
-    let y = Tensor::new(
+    let y = Computed::new(
         (**x)
             .broadcast(shape.as_slice())
             .unwrap_or_else(|| panic!("illegal broadcast: {:?} to {:?}", x.shape(), shape))
@@ -53,10 +53,10 @@ impl Broadcast {
 }
 
 impl Function for Broadcast {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 1);
 
-        vec![Tensor::new(
+        vec![Computed::new(
             (*xs[0])
                 .broadcast(self.shape.as_slice())
                 .unwrap_or_else(|| {
@@ -66,13 +66,13 @@ impl Function for Broadcast {
         )]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         vec![call!(Sum::new(self.axes.clone(), false), &gys[0])]
     }
 
-    fn into_backward(mut self, xs: &Vec<Tensor>) -> Box<dyn Backward>
+    fn into_backward(mut self, xs: &Vec<Computed>) -> Box<dyn Backward>
     where
         Self: Sized + 'static,
     {

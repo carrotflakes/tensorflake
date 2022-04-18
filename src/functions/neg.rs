@@ -1,7 +1,7 @@
 use crate::*;
 
-pub fn neg(x: &Tensor) -> Tensor {
-    let y = Tensor::new((-&**x).into_ndarray());
+pub fn neg(x: &Computed) -> Computed {
+    let y = Computed::new((-&**x).into_ndarray());
 
     chain(
         &[x.clone()],
@@ -20,12 +20,12 @@ pub fn neg(x: &Tensor) -> Tensor {
 pub struct Neg;
 
 impl Function for Neg {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 1);
         vec![xs[0].map(|x| -x).into_ndarray().into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         Neg.call(gys.clone())

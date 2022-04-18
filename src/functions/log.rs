@@ -1,7 +1,7 @@
 use crate::*;
 
-pub fn log(x: &Tensor) -> Tensor {
-    let y = Tensor::new(x.map(|x| x.ln()).into_ndarray());
+pub fn log(x: &Computed) -> Computed {
+    let y = Computed::new(x.map(|x| x.ln()).into_ndarray());
 
     chain(
         &[x.clone()],

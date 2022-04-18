@@ -1,7 +1,7 @@
 use crate::*;
 
-pub fn t(x: &Tensor) -> Tensor {
-    let y = Tensor::new((**x).t().into_ndarray());
+pub fn t(x: &Computed) -> Computed {
+    let y = Computed::new((**x).t().into_ndarray());
 
     chain(
         &[x.clone()],
@@ -20,13 +20,13 @@ pub fn t(x: &Tensor) -> Tensor {
 pub struct T;
 
 impl Function for T {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 1);
 
         vec![(&*xs[0]).t().into_ndarray().into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         T.call(vec![gys[0].clone()])
@@ -36,13 +36,13 @@ impl Function for T {
 #[test]
 fn test() {
     {
-        let x = Tensor::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
+        let x = Computed::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
         let ys = T.call(vec![x.clone()]);
         assert_eq!(&ys[0].shape(), &[3, 2]);
     }
 
     {
-        let x = Tensor::new(ndarray::array![[[1., 2., 3.], [4., 5., 6.]]].into_ndarray());
+        let x = Computed::new(ndarray::array![[[1., 2., 3.], [4., 5., 6.]]].into_ndarray());
         let ys = T.call(vec![x.clone()]);
         assert_eq!(&ys[0].shape(), &[3, 2, 1]);
     }

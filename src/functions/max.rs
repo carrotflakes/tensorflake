@@ -2,8 +2,8 @@ use ndarray::{prelude::*, Zip};
 
 use crate::*;
 
-pub fn max(axis: usize, x: &Tensor) -> Tensor {
-    let y: Tensor = x
+pub fn max(axis: usize, x: &Computed) -> Computed {
+    let y: Computed = x
         .map_axis(Axis(axis), |x| {
             x.iter().fold(f32::NEG_INFINITY, |a, b| a.max(*b))
         })
@@ -28,7 +28,7 @@ pub fn max(axis: usize, x: &Tensor) -> Tensor {
                         .unwrap(),
                 )
                 .for_each(|m, y| *m = if *m == *y { 1.0 } else { 0.0 });
-            vec![&Tensor::new(mask.into_ndarray()) * &gys[0].reshape(shape.clone())]
+            vec![&Computed::new(mask.into_ndarray()) * &gys[0].reshape(shape.clone())]
         },
     );
     y

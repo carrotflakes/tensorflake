@@ -43,8 +43,8 @@ impl Conv2d {
 }
 
 impl Layer for Conv2d {
-    type Input = Tensor;
-    type Output = Tensor;
+    type Input = Computed;
+    type Output = Computed;
 
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output
     where
@@ -162,7 +162,7 @@ fn test_conv2d() {
     let grads = gradients(&[y.clone()], &[x.clone()], true);
     // dbg!(&*grads[0]);
 
-    let y2 = conv2d([1, 1], [1, 1], &Tensor::new(w), Some(&Tensor::new(b)), &x);
+    let y2 = conv2d([1, 1], [1, 1], &Computed::new(w), Some(&Computed::new(b)), &x);
     assert_eq!(&*y, &*y2);
 
     let grads2 = gradients(&[y2.clone()], &[x.clone()], true);
@@ -206,8 +206,8 @@ impl Conv2dTranspose {
 }
 
 impl Layer for Conv2dTranspose {
-    type Input = Tensor;
-    type Output = Tensor;
+    type Input = Computed;
+    type Output = Computed;
 
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output
     where
@@ -298,10 +298,10 @@ impl Layer for Conv2dTranspose {
 pub fn conv2d(
     stride: [usize; 2],
     padding: [usize; 2],
-    kernel: &Tensor,
-    bias: Option<&Tensor>,
-    x: &Tensor,
-) -> Tensor {
+    kernel: &Computed,
+    bias: Option<&Computed>,
+    x: &Computed,
+) -> Computed {
     let kh = kernel.shape()[2];
     let kw = kernel.shape()[3];
 
@@ -319,7 +319,7 @@ pub fn conv2d(
     }
     y = y.permuted_axes(&[0, 3, 1, 2][..]);
 
-    let y = Tensor::new(y.into_ndarray());
+    let y = Computed::new(y.into_ndarray());
 
     let mut xs = vec![x.clone(), kernel.clone()];
     xs.extend(bias.cloned());
@@ -353,10 +353,10 @@ pub fn conv2d_transpose(
     stride: [usize; 2],
     padding: [usize; 2],
     out_size: [usize; 2],
-    kernel: &Tensor, // [out_ch, in_ch, kh, kw]
-    bias: Option<&Tensor>,
-    x: &Tensor, // [batch, out_ch, oh, ow]
-) -> Tensor {
+    kernel: &Computed, // [out_ch, in_ch, kh, kw]
+    bias: Option<&Computed>,
+    x: &Computed, // [batch, out_ch, oh, ow]
+) -> Computed {
     let kh = kernel.shape()[2];
     let kw = kernel.shape()[3];
 
@@ -380,7 +380,7 @@ pub fn conv2d_transpose(
         y += &(**bias).reshape([1, bias.len(), 1, 1]);
     }
 
-    let y = Tensor::new(y);
+    let y = Computed::new(y);
 
     let mut xs = vec![x.clone(), kernel.clone()];
     xs.extend(bias.cloned());
@@ -413,9 +413,9 @@ pub fn conv2d_grad_w(
     stride: [usize; 2],
     padding: [usize; 2],
     kernel_size: [usize; 2],
-    x: &Tensor,
-    gy: &Tensor,
-) -> Tensor {
+    x: &Computed,
+    gy: &Computed,
+) -> Computed {
     let col = im2col(x, kernel_size, stride, padding, false);
 
     let gw = ndarray_util::tensordot(
@@ -424,7 +424,7 @@ pub fn conv2d_grad_w(
         &[Axis(0), Axis(2), Axis(3)],
         &[Axis(0), Axis(4), Axis(5)],
     );
-    let gw = Tensor::new(gw.into_ndarray());
+    let gw = Computed::new(gw.into_ndarray());
 
     chain(
         &[x.clone(), gy.clone()],

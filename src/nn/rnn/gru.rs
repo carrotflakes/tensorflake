@@ -63,17 +63,17 @@ impl Gru {
 }
 
 impl Cell for Gru {
-    type State = Tensor;
+    type State = Computed;
 
     fn initial_state(&self, batch_size: usize) -> Self::State {
-        Tensor::new(NDArray::zeros(&[batch_size, self.state_size][..]))
+        Computed::new(NDArray::zeros(&[batch_size, self.state_size][..]))
     }
 
     fn get_input_size(&self) -> usize {
         self.input_size
     }
 
-    fn step(&self, x: Tensor, state: Self::State) -> (Self::State, Tensor) {
+    fn step(&self, x: Computed, state: Self::State) -> (Self::State, Computed) {
         let z = sigmoid(
             &(x.matmul(&self.ws[0].get_tensor())
                 + state.matmul(&self.us[0].get_tensor())
@@ -84,7 +84,7 @@ impl Cell for Gru {
                 + state.matmul(&self.us[1].get_tensor())
                 + self.bs[1].get_tensor()),
         );
-        let state = (Tensor::new(NDArray::ones(z.shape())) - z.clone()) * state.clone()
+        let state = (Computed::new(NDArray::ones(z.shape())) - z.clone()) * state.clone()
             + z * tanh(
                 &(x.matmul(&self.ws[2].get_tensor())
                     + (r * state).matmul(&self.us[2].get_tensor())

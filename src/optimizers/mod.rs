@@ -21,7 +21,7 @@ fn test_optimizer(optimizer: impl crate::Optimizer + Clone) {
     let loss_fn = || {
         let x = px.get_tensor();
         let y = x.clone() + x;
-        (y - Tensor::new(scalar(6.0))).pow(2.0)
+        (y - Computed::new(scalar(6.0))).pow(2.0)
     };
 
     let first_loss = loss_fn()[[]];

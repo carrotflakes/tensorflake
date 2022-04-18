@@ -1,6 +1,6 @@
-use super::{gradients, graph, NDArray, Param, Tensor};
+use super::{gradients, graph, NDArray, Param, Computed};
 
-pub fn optimize(loss: &Tensor) {
+pub fn optimize(loss: &Computed) {
     let mut ga = GradientsAccumulator::new();
     ga.compute(loss);
     ga.optimize();
@@ -17,7 +17,7 @@ impl GradientsAccumulator {
         }
     }
 
-    pub fn compute(&mut self, loss: &Tensor) {
+    pub fn compute(&mut self, loss: &Computed) {
         let (params, grads) = collect_params_grads(loss);
         for (param, grad) in params.into_iter().zip(grads.into_iter()) {
             self.push(param, (*grad).clone());
@@ -49,7 +49,7 @@ impl GradientsAccumulator {
     }
 }
 
-fn collect_params_grads(loss: &Tensor) -> (Vec<Param>, Vec<Tensor>) {
+fn collect_params_grads(loss: &Computed) -> (Vec<Param>, Vec<Computed>) {
     let function_calls = graph::collect_function_calls(vec![loss.clone()]);
     let mut params = Vec::new();
     let mut trainables = Vec::new();

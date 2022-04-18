@@ -28,15 +28,15 @@ impl Dropout {
 }
 
 impl Layer for Dropout {
-    type Input = Tensor;
-    type Output = Tensor;
+    type Input = Computed;
+    type Output = Computed;
 
     fn call(&self, x: Self::Input, train: bool) -> Self::Output {
         if !train {
             return x;
         }
         let rate = (self.rate_fn)();
-        let fuctor = Tensor::new(
+        let fuctor = Computed::new(
             Array::random_using(
                 x.shape(),
                 Uniform::new(0.0, 1.0),
@@ -55,7 +55,7 @@ impl Layer for Dropout {
 
 #[test]
 fn test() {
-    let x = Tensor::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
+    let x = Computed::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
     let y = Dropout::new(0.8, 42).call(x.clone(), true);
     assert_eq!(&y.shape(), &[2, 3]);
     dbg!(&*y);

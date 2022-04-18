@@ -42,7 +42,7 @@ impl Optimizer for AdamOptimizer {
         }
     }
 
-    fn update(&mut self, tensor: &mut Tensor, state: &mut Self::State, grad: &NDArray) {
+    fn update(&mut self, tensor: &mut Computed, state: &mut Self::State, grad: &NDArray) {
         tensor.unchain();
         state.mom = (&state.mom * self.beta1 + grad * (1.0 - self.beta1)).into_ndarray();
         state.vel =

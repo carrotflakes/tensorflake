@@ -12,12 +12,12 @@ pub use graph::gradients;
 pub use optimize::{optimize, GradientsAccumulator};
 pub use optimizer::Optimizer;
 pub use param::Param;
-pub use tensor::Tensor;
+pub use tensor::Computed;
 
 use crate::NDArray;
 
-pub fn backprop(x: NDArray) -> Tensor {
-    let y = Tensor::new(x);
+pub fn backprop(x: NDArray) -> Computed {
+    let y = Computed::new(x);
     chain(&[], &[y.clone()], true, "backprop", |_, _, _| vec![]);
     y
 }

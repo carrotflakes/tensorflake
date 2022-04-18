@@ -32,7 +32,7 @@ fn main() {
     .build();
     while !train.is_end() {
         train.fit_one_epoch(|batch, ctx| {
-            let x = Tensor::new(
+            let x = Computed::new(
                 NDArray::from_shape_vec(
                     &[batch.len(), 1, 28, 28][..],
                     batch
@@ -49,7 +49,7 @@ fn main() {
         });
 
         // generate images
-        let x = Tensor::new(
+        let x = Computed::new(
             NDArray::from_shape_vec(
                 &[32, 1, 28, 28][..],
                 mnist
@@ -143,7 +143,7 @@ impl Model {
         }
     }
 
-    pub fn call(&self, x: Tensor, train: bool) -> Tensor {
+    pub fn call(&self, x: Computed, train: bool) -> Computed {
         let mut x = x;
         for conv in &self.encoder_convs {
             x = conv.call(x, train);
@@ -167,7 +167,7 @@ impl Model {
     }
 }
 
-fn save_iamges(data: &Tensor, path: &str) {
+fn save_iamges(data: &Computed, path: &str) {
     let mut img = image::ImageBuffer::new(data.shape()[3] as u32 * 8, data.shape()[2] as u32 * 8);
 
     for i in 0..data.shape()[0] {

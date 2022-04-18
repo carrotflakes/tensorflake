@@ -1,7 +1,7 @@
 use crate::*;
 
-pub fn relu(x: &Tensor) -> Tensor {
-    let y = Tensor::new((**x).map(|x| x.max(0.0)).into_ndarray());
+pub fn relu(x: &Computed) -> Computed {
+    let y = Computed::new((**x).map(|x| x.max(0.0)).into_ndarray());
 
     chain(
         &[x.clone()],
@@ -10,7 +10,7 @@ pub fn relu(x: &Tensor) -> Tensor {
         "relu",
         move |xs, _ys, gys| {
             let gx = &gys[0]
-                * &Tensor::new(
+                * &Computed::new(
                     xs[0]
                         .map(|x| if *x > 0.0 { 1.0 } else { 0.0 })
                         .into_ndarray(),
@@ -25,19 +25,19 @@ pub fn relu(x: &Tensor) -> Tensor {
 pub struct Relu;
 
 impl Function for Relu {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 1);
 
         vec![xs[0].map(|x| x.max(0.0)).into_ndarray().into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         vec![call!(
             functions::Mul,
             gys[0],
-            Tensor::new(
+            Computed::new(
                 xs[0]
                     .map(|x| if *x > 0.0 { 1.0 } else { 0.0 })
                     .into_ndarray()

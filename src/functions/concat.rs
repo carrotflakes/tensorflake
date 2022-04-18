@@ -3,10 +3,10 @@ use ndarray::{Axis, IxDyn, SliceInfo, SliceInfoElem};
 use crate::functions::*;
 use crate::*;
 
-pub fn concat(xs: &[Tensor], axis: usize) -> Tensor {
+pub fn concat(xs: &[Computed], axis: usize) -> Computed {
     let y =
         ndarray::concatenate(Axis(axis), &xs.iter().map(|x| x.view()).collect::<Vec<_>>()).unwrap();
-    let y = Tensor::new(y.into_ndarray());
+    let y = Computed::new(y.into_ndarray());
 
     chain(xs, &[y.clone()], false, "concat", move |xs, _ys, gys| {
         let gy = &gys[0];
@@ -54,7 +54,7 @@ impl Concat {
 }
 
 impl Function for Concat {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         let concated = ndarray::concatenate(
             Axis(self.axis),
             &xs.iter().map(|x| x.view()).collect::<Vec<_>>(),
@@ -63,7 +63,7 @@ impl Function for Concat {
         vec![concated.into_ndarray().into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         drop(ys);
 
         let gy = &gys[0];

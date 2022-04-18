@@ -5,11 +5,11 @@ use ndarray::{IxDyn, SliceArg};
 use crate::*;
 
 pub fn slice<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static>(
-    x: &Tensor,
+    x: &Computed,
     slice_arg: I,
-) -> Tensor {
+) -> Computed {
     let y = (&**x).slice(slice_arg.clone());
-    let y = Tensor::new(y.into_ndarray());
+    let y = Computed::new(y.into_ndarray());
 
     chain(
         &[x.clone()],
@@ -21,7 +21,7 @@ pub fn slice<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static>(
             let mut gx = NDArray::zeros(x.shape()); // TODO: Too large tensor!
             gx.slice_mut(slice_arg.clone())
                 .assign(&(*gys[0]).reshape(ys[0].shape()));
-            vec![Tensor::new(gx)]
+            vec![Computed::new(gx)]
         },
     );
 
@@ -30,9 +30,9 @@ pub fn slice<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static>(
 }
 
 pub fn slices<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static>(
-    x: &Tensor,
+    x: &Computed,
     slice_args: Vec<I>,
-) -> Vec<Tensor> {
+) -> Vec<Computed> {
     let xa = &**x;
     let ys: Vec<_> = slice_args
         .iter()
@@ -46,7 +46,7 @@ pub fn slices<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static>(
             gx.slice_mut(slice_args[i].clone())
                 .add_assign(&(*gys[i]).reshape(ys[i].shape()));
         }
-        vec![Tensor::new(gx)]
+        vec![Computed::new(gx)]
     });
 
     ys
@@ -63,7 +63,7 @@ impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Slice<I> {
 }
 
 impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Function for Slice<I> {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert_eq!(xs.len(), 1);
         let x = &*xs[0];
         let y = x.slice(self.slice_arg.clone());
@@ -71,13 +71,13 @@ impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Function for Slice<I> {
     }
 
     // NOTE: backward cuts the graph.
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
         let x = &*xs[0];
         let mut gx = NDArray::zeros(x.shape()); // TODO: Too large tensor!
         gx.slice_mut(self.slice_arg.clone())
             .assign(&(*gys[0]).reshape(ys[0].shape()));
-        vec![Tensor::new(gx)]
+        vec![Computed::new(gx)]
     }
 }
 
@@ -92,7 +92,7 @@ impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Slices<I> {
 }
 
 impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Function for Slices<I> {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert_eq!(xs.len(), 1);
         let x = &*xs[0];
         self.slice_args
@@ -102,13 +102,13 @@ impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Function for Slices<I> 
     }
 
     // NOTE: backward cuts the graph.
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         let x = &*xs[0];
         let mut gx = NDArray::zeros(x.shape());
         for i in 0..xs.len() {
             gx.slice_mut(self.slice_args[i].clone())
                 .add_assign(&(*gys[i]).reshape(ys[i].shape()));
         }
-        vec![Tensor::new(gx)]
+        vec![Computed::new(gx)]
     }
 }

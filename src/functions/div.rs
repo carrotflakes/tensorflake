@@ -3,8 +3,8 @@ use crate::{
     *,
 };
 
-pub fn div(a: &Tensor, b: &Tensor) -> Tensor {
-    let y = Tensor::new((&**a / &**b).into_ndarray());
+pub fn div(a: &Computed, b: &Computed) -> Computed {
+    let y = Computed::new((&**a / &**b).into_ndarray());
 
     chain(
         &[a.clone(), b.clone()],
@@ -35,13 +35,13 @@ pub fn div(a: &Tensor, b: &Tensor) -> Tensor {
 pub struct Div;
 
 impl Function for Div {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 2);
 
         vec![(&*xs[0] / &*xs[1]).into_ndarray().into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         let mut gx0 = Div.call(vec![gys[0].clone(), xs[0].clone()]).pop().unwrap();

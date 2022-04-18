@@ -2,8 +2,8 @@ use crate::*;
 
 use super::{sum_axes_to_desire, Sum};
 
-pub fn mul(a: &Tensor, b: &Tensor) -> Tensor {
-    let y = Tensor::new((&**a * &**b).into_ndarray());
+pub fn mul(a: &Computed, b: &Computed) -> Computed {
+    let y = Computed::new((&**a * &**b).into_ndarray());
 
     chain(
         &[a.clone(), b.clone()],
@@ -30,7 +30,7 @@ pub fn mul(a: &Tensor, b: &Tensor) -> Tensor {
     y
 }
 
-pub fn multi_mul(xs: &[Tensor]) -> Tensor {
+pub fn multi_mul(xs: &[Computed]) -> Computed {
     assert!(xs.len() >= 1);
     if broadcasted_shape(&xs).is_none() {
         panic!(
@@ -45,7 +45,7 @@ pub fn multi_mul(xs: &[Tensor]) -> Tensor {
     for x in xs.iter().skip(1) {
         y = y * &**x;
     }
-    let y = Tensor::new(y.into_ndarray());
+    let y = Computed::new(y.into_ndarray());
 
     chain(xs, &[y.clone()], false, "multi_mul", |xs, _ys, gys| {
         xs.iter()
@@ -79,7 +79,7 @@ pub fn multi_mul(xs: &[Tensor]) -> Tensor {
 pub struct Mul;
 
 impl Function for Mul {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() >= 1);
         if broadcasted_shape(&xs).is_none() {
             panic!(
@@ -97,7 +97,7 @@ impl Function for Mul {
         vec![y.into_ndarray().into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         xs.iter()

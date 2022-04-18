@@ -2,7 +2,7 @@ use ndarray::s;
 
 use crate::*;
 
-pub fn argmax_accuracy(t: &[usize], y: &Tensor) -> Accuracy {
+pub fn argmax_accuracy(t: &[usize], y: &Computed) -> Accuracy {
     let y = y
         .view()
         .into_shape([

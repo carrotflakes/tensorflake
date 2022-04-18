@@ -2,8 +2,8 @@ use crate::*;
 
 use super::{sum_axes_to_desire, Sum};
 
-pub fn add(a: &Tensor, b: &Tensor) -> Tensor {
-    let y = Tensor::new((&**a + &**b).into_ndarray());
+pub fn add(a: &Computed, b: &Computed) -> Computed {
+    let y = Computed::new((&**a + &**b).into_ndarray());
 
     chain(
         &[a.clone(), b.clone()],
@@ -29,12 +29,12 @@ pub fn add(a: &Tensor, b: &Tensor) -> Tensor {
     y
 }
 
-pub fn multi_add(xs: &[Tensor]) -> Tensor {
+pub fn multi_add(xs: &[Computed]) -> Computed {
     let mut y = (*xs[0]).clone();
     for x in xs.iter().skip(1) {
         y = y + &**x;
     }
-    let y = Tensor::new(y);
+    let y = Computed::new(y);
 
     chain(xs, &[y.clone()], false, "multi_add", |xs, _ys, gys| {
         xs.iter()
@@ -57,16 +57,16 @@ pub fn multi_add(xs: &[Tensor]) -> Tensor {
 pub struct Add;
 
 impl Function for Add {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() >= 1);
         let mut y = (*xs[0]).clone();
         for x in xs.iter().skip(1) {
             y = y + &**x;
         }
-        vec![Tensor::new(y)]
+        vec![Computed::new(y)]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         xs.iter()

@@ -4,7 +4,7 @@ use crate::*;
 
 use super::Broadcast;
 
-pub fn sum(x: &Tensor, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Tensor {
+pub fn sum(x: &Computed, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Computed {
     let axes = axes.into();
     let mut y = (**x).to_owned();
     for axis in axes.iter().rev() {
@@ -13,7 +13,7 @@ pub fn sum(x: &Tensor, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Tensor {
             y.insert_axis_inplace(Axis(*axis));
         }
     }
-    let y = Tensor::new(y.into_ndarray());
+    let y = Computed::new(y.into_ndarray());
 
     chain(
         &[x.clone()],
@@ -49,7 +49,7 @@ impl Sum {
 }
 
 impl Function for Sum {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 1);
 
         let mut x = (*xs[0]).to_owned();
@@ -63,13 +63,13 @@ impl Function for Sum {
         vec![x.into_ndarray().into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         Broadcast::new(self.original_shape.clone()).call(vec![gys[0].clone()])
     }
 
-    fn into_backward(mut self, xs: &Vec<Tensor>) -> Box<dyn Backward>
+    fn into_backward(mut self, xs: &Vec<Computed>) -> Box<dyn Backward>
     where
         Self: Sized + 'static,
     {
@@ -100,14 +100,14 @@ fn test_sum_axes_to_desire() {
 #[test]
 fn test() {
     {
-        let x = Tensor::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
+        let x = Computed::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
         let ys = Sum::new(vec![0], false).call(vec![x.clone()]);
         assert_eq!(ys[0].shape(), &[3]);
         assert_eq!(&*ys[0], &ndarray::array![5., 7., 9.].into_ndarray());
     }
 
     {
-        let x = Tensor::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
+        let x = Computed::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
         let ys = Sum::new(vec![1], false).call(vec![x.clone()]);
         assert_eq!(ys[0].shape(), &[2]);
         assert_eq!(&*ys[0], &ndarray::array![6., 15.].into_ndarray());

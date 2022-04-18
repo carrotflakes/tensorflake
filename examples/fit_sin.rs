@@ -47,14 +47,14 @@ fn main() {
     }
     .build()
     .fit(|batch, ctx| {
-        let x = Tensor::new(
+        let x = Computed::new(
             NDArray::from_shape_vec(
                 &[batch.len(), 1][..],
                 batch.iter().map(|x| x.0).collect::<Vec<_>>(),
             )
             .unwrap(),
         );
-        let t = Tensor::new(
+        let t = Computed::new(
             NDArray::from_shape_vec(
                 &[batch.len(), 1][..],
                 batch.iter().map(|x| x.1).collect::<Vec<_>>(),
@@ -70,7 +70,7 @@ fn main() {
     });
 
     for i in 0..20 {
-        let x = Tensor::new(array![[i as f32 / 20.0]].into_ndarray());
+        let x = Computed::new(array![[i as f32 / 20.0]].into_ndarray());
         let h = l1.call(x.clone(), false);
         let h = sigmoid(&h);
         let y = l2.call(h, false);

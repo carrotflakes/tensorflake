@@ -5,7 +5,7 @@ use ndarray::Axis;
 use crate::functions::*;
 use crate::*;
 
-pub fn softmax(x: &Tensor) -> Tensor {
+pub fn softmax(x: &Computed) -> Computed {
     let ndim = x.ndim();
     let x_max = x.map_axis(Axis(ndim - 1), |x| {
         *x.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap()
@@ -13,7 +13,7 @@ pub fn softmax(x: &Tensor) -> Tensor {
     let y = &**x - x_max.insert_axis(Axis(ndim - 1));
     let mut y = y.map(|x| x.exp());
     y.div_assign(&y.sum_axis(Axis(ndim - 1)).insert_axis(Axis(ndim - 1)));
-    let y = Tensor::new(y.into_ndarray());
+    let y = Computed::new(y.into_ndarray());
 
     chain(
         &[x.clone()],
@@ -34,7 +34,7 @@ pub fn softmax(x: &Tensor) -> Tensor {
 pub struct Softmax;
 
 impl Function for Softmax {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert_eq!(xs.len(), 1);
         let x = &*xs[0];
         let ndim = x.ndim();
@@ -47,7 +47,7 @@ impl Function for Softmax {
         vec![y.into_ndarray().into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         let gx = call!(Mul, ys[0], gys[0]);
         let sum_dx = call!(Sum::new(vec![xs[0].ndim() - 1], true), gx);
         vec![call!(Sub, gx, call!(Mul, ys[0], sum_dx))]

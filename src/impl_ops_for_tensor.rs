@@ -2,16 +2,16 @@ use crate::*;
 
 macro_rules! impl_op {
     ($op:ident, $fn:ident) => {
-        impl std::ops::$op for &Tensor {
-            type Output = Tensor;
+        impl std::ops::$op for &Computed {
+            type Output = Computed;
 
             fn $fn(self, rhs: Self) -> Self::Output {
                 functions::$fn(self, rhs)
             }
         }
 
-        impl std::ops::$op for Tensor {
-            type Output = Tensor;
+        impl std::ops::$op for Computed {
+            type Output = Computed;
 
             fn $fn(self, rhs: Self) -> Self::Output {
                 functions::$fn(&self, &rhs)
@@ -25,103 +25,103 @@ impl_op!(Sub, sub);
 impl_op!(Mul, mul);
 impl_op!(Div, div);
 
-impl std::ops::Neg for &Tensor {
-    type Output = Tensor;
+impl std::ops::Neg for &Computed {
+    type Output = Computed;
 
     fn neg(self) -> Self::Output {
         functions::neg(self)
     }
 }
 
-impl std::ops::Neg for Tensor {
-    type Output = Tensor;
+impl std::ops::Neg for Computed {
+    type Output = Computed;
 
     fn neg(self) -> Self::Output {
         functions::neg(&self)
     }
 }
 
-impl Tensor {
-    pub fn abs(&self) -> Tensor {
+impl Computed {
+    pub fn abs(&self) -> Computed {
         functions::abs(self)
     }
 
-    pub fn broadcast(&self, shape: impl Into<Vec<usize>>) -> Tensor {
+    pub fn broadcast(&self, shape: impl Into<Vec<usize>>) -> Computed {
         functions::broadcast(self, shape)
     }
 
-    pub fn exp(&self) -> Tensor {
+    pub fn exp(&self) -> Computed {
         functions::exp(self)
     }
 
-    pub fn log(&self) -> Tensor {
+    pub fn log(&self) -> Computed {
         functions::log(self)
     }
 
-    pub fn mat_t(&self) -> Tensor {
+    pub fn mat_t(&self) -> Computed {
         functions::mat_transpose(self)
     }
 
-    pub fn matmul(&self, rhs: &Tensor) -> Tensor {
+    pub fn matmul(&self, rhs: &Computed) -> Computed {
         functions::matmul::matmul(self, rhs)
     }
 
-    pub fn pow(&self, rhs: f32) -> Tensor {
+    pub fn pow(&self, rhs: f32) -> Computed {
         functions::pow(self, rhs)
     }
 
-    pub fn reshape(&self, shape: impl Into<Vec<usize>>) -> Tensor {
+    pub fn reshape(&self, shape: impl Into<Vec<usize>>) -> Computed {
         functions::reshape(self, shape)
     }
 
-    pub fn sin(&self) -> Tensor {
+    pub fn sin(&self) -> Computed {
         functions::sin(self)
     }
 
-    pub fn cos(&self) -> Tensor {
+    pub fn cos(&self) -> Computed {
         functions::cos(self)
     }
 
     pub fn slice<I: ndarray::SliceArg<ndarray::IxDyn> + Clone + Sync + Send + 'static>(
         &self,
         slice_arg: I,
-    ) -> Tensor {
+    ) -> Computed {
         functions::slice(self, slice_arg)
     }
 
     pub fn slices<I: ndarray::SliceArg<ndarray::IxDyn> + Clone + Sync + Send + 'static>(
         &self,
         slice_args: Vec<I>,
-    ) -> Vec<Tensor> {
+    ) -> Vec<Computed> {
         functions::slices(self, slice_args)
     }
 
-    pub fn sum(&self, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Tensor {
+    pub fn sum(&self, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Computed {
         functions::sum(self, axes, keep_dim)
     }
 
-    pub fn t(&self) -> Tensor {
+    pub fn t(&self) -> Computed {
         functions::t(self)
     }
 
-    pub fn tanh(&self) -> Tensor {
+    pub fn tanh(&self) -> Computed {
         functions::tanh(self)
     }
 
-    pub fn transpose(&self, axes: impl Into<Vec<usize>>) -> Tensor {
+    pub fn transpose(&self, axes: impl Into<Vec<usize>>) -> Computed {
         functions::transpose(self, axes)
     }
 }
 
 #[test]
 fn test() {
-    let x = Tensor::new(scalar(1.0));
-    let y = Tensor::new(scalar(2.0));
+    let x = Computed::new(scalar(1.0));
+    let y = Computed::new(scalar(2.0));
     let z = x + y;
     assert_eq!(z[[]], 3.0);
 
-    let x = Tensor::new(scalar(1.0));
-    let y = Tensor::new(scalar(2.0));
+    let x = Computed::new(scalar(1.0));
+    let y = Computed::new(scalar(2.0));
     let z = &x - &y;
     assert_eq!(z[[]], -1.0);
 }

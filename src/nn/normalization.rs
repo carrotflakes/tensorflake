@@ -23,15 +23,15 @@ impl Normalization {
 }
 
 impl Layer for Normalization {
-    type Input = Tensor;
-    type Output = Tensor;
+    type Input = Computed;
+    type Output = Computed;
 
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output {
         let mean = map_axes_keep_dim(&*x, &self.axes, |x| x.mean_axis(Axis(1)).unwrap());
         let var = map_axes_keep_dim(&*x, &self.axes, |x| x.var_axis(Axis(1), 1.0));
-        (x - Tensor::new(mean.into_ndarray()))
+        (x - Computed::new(mean.into_ndarray()))
             * (self.gamma.get_tensor()
-                / Tensor::new((var + self.eps).map(|x| x.sqrt()).into_ndarray()))
+                / Computed::new((var + self.eps).map(|x| x.sqrt()).into_ndarray()))
             + self.beta.get_tensor()
     }
 
@@ -42,7 +42,7 @@ impl Layer for Normalization {
 
 #[test]
 fn test() {
-    let x = Tensor::new(ndarray::array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0].into_ndarray());
+    let x = Computed::new(ndarray::array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0].into_ndarray());
     let bn = Normalization::new(vec![0], 0.001, optimizers::AdamOptimizer::new());
     let y = bn.call(x, false);
     assert!((y.mean().unwrap() - 0.0).abs() < 1e-6);

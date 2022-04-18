@@ -3,11 +3,11 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use super::{Backward, FunctionCall, NDArray, Optimizer, Tensor};
+use super::{Backward, FunctionCall, NDArray, Optimizer, Computed};
 
 pub trait ParamInnerT: Sync + Send + 'static {
-    fn tensor(&self) -> Tensor;
-    fn set(&mut self, tensor: Tensor);
+    fn tensor(&self) -> Computed;
+    fn set(&mut self, tensor: Computed);
     fn update(&mut self, grad: &NDArray);
     fn name(&self) -> Cow<'static, str>;
 
@@ -17,18 +17,18 @@ pub trait ParamInnerT: Sync + Send + 'static {
 }
 
 struct ParamInner<T: Optimizer + Clone> {
-    tensor: Tensor,
+    tensor: Computed,
     name: Cow<'static, str>,
     optimizer: T,
     state: T::State,
 }
 
 impl<T: Optimizer + Clone> ParamInnerT for ParamInner<T> {
-    fn tensor(&self) -> Tensor {
+    fn tensor(&self) -> Computed {
         self.tensor.clone()
     }
 
-    fn set(&mut self, tensor: Tensor) {
+    fn set(&mut self, tensor: Computed) {
         self.tensor = tensor;
     }
 
@@ -43,18 +43,18 @@ impl<T: Optimizer + Clone> ParamInnerT for ParamInner<T> {
 }
 
 struct ParamInnerShared<T: Optimizer + Clone> {
-    tensor: Tensor,
+    tensor: Computed,
     name: Cow<'static, str>,
     optimizer: Arc<Mutex<T>>,
     state: T::State,
 }
 
 impl<T: Optimizer + Clone> ParamInnerT for ParamInnerShared<T> {
-    fn tensor(&self) -> Tensor {
+    fn tensor(&self) -> Computed {
         self.tensor.clone()
     }
 
-    fn set(&mut self, tensor: Tensor) {
+    fn set(&mut self, tensor: Computed) {
         self.tensor = tensor;
     }
 
@@ -69,16 +69,16 @@ impl<T: Optimizer + Clone> ParamInnerT for ParamInnerShared<T> {
 }
 
 struct ParamInnerFixed {
-    tensor: Tensor,
+    tensor: Computed,
     name: Cow<'static, str>,
 }
 
 impl ParamInnerT for ParamInnerFixed {
-    fn tensor(&self) -> Tensor {
+    fn tensor(&self) -> Computed {
         self.tensor.clone()
     }
 
-    fn set(&mut self, tensor: Tensor) {
+    fn set(&mut self, tensor: Computed) {
         self.tensor = tensor;
     }
 
@@ -146,7 +146,7 @@ impl Param {
         }
     }
 
-    pub fn get_tensor(&self) -> Tensor {
+    pub fn get_tensor(&self) -> Computed {
         let inner = self.inner.lock().unwrap();
         let v = inner.tensor().clone();
         if inner.create_graph() && !v.has_creator() {
@@ -164,7 +164,7 @@ impl Param {
 
     pub fn set(&mut self, ndarray: NDArray) {
         let mut inner = self.inner.lock().unwrap();
-        inner.set(Tensor::new(ndarray));
+        inner.set(Computed::new(ndarray));
     }
 
     pub fn update(&self, grad: &NDArray) {
@@ -196,7 +196,7 @@ impl std::hash::Hash for Param {
 }
 
 impl Backward for Param {
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
         vec![]
     }

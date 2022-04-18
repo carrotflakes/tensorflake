@@ -90,8 +90,8 @@ impl Model {
         }
     }
 
-    pub fn call(&self, x: NDArray, train: bool) -> Tensor {
-        let y = self.conv1.call(Tensor::new(x), train);
+    pub fn call(&self, x: NDArray, train: bool) -> Computed {
+        let y = self.conv1.call(Computed::new(x), train);
         // let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
         let y = relu(&y);
         let y = self.conv2.call(y, train);
@@ -160,8 +160,8 @@ impl BigModel {
         }
     }
 
-    pub fn call(&self, x: NDArray, train: bool) -> Tensor {
-        let x = Tensor::new(x);
+    pub fn call(&self, x: NDArray, train: bool) -> Computed {
+        let x = Computed::new(x);
         let y = self.conv1.call(x, train);
         let y = relu(&y);
         let y = self.conv2.call(y, train);

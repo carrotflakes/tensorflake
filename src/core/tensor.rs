@@ -3,26 +3,26 @@ use std::sync::{Arc, Mutex};
 use super::{FunctionCall, NDArray};
 
 #[derive(Clone)]
-pub(crate) struct TensorAttrs {
+pub(crate) struct ComputedAttrs {
     pub name: String,
     pub creator: Option<Arc<FunctionCall>>,
 }
 
-pub(crate) struct TensorInner {
+pub(crate) struct ComputedInner {
     pub data: NDArray,
-    pub attrs: Mutex<TensorAttrs>,
+    pub attrs: Mutex<ComputedAttrs>,
 }
 
-pub struct Tensor {
-    pub(crate) inner: Arc<TensorInner>,
+pub struct Computed {
+    pub(crate) inner: Arc<ComputedInner>,
 }
 
-impl Tensor {
+impl Computed {
     pub fn new(data: NDArray) -> Self {
-        Tensor {
-            inner: Arc::new(TensorInner {
+        Computed {
+            inner: Arc::new(ComputedInner {
                 data,
-                attrs: Mutex::new(TensorAttrs {
+                attrs: Mutex::new(ComputedAttrs {
                     name: "".to_string(),
                     creator: None,
                 }),
@@ -52,7 +52,7 @@ impl Tensor {
     }
 }
 
-impl std::ops::Deref for Tensor {
+impl std::ops::Deref for Computed {
     type Target = NDArray;
 
     fn deref(&self) -> &Self::Target {
@@ -60,30 +60,30 @@ impl std::ops::Deref for Tensor {
     }
 }
 
-impl Clone for Tensor {
+impl Clone for Computed {
     fn clone(&self) -> Self {
-        Tensor {
+        Computed {
             inner: self.inner.clone(),
         }
     }
 }
 
-impl PartialEq for Tensor {
+impl PartialEq for Computed {
     fn eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.inner, &other.inner)
     }
 }
 
-impl Eq for Tensor {}
+impl Eq for Computed {}
 
-impl std::hash::Hash for Tensor {
+impl std::hash::Hash for Computed {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         Arc::as_ptr(&self.inner).hash(state);
     }
 }
 
-impl Into<Tensor> for NDArray {
-    fn into(self) -> Tensor {
-        Tensor::new(self)
+impl Into<Computed> for NDArray {
+    fn into(self) -> Computed {
+        Computed::new(self)
     }
 }

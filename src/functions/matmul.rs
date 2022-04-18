@@ -3,8 +3,8 @@ use ndarray::{Axis, Ix2};
 use crate::functions::*;
 use crate::*;
 
-pub fn matmul(lhs: &Tensor, rhs: &Tensor) -> Tensor {
-    let y = Tensor::new(forward(&lhs, &rhs));
+pub fn matmul(lhs: &Computed, rhs: &Computed) -> Computed {
+    let y = Computed::new(forward(&lhs, &rhs));
 
     chain(
         &[lhs.clone(), rhs.clone()],
@@ -26,12 +26,12 @@ pub fn matmul(lhs: &Tensor, rhs: &Tensor) -> Tensor {
 pub struct Matmul;
 
 impl Function for Matmul {
-    fn forward(&self, xs: &[Tensor]) -> Vec<Tensor> {
+    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
         assert!(xs.len() == 2);
         vec![forward(&xs[0], &xs[1]).into()]
     }
 
-    fn backward(&self, xs: &Vec<Tensor>, ys: &Vec<Tensor>, gys: &Vec<Tensor>) -> Vec<Tensor> {
+    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         let x = xs[0].clone();

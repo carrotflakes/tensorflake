@@ -107,7 +107,7 @@ impl Model {
         }
     }
 
-    pub fn call(&self, x: Vec<usize>, train: bool) -> Vec<Tensor> {
+    pub fn call(&self, x: Vec<usize>, train: bool) -> Vec<Computed> {
         let mut state = self.initial.get_tensor();
         let mut outputs = vec![];
         for x in x {
@@ -131,7 +131,7 @@ impl Model {
     }
 }
 
-fn graph(vars: &[Tensor], name: impl ToString) {
+fn graph(vars: &[Computed], name: impl ToString) {
     let f = std::fs::File::create(name.to_string() + ".dot").unwrap();
     let mut w = std::io::BufWriter::new(f);
     tensorflake::export_dot::write_dot(&mut w, vars, &mut |v| {

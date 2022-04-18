@@ -30,7 +30,7 @@ impl Optimizer for MomentumSGDOptimizer {
         }
     }
 
-    fn update(&mut self, tensor: &mut Tensor, state: &mut Self::State, grad: &NDArray) {
+    fn update(&mut self, tensor: &mut Computed, state: &mut Self::State, grad: &NDArray) {
         tensor.unchain();
         state.velocity *= self.momentum;
         state.velocity += &grad.mul(scalar(-self.learning_rate));
