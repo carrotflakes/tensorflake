@@ -1,3 +1,4 @@
+/// COIN: COmpression with Implicit Neural representations https://arxiv.org/abs/2103.03123
 use std::sync::{Arc, Mutex};
 
 use image::GenericImageView;

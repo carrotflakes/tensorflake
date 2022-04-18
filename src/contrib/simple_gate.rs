@@ -1,3 +1,6 @@
+/// SimpleGate
+///
+/// Simple Baselines for Image Restoration https://arxiv.org/abs/2204.04676
 use ndarray::{azip, Array, Axis};
 
 use crate::*;
