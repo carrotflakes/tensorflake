@@ -26,7 +26,6 @@ fn main() {
         validation_data: mnist.tests().collect(),
         validation_rate: 0.1,
         batch_size: 32,
-        parallel: false,
         ..Default::default()
     }
     .build();

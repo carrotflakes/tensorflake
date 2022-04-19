@@ -34,9 +34,9 @@ fn main() {
         train_data: (0..img.height())
             .flat_map(|y| (0..img.width()).map(move |x| (y, x)))
             .collect::<Vec<_>>(),
-        batch_size: 128,
-        parallel: true,
-        update_strategy: UpdateStrategy::MiniBatch(1),
+        batch_size: usize::MAX,
+        parallel_chunk_size: 128,
+        update_strategy: UpdateStrategy::Chunk(1),
         ..TrainConfig::default()
     }
     .build();

@@ -12,9 +12,9 @@ This aims to be able to train several networks on the CPU fast.
   - [ ] Save the structure -> serde?
 - [x] Strong typing -> Functional API (tensorflake::function::chain)
   - [ ] Generic for dimension
-- [ ] Multi thread
+- [x] Multi thread
   - [x] High level API
-  - [ ] Synchronous update
+  - [x] Synchronous update
   - [x] Asynchronous update
 - [x] Impl ops
 - [ ] Lazy execution for optimization on the graph

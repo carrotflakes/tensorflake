@@ -16,7 +16,7 @@ use tensorflake::{
         rnn::{Cell, Gru},
         *,
     },
-    training::TrainConfig,
+    training::{TrainConfig, UpdateStrategy},
     *,
 };
 
@@ -70,8 +70,9 @@ fn main() {
     let mut train = TrainConfig {
         epoch: 30,
         train_data: data,
-        batch_size: 100,
-        parallel: true,
+        batch_size: usize::MAX,
+        parallel_chunk_size: 100,
+        update_strategy: UpdateStrategy::Chunk(1),
         ..Default::default()
     }
     .build();

@@ -22,9 +22,9 @@ fn main() {
         train_data: mnist.trains().collect(),
         validation_data: mnist.tests().collect(),
         validation_rate: 0.1,
-        batch_size: 100,
-        parallel: true,
-        update_strategy: UpdateStrategy::MiniBatch(1),
+        batch_size: usize::MAX,
+        parallel_chunk_size: 100,
+        update_strategy: UpdateStrategy::Chunk(1),
         ..Default::default()
     }
     .build()

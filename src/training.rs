@@ -14,7 +14,6 @@ pub struct TrainConfig<T> {
     pub batch_size: usize,
     pub parallel_chunk_size: usize,
     pub shuffle: bool,
-    pub parallel: bool,
     pub update_strategy: UpdateStrategy,
     pub update_async: bool,
 }
@@ -30,8 +29,7 @@ impl<T> Default for TrainConfig<T> {
             batch_size: 32,
             parallel_chunk_size: usize::MAX,
             shuffle: true,
-            parallel: false,
-            update_strategy: UpdateStrategy::MiniBatch(1),
+            update_strategy: UpdateStrategy::Chunk(1),
             update_async: false,
         }
     }
@@ -56,6 +54,7 @@ impl<T> Train<T> {
         assert!(config.initial_epoch > 0);
         assert!(0.0 <= config.validation_rate && config.validation_rate <= 1.0);
         assert!(config.batch_size > 0);
+        assert!(config.parallel_chunk_size > 0);
 
         Self {
             rng: rand_isaac::Isaac64Rng::seed_from_u64(42),
@@ -85,45 +84,52 @@ impl<T: Sync + Send> Train<T> {
                 / self.config.validation_rate)
                 .floor() as usize;
 
-        if self.config.parallel {
+        if self.config.parallel_chunk_size < self.config.batch_size {
             // train
             let mut ctx = self.context(true);
             let samples_threshold = match self.config.update_strategy {
                 UpdateStrategy::Sample(n) => n,
+                UpdateStrategy::Chunk(n) => {
+                    n * self.config.parallel_chunk_size.min(self.config.batch_size)
+                }
                 UpdateStrategy::MiniBatch(n) => n * self.config.batch_size,
                 UpdateStrategy::Batch => usize::MAX,
             };
             let progress = Arc::new(Mutex::new(Progress::new(self.config.train_data.len())));
 
-            let (metrics, mut ga, _) = self
-                .shuffle_table
-                .par_chunks(self.config.parallel_chunk_size.min(self.config.batch_size))
-                .map(|shuffle_table| {
-                    let data = shuffle_table
-                        .iter()
-                        .map(|i| &self.config.train_data[*i])
-                        .collect::<Vec<_>>();
-                    let mut ctx = ctx.child();
-                    f(&data, &mut ctx);
-                    let samples = ctx.metrics.total;
-                    progress.lock().unwrap().update(samples);
-                    (ctx.metrics, ctx.gradients_accumulator, samples)
-                })
-                .reduce(
-                    || (Metrics::new(), GradientsAccumulator::new(), 0),
-                    |mut a, b| {
-                        a.0.merge(b.0);
-                        a.1.merge(b.1);
-                        a.2 += b.2;
-                        if a.2 > samples_threshold {
-                            a.1.optimize();
-                            a.2 = 0;
+            for batch in self.shuffle_table.chunks(self.config.batch_size) {
+                let (metrics, mut ga, _) = batch
+                    .par_chunks(self.config.parallel_chunk_size)
+                    .map(|shuffle_table| {
+                        let data = shuffle_table
+                            .iter()
+                            .map(|i| &self.config.train_data[*i])
+                            .collect::<Vec<_>>();
+                        let mut ctx = ctx.child();
+                        f(&data, &mut ctx);
+                        let samples = ctx.metrics.total;
+                        if batch.len() <= self.config.parallel_chunk_size {
+                            progress.lock().unwrap().update(samples);
                         }
-                        a
-                    },
-                );
-            ctx.merge_metrics(metrics);
-            ga.optimize();
+                        (ctx.metrics, ctx.gradients_accumulator, samples)
+                    })
+                    .reduce(
+                        || (Metrics::new(), GradientsAccumulator::new(), 0),
+                        |mut a, b| {
+                            a.0.merge(b.0);
+                            a.1.merge(b.1);
+                            a.2 += b.2;
+                            if a.2 > samples_threshold {
+                                a.1.optimize();
+                                a.2 = 0;
+                            }
+                            a
+                        },
+                    );
+                ctx.merge_metrics(metrics);
+                ga.optimize();
+                ctx.print_progress();
+            }
             ctx.print_result();
 
             // validation
@@ -211,6 +217,7 @@ impl<T: Sync + Send> Train<T> {
 pub enum UpdateStrategy {
     /// Update after processing the specified number of samples.
     Sample(usize),
+    Chunk(usize),
     /// Update after processing the specified number of mini-batch.
     MiniBatch(usize),
     /// Update each epoch.
@@ -324,7 +331,6 @@ fn test() {
         validation_data: (0..10).collect(),
         validation_rate: 0.25,
         batch_size: 10,
-        parallel: false,
         update_async: false,
         ..Default::default()
     }

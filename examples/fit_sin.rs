@@ -41,7 +41,6 @@ fn main() {
         epoch: 100,
         train_data: x.into_iter().zip(y.into_iter()).collect(),
         batch_size: 100,
-        parallel: false,
         shuffle: true,
         ..Default::default()
     }
