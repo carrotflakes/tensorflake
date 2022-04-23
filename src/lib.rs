@@ -21,6 +21,9 @@ pub use metrics::{Metric, Metrics};
 pub use ndarray_util::{scalar, IntoNDArray, NDArray};
 pub use nn::Layer;
 
+pub use ndarray;
+pub use ndarray_rand;
+
 pub type DefaultRng = rand_isaac::Isaac64Rng;
 
 #[macro_export]
