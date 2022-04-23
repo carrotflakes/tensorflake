@@ -3,7 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use super::{Backward, FunctionCall, NDArray, Optimizer, Computed};
+use super::{Backward, Computed, FunctionCall, NDArray, Optimizer};
 
 pub trait ParamInnerT: Sync + Send + 'static {
     fn tensor(&self) -> Computed;
@@ -171,6 +171,11 @@ impl Param {
         let mut inner = self.inner.lock().unwrap();
         inner.update(grad);
     }
+
+    pub fn name(&self) -> Cow<'static, str> {
+        let inner = self.inner.lock().unwrap();
+        inner.name()
+    }
 }
 
 impl Clone for Param {
@@ -196,7 +201,12 @@ impl std::hash::Hash for Param {
 }
 
 impl Backward for Param {
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
+    fn backward(
+        &self,
+        xs: &Vec<Computed>,
+        ys: &Vec<Computed>,
+        gys: &Vec<Computed>,
+    ) -> Vec<Computed> {
         #![allow(unused_variables)]
         vec![]
     }
