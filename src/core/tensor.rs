@@ -50,6 +50,17 @@ impl Computed {
     pub fn unchain(&self) {
         self.inner.attrs.lock().unwrap().creator = None;
     }
+
+    pub fn unchained(&self) -> Self {
+        let mut attrs = self.inner.attrs.lock().unwrap().clone();
+        attrs.creator = None;
+        Computed {
+            inner: Arc::new(ComputedInner {
+                data: self.inner.data.clone(),
+                attrs: Mutex::new(attrs),
+            }),
+        }
+    }
 }
 
 impl std::ops::Deref for Computed {
