@@ -70,7 +70,12 @@ impl Function for SoftmaxCrossEntropy {
         vec![Computed::new(scalar(y / n as f32))]
     }
 
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
+    fn backward(
+        &self,
+        xs: &Vec<Computed>,
+        ys: &Vec<Computed>,
+        gys: &Vec<Computed>,
+    ) -> Vec<Computed> {
         #![allow(unused_variables)]
 
         let n: usize = xs[0].shape().iter().take(xs[0].ndim() - 1).product();
@@ -91,6 +96,47 @@ fn test_softmax_cross_entropy() {
     let x = backprop(ndarray::array![[0.1, 0.2, 0.3], [0.0, 0.0, 100.0]].into_ndarray());
     let t = vec![1, 2];
     let loss = softmax_cross_entropy(t, &x);
+    dbg!(&*loss);
+
+    let grads = gradients(&[loss], &vec![x.clone()], false);
+    dbg!(&*grads[0]);
+}
+
+pub fn softmax_cross_entropy_with_logits(
+    labels: &Computed,
+    logits: &Computed,
+    axis: usize,
+) -> Computed {
+    let x = softmax(logits);
+    let y = -(labels * &x.log()).sum([axis], false);
+
+    chain(
+        &[labels.clone(), logits.clone()],
+        &[y.clone()],
+        false,
+        "softmax_cross_entropy_with_logits",
+        move |xs, _ys, gys| {
+            let labels = &xs[0];
+            let gy = &gys[0];
+            let mut shape = labels.shape().to_vec();
+            shape[axis] = 1;
+            let n: usize = shape.iter().product();
+
+            let gy = gy.reshape(shape) / Computed::new(scalar(n as f32));
+            let g_logits = &(&x - labels) * &gy;
+            let g_labels = -(&x.log() * &gy);
+            vec![g_labels, g_logits]
+        },
+    );
+
+    y
+}
+
+#[test]
+fn test_softmax_cross_entropy_with_logits() {
+    let x = backprop(ndarray::array![[0.1, 0.2, 0.3], [0.0, 0.0, 100.0]].into_ndarray());
+    let t = backprop(ndarray::array![[0.0, 1.0, 0.0], [0.0, 0.0, 1.0]].into_ndarray());
+    let loss = softmax_cross_entropy_with_logits(&t, &x, 1);
     dbg!(&*loss);
 
     let grads = gradients(&[loss], &vec![x.clone()], false);
