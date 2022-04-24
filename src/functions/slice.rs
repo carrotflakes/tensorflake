@@ -71,7 +71,12 @@ impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Function for Slice<I> {
     }
 
     // NOTE: backward cuts the graph.
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
+    fn backward(
+        &self,
+        xs: &Vec<Computed>,
+        ys: &Vec<Computed>,
+        gys: &Vec<Computed>,
+    ) -> Vec<Computed> {
         #![allow(unused_variables)]
         let x = &*xs[0];
         let mut gx = NDArray::zeros(x.shape()); // TODO: Too large tensor!
@@ -102,7 +107,12 @@ impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Function for Slices<I> 
     }
 
     // NOTE: backward cuts the graph.
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
+    fn backward(
+        &self,
+        xs: &Vec<Computed>,
+        ys: &Vec<Computed>,
+        gys: &Vec<Computed>,
+    ) -> Vec<Computed> {
         let x = &*xs[0];
         let mut gx = NDArray::zeros(x.shape());
         for i in 0..xs.len() {
@@ -112,3 +122,13 @@ impl<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static> Function for Slices<I> 
         vec![Computed::new(gx)]
     }
 }
+
+// TODO:
+// #[test]
+// fn test_slices() {
+//     let x = backprop(NDArray::zeros(&[2, 3][..]));
+//     let ys = x.slices(vec![ndarray::s![0, ..], ndarray::s![1, ..]]);
+//     let y0 = ys[0].clone();
+//     drop(ys);
+//     optimize(&y0);
+// }

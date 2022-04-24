@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use super::{backprop, FunctionCall, NDArray, Computed};
+use super::{backprop, Computed, FunctionCall, NDArray};
 
 pub fn gradients(ys: &[Computed], xs: &[Computed], create_graph: bool) -> Vec<Computed> {
     let mut grads = HashMap::new();
@@ -102,14 +102,17 @@ pub(crate) fn sort_for_backward(mut fcs: Vec<Arc<FunctionCall>>) -> Vec<Arc<Func
 
 pub(crate) fn collect_function_calls(mut vars: Vec<Computed>) -> Vec<Arc<FunctionCall>> {
     let mut function_call_vec = Vec::new();
-    let mut closed_vars = Vec::new();
+    let mut closed_function_calls = Vec::new();
     while let Some(var) = vars.pop() {
-        if closed_vars.contains(&var) {
-            continue;
-        }
-        closed_vars.push(var.clone());
-
         if let Some(creator) = var.inner.attrs.lock().unwrap().creator.clone() {
+            if closed_function_calls
+                .iter()
+                .any(|fc| Arc::as_ptr(fc) == Arc::as_ptr(&creator))
+            {
+                continue;
+            }
+            closed_function_calls.push(creator.clone());
+
             vars.extend(creator.xs.iter().cloned());
             vars.extend(creator.get_ys());
             function_call_vec.push(creator);
