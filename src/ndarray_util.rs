@@ -189,11 +189,28 @@ fn test_map_axes_keep_dim() {
     assert_eq!(y.shape(), &[2, 1, 4, 1, 6]);
 }
 
-pub fn ndarray_summary(a: &NDArray) -> String {
-    format!(
-        "shape: {:?}\nmean: {:.4}\nvar: {:.4}",
-        a.shape(),
-        a.mean().unwrap(),
-        a.var(1.0)
-    )
+pub struct NDArraySummary {
+    pub shape: Vec<usize>,
+    pub mean: f32,
+    pub var: f32,
+}
+
+impl NDArraySummary {
+    pub fn from(a: &NDArray) -> Self {
+        Self {
+            shape: a.shape().to_vec(),
+            mean: a.mean().unwrap(),
+            var: a.var(1.0),
+        }
+    }
+}
+
+impl std::fmt::Debug for NDArraySummary {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "shape: {:?}\nmean: {:.4}\nvar: {:.4}",
+            self.shape, self.mean, self.var,
+        )
+    }
 }
