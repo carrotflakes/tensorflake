@@ -1,4 +1,4 @@
-use super::{gradients, graph, NDArray, Param, Computed};
+use super::{gradients, graph, Computed, NDArray, Param};
 
 pub fn optimize(loss: &Computed) {
     let mut ga = GradientsAccumulator::new();
@@ -51,10 +51,17 @@ impl GradientsAccumulator {
 
 fn collect_params_grads(loss: &Computed) -> (Vec<Param>, Vec<Computed>) {
     let function_calls = graph::collect_function_calls(vec![loss.clone()]);
+
     let mut params = Vec::new();
     let mut trainables = Vec::new();
+
     for fc in function_calls {
-        if let Some(o) = fc.backward.get_param() {
+        if let Some(o) = fc
+            .backward
+            .as_any()
+            .and_then(|o| o.downcast_ref::<Param>())
+            .cloned()
+        {
             let trainable = fc.get_ys().pop().unwrap();
             if trainables.contains(&trainable) {
                 panic!("same trainables");
@@ -64,6 +71,7 @@ fn collect_params_grads(loss: &Computed) -> (Vec<Param>, Vec<Computed>) {
             params.push(o);
         }
     }
+
     let grads = gradients(&[loss.clone()], &trainables, false);
     (params, grads)
 }

@@ -211,10 +211,8 @@ impl Backward for Param {
         vec![]
     }
 
-    fn get_param(&self) -> Option<Param> {
-        Some(Param {
-            inner: self.inner.clone(),
-        })
+    fn as_any(&self) -> Option<&dyn std::any::Any> {
+        Some(self)
     }
 
     fn get_function_name(&self) -> Cow<'static, str> {

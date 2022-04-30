@@ -32,7 +32,7 @@ pub trait Function: Sync + Send + 'static {
     }
 }
 
-pub trait Backward: Sync + Send {
+pub trait Backward: Sync + Send+ 'static {
     fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed>;
 
     fn get_function_name(&self) -> Cow<'static, str> {
@@ -47,7 +47,7 @@ pub trait Backward: Sync + Send {
         .into()
     }
 
-    fn get_param(&self) -> Option<crate::Param> {
+    fn as_any(&self) -> Option<&dyn std::any::Any> {
         None
     }
 }
