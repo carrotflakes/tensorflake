@@ -42,32 +42,14 @@ impl Lstm {
             ],
         }
     }
-
-    pub fn all_params(&self) -> Vec<Param> {
-        self.ws
-            .iter()
-            .chain(self.us.iter())
-            .chain(self.bs.iter())
-            .cloned()
-            .collect()
-    }
 }
 
-impl Cell for Lstm {
-    type State = [Computed; 2];
+impl Layer for Lstm {
+    type Input = (Computed, [Computed; 2]);
+    type Output = ([Computed; 2], Computed);
 
-    fn initial_state(&self, batch_size: usize) -> Self::State {
-        [
-            Computed::new(NDArray::zeros(&[batch_size, self.state_size][..])),
-            Computed::new(NDArray::zeros(&[batch_size, self.state_size][..])),
-        ]
-    }
-
-    fn get_input_size(&self) -> usize {
-        self.input_size
-    }
-
-    fn step(&self, x: Computed, state: Self::State) -> (Self::State, Computed) {
+    fn call(&self, input: Self::Input, _train: bool) -> Self::Output {
+        let (x, state) = input;
         let [c, h] = state;
         let f = sigmoid(
             &(x.matmul(&self.ws[0].get_tensor())
@@ -92,5 +74,33 @@ impl Cell for Lstm {
         let c = f * c + i * d;
         let h = o * tanh(&c);
         ([c, h.clone()], h)
+    }
+
+    fn all_params(&self) -> Vec<Param> {
+        self.ws
+            .iter()
+            .chain(self.us.iter())
+            .chain(self.bs.iter())
+            .cloned()
+            .collect()
+    }
+}
+
+impl Cell for Lstm {
+    type State = [Computed; 2];
+
+    fn initial_state(&self, batch_size: usize) -> Self::State {
+        [
+            Computed::new(NDArray::zeros(&[batch_size, self.state_size][..])),
+            Computed::new(NDArray::zeros(&[batch_size, self.state_size][..])),
+        ]
+    }
+
+    fn get_input_size(&self) -> usize {
+        self.input_size
+    }
+
+    fn step(&self, x: Computed, state: Self::State) -> (Self::State, Computed) {
+        self.call((x, state), false)
     }
 }

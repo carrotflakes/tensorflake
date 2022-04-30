@@ -51,8 +51,34 @@ impl Gru {
             ],
         }
     }
+}
 
-    pub fn all_params(&self) -> Vec<Param> {
+impl Layer for Gru {
+    type Input = (Computed, Computed);
+    type Output = Computed;
+
+    fn call(&self, input: Self::Input, _train: bool) -> Self::Output {
+        let (x, state) = input;
+        let z = sigmoid(
+            &(x.matmul(&self.ws[0].get_tensor())
+                + state.matmul(&self.us[0].get_tensor())
+                + self.bs[0].get_tensor()),
+        );
+        let r = sigmoid(
+            &(x.matmul(&self.ws[1].get_tensor())
+                + state.matmul(&self.us[1].get_tensor())
+                + self.bs[1].get_tensor()),
+        );
+        let state = (Computed::new(NDArray::ones(z.shape())) - z.clone()) * state.clone()
+            + z * tanh(
+                &(x.matmul(&self.ws[2].get_tensor())
+                    + (r * state).matmul(&self.us[2].get_tensor())
+                    + self.bs[2].get_tensor()),
+            );
+        state
+    }
+
+    fn all_params(&self) -> Vec<Param> {
         self.ws
             .iter()
             .chain(self.us.iter())
@@ -74,22 +100,7 @@ impl Cell for Gru {
     }
 
     fn step(&self, x: Computed, state: Self::State) -> (Self::State, Computed) {
-        let z = sigmoid(
-            &(x.matmul(&self.ws[0].get_tensor())
-                + state.matmul(&self.us[0].get_tensor())
-                + self.bs[0].get_tensor()),
-        );
-        let r = sigmoid(
-            &(x.matmul(&self.ws[1].get_tensor())
-                + state.matmul(&self.us[1].get_tensor())
-                + self.bs[1].get_tensor()),
-        );
-        let state = (Computed::new(NDArray::ones(z.shape())) - z.clone()) * state.clone()
-            + z * tanh(
-                &(x.matmul(&self.ws[2].get_tensor())
-                    + (r * state).matmul(&self.us[2].get_tensor())
-                    + self.bs[2].get_tensor()),
-            );
+        let state = self.call((x, state), false);
         (state.clone(), state)
     }
 }
