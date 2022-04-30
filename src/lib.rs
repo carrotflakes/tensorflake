@@ -1,6 +1,5 @@
 pub mod contrib;
 pub mod core;
-pub mod export_dot;
 pub mod functions;
 mod impl_ops_for_tensor;
 pub mod initializers;
@@ -9,7 +8,6 @@ pub mod metrics;
 pub mod ndarray_util;
 pub mod nn;
 pub mod optimizers;
-pub mod param_bin;
 pub mod regularizers;
 pub mod training;
 
@@ -17,6 +15,7 @@ pub mod training;
 mod test;
 
 pub use crate::core::*;
+pub use contrib::{export_dot, param_bin};
 pub use metrics::{Metric, Metrics};
 pub use ndarray_util::{scalar, IntoNDArray, NDArray};
 pub use nn::Layer;
