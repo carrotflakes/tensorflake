@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use super::{FunctionCall, NDArray};
+use super::FunctionCall;
 
 #[derive(Clone)]
 pub(crate) struct ComputedAttrs {
@@ -8,17 +8,17 @@ pub(crate) struct ComputedAttrs {
     pub creator: Option<Arc<FunctionCall>>,
 }
 
-pub(crate) struct ComputedInner {
-    pub data: NDArray,
+pub(crate) struct ComputedInner<T> {
+    pub data: T,
     pub attrs: Mutex<ComputedAttrs>,
 }
 
-pub struct Computed {
-    pub(crate) inner: Arc<ComputedInner>,
+pub struct Computed<T> {
+    pub(crate) inner: Arc<ComputedInner<T>>,
 }
 
-impl Computed {
-    pub fn new(data: NDArray) -> Self {
+impl<T> Computed<T> {
+    pub fn new(data: T) -> Self {
         Computed {
             inner: Arc::new(ComputedInner {
                 data,
@@ -51,7 +51,10 @@ impl Computed {
         self.inner.attrs.lock().unwrap().creator = None;
     }
 
-    pub fn unchained(&self) -> Self {
+    pub fn unchained(&self) -> Self
+    where
+        T: Clone,
+    {
         let mut attrs = self.inner.attrs.lock().unwrap().clone();
         attrs.creator = None;
         Computed {
@@ -63,15 +66,15 @@ impl Computed {
     }
 }
 
-impl std::ops::Deref for Computed {
-    type Target = NDArray;
+impl<T> std::ops::Deref for Computed<T> {
+    type Target = T;
 
     fn deref(&self) -> &Self::Target {
         &self.inner.data
     }
 }
 
-impl Clone for Computed {
+impl<T> Clone for Computed<T> {
     fn clone(&self) -> Self {
         Computed {
             inner: self.inner.clone(),
@@ -79,22 +82,16 @@ impl Clone for Computed {
     }
 }
 
-impl PartialEq for Computed {
+impl<T> PartialEq for Computed<T> {
     fn eq(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.inner, &other.inner)
     }
 }
 
-impl Eq for Computed {}
+impl<T> Eq for Computed<T> {}
 
-impl std::hash::Hash for Computed {
+impl<T> std::hash::Hash for Computed<T> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         Arc::as_ptr(&self.inner).hash(state);
-    }
-}
-
-impl Into<Computed> for NDArray {
-    fn into(self) -> Computed {
-        Computed::new(self)
     }
 }

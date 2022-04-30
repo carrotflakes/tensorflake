@@ -1,11 +1,11 @@
 use std::sync::{Arc, Weak};
 
-use super::{tensor::ComputedInner, Backward, Computed};
+use super::{computed::ComputedInner, Backward, Computed, NDArray};
 
 pub struct FunctionCall {
     pub(crate) backward: Box<dyn Backward>,
     pub(crate) xs: Vec<Computed>,
-    pub(crate) ys: Vec<Weak<ComputedInner>>,
+    pub(crate) ys: Vec<Weak<ComputedInner<NDArray>>>,
 }
 
 impl FunctionCall {
