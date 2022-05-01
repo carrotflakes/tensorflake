@@ -1,8 +1,7 @@
-use std::ops::{DivAssign, Sub};
+use std::ops::DivAssign;
 
 use ndarray::Axis;
 
-use crate::functions::*;
 use crate::*;
 
 pub fn softmax(x: &Computed) -> Computed {
@@ -29,29 +28,6 @@ pub fn softmax(x: &Computed) -> Computed {
     );
 
     y
-}
-
-pub struct Softmax;
-
-impl Function for Softmax {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert_eq!(xs.len(), 1);
-        let x = &*xs[0];
-        let ndim = x.ndim();
-        let x_max = x.map_axis(Axis(ndim - 1), |x| {
-            *x.iter().max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap()
-        });
-        let y = x.sub(x_max.insert_axis(Axis(ndim - 1)));
-        let mut y = y.map(|x| x.exp());
-        y.div_assign(&y.sum_axis(Axis(ndim - 1)).insert_axis(Axis(ndim - 1)));
-        vec![y.into_ndarray().into()]
-    }
-
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
-        let gx = call!(Mul, ys[0], gys[0]);
-        let sum_dx = call!(Sum::new(vec![xs[0].ndim() - 1], true), gx);
-        vec![call!(Sub, gx, call!(Mul, ys[0], sum_dx))]
-    }
 }
 
 #[test]

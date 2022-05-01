@@ -27,29 +27,40 @@ impl Im2col {
     }
 }
 
-impl Function for Im2col {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert_eq!(xs.len(), 1);
-        vec![im2col(
-            &*xs[0],
+impl Layer for Im2col {
+    type Input = Computed;
+    type Output = Computed;
+
+    fn call(&self, input: Self::Input, _train: bool) -> Self::Output {
+        let y = Computed::new(im2col(
+            &*input,
             self.kernel_size,
             self.stride,
             self.padding,
             self.to_matrix,
-        )
-        .into()]
+        ));
+
+        let col2im = Col2im::new(
+            input.shape().try_into().unwrap(),
+            self.kernel_size,
+            self.stride,
+            self.padding,
+            self.to_matrix,
+        );
+
+        chain(
+            &[input.clone()],
+            &[y.clone()],
+            false,
+            "Im2col",
+            move |_xs, _ys, gys| vec![col2im.call(gys[0].clone(), false)],
+        );
+
+        y
     }
 
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
-        drop(ys);
-        Col2im::new(
-            xs[0].shape().try_into().unwrap(),
-            self.kernel_size,
-            self.stride,
-            self.padding,
-            self.to_matrix,
-        )
-        .call(gys.clone())
+    fn all_params(&self) -> Vec<Param> {
+        Vec::new()
     }
 }
 
@@ -79,24 +90,35 @@ impl Col2im {
     }
 }
 
-impl Function for Col2im {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert_eq!(xs.len(), 1);
-        vec![col2im(
-            &*xs[0],
+impl Layer for Col2im {
+    type Input = Computed;
+    type Output = Computed;
+
+    fn call(&self, input: Self::Input, _train: bool) -> Self::Output {
+        let y = Computed::new(col2im(
+            &*input,
             self.input_shape,
             self.kernel_size,
             self.stride,
             self.padding,
             self.to_matrix,
-        )
-        .into()]
+        ));
+
+        let im2col = Im2col::new(self.kernel_size, self.stride, self.padding, self.to_matrix);
+
+        chain(
+            &[input.clone()],
+            &[y.clone()],
+            false,
+            "Col2im",
+            move |_xs, _ys, gys| vec![im2col.call(gys[0].clone(), false)],
+        );
+
+        y
     }
 
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
-        drop(xs);
-        drop(ys);
-        Im2col::new(self.kernel_size, self.stride, self.padding, self.to_matrix).call(gys.clone())
+    fn all_params(&self) -> Vec<Param> {
+        Vec::new()
     }
 }
 

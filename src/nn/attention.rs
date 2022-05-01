@@ -1,6 +1,6 @@
 use crate::{initializers::Initializer, *};
 
-use super::{activations::Softmax, normalization::Normalization, Linear};
+use super::{activations::softmax, normalization::Normalization, Linear};
 
 pub struct MultiHeadAttention {
     head_dim: usize,
@@ -72,10 +72,7 @@ impl MultiHeadAttention {
             query.matmul(&key.mat_t()) / Computed::new(scalar((self.head_dim as f32).sqrt()));
 
         // Apply softmax to the attention scores
-        let attention = Softmax
-            .call(vec![attention + self.extend_mask(attn_mask)])
-            .pop()
-            .unwrap();
+        let attention = softmax(&(attention + self.extend_mask(attn_mask)));
 
         // Applying attention weights
         // (N, num_heads, L, L) * (N, num_heads, L, head_dim) -> (N, num_heads, L, head_dim)

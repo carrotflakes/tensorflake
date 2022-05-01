@@ -14,33 +14,38 @@ impl UpSampling2d {
     }
 }
 
-impl Function for UpSampling2d {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert_eq!(xs.len(), 1);
-        let x = &*xs[0];
-        let s = x.shape();
+impl Layer for UpSampling2d {
+    type Input = Computed;
+    type Output = Computed;
+
+    fn call(&self, input: Self::Input, _train: bool) -> Self::Output {
+        let s = input.shape();
         let [sh, sw] = self.size;
         let mut y = Array4::zeros([s[0], s[1], s[2] * sh, s[3] * sw]);
 
         for i in 0..sh {
             for j in 0..sw {
-                y.slice_mut(s![.., .., i..;sh, j..;sw]).assign(x);
+                y.slice_mut(s![.., .., i..;sh, j..;sw]).assign(&input);
             }
         }
 
-        vec![y.into_ndarray().into()]
+        let y = Computed::new(y.into_ndarray());
+
+        let size = self.size;
+
+        chain(
+            &[input.clone()],
+            &[y.clone()],
+            false,
+            "UpSampling2d",
+            move |_xs, _ys, gys| vec![naive_sum_pooling(&gys[0], size, size, [0, 0])],
+        );
+
+        y
     }
 
-    fn backward(
-        &self,
-        xs: &Vec<Computed>,
-        ys: &Vec<Computed>,
-        gys: &Vec<Computed>,
-    ) -> Vec<Computed> {
-        drop(xs);
-        drop(ys);
-        let gy = naive_sum_pooling(&gys[0], self.size, self.size, [0, 0]);
-        vec![gy]
+    fn all_params(&self) -> Vec<Param> {
+        Vec::new()
     }
 }
 
@@ -51,13 +56,13 @@ fn test() {
             .unwrap()
             .into_ndarray(),
     );
-    let y = UpSampling2d::new([2, 2]).call(vec![x.clone()]);
-    assert_eq!(y[0].shape(), &[1, 2, 4, 4]);
-    dbg!(&*y[0]);
+    let y = UpSampling2d::new([2, 2]).call(x.clone(), false);
+    assert_eq!(y.shape(), &[1, 2, 4, 4]);
+    dbg!(&*y);
 
-    let y = UpSampling2d::new([1, 3]).call(vec![x.clone()]);
-    assert_eq!(y[0].shape(), &[1, 2, 2, 6]);
+    let y = UpSampling2d::new([1, 3]).call(x.clone(), false);
+    assert_eq!(y.shape(), &[1, 2, 2, 6]);
 
-    let y = UpSampling2d::new([4, 2]).call(vec![x.clone()]);
-    assert_eq!(y[0].shape(), &[1, 2, 8, 4]);
+    let y = UpSampling2d::new([4, 2]).call(x.clone(), false);
+    assert_eq!(y.shape(), &[1, 2, 8, 4]);
 }

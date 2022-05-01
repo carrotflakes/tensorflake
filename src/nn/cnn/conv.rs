@@ -46,7 +46,7 @@ impl Layer for Conv2d {
     type Input = Computed;
     type Output = Computed;
 
-    fn call(&self, x: Self::Input, _train: bool) -> Self::Output
+    fn call(&self, x: Self::Input, train: bool) -> Self::Output
     where
         Self: Sized + 'static,
     {
@@ -64,9 +64,7 @@ impl Layer for Conv2d {
             self.padding[1],
         );
         let col = Im2col::new(self.kernel_size, self.stride, self.padding, true)
-            .call(vec![x.clone()])
-            .pop()
-            .unwrap();
+            .call(x.clone(), train);
         // col: [batch_size * oh * ow, in_ch * kh * kw]
         let w = self.w.get();
         let oc = w.shape()[0];
@@ -209,7 +207,7 @@ impl Layer for Conv2dTranspose {
     type Input = Computed;
     type Output = Computed;
 
-    fn call(&self, x: Self::Input, _train: bool) -> Self::Output
+    fn call(&self, x: Self::Input, train: bool) -> Self::Output
     where
         Self: Sized + 'static,
     {
@@ -255,9 +253,7 @@ impl Layer for Conv2dTranspose {
 
         // col: batch_size, oh, ow, in_ch, kh, kw
         let mut y = Col2im::new(img_shape, kernel_size, self.stride, self.padding, true)
-            .call(vec![col.clone()])
-            .pop()
-            .unwrap();
+            .call(col.clone(), train);
 
         if let Some(b) = &self.b {
             let b = b.get();

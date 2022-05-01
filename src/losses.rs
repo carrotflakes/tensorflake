@@ -2,9 +2,8 @@ use std::ops::Sub;
 
 use ndarray::{Array1, Axis};
 
-use crate::functions::*;
 use crate::ndarray_util::onehot;
-use crate::nn::activations::{relu, softmax, Softmax};
+use crate::nn::activations::{relu, softmax};
 use crate::*;
 
 pub fn naive_mean_squared_error(x0: Computed, x1: Computed) -> Computed {
@@ -43,52 +42,6 @@ pub fn softmax_cross_entropy(t: Vec<usize>, x: &Computed) -> Computed {
     );
 
     y
-}
-
-pub struct SoftmaxCrossEntropy {
-    t: Vec<usize>,
-}
-
-impl SoftmaxCrossEntropy {
-    pub fn new(t: Vec<usize>) -> Self {
-        Self { t }
-    }
-}
-
-impl Function for SoftmaxCrossEntropy {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert_eq!(xs.len(), 1);
-        let x = &*xs[0];
-
-        let n = x.shape().iter().take(x.ndim() - 1).product();
-        let log_z = log_sum_exp(&*x);
-        let log_p = x.to_shape((n, x.shape()[x.ndim() - 1])).unwrap();
-        let mut y = 0.0;
-        for i in 0..n {
-            y -= log_p[[i, self.t[i]]] - log_z[i];
-        }
-        vec![Computed::new(scalar(y / n as f32))]
-    }
-
-    fn backward(
-        &self,
-        xs: &Vec<Computed>,
-        ys: &Vec<Computed>,
-        gys: &Vec<Computed>,
-    ) -> Vec<Computed> {
-        #![allow(unused_variables)]
-
-        let n: usize = xs[0].shape().iter().take(xs[0].ndim() - 1).product();
-        let class_num = xs[0].shape()[xs[0].ndim() - 1];
-        let gy = call!(Mul, gys[0], Computed::new(scalar(1.0 / n as f32)));
-        let y = call!(Softmax, xs[0]);
-        let t_onehot = Computed::new(
-            onehot(&Array1::from(self.t.clone()), class_num)
-                .into_shape(y.shape())
-                .unwrap(),
-        );
-        vec![call!(Mul, call!(Sub, y, t_onehot), gy)]
-    }
 }
 
 #[test]

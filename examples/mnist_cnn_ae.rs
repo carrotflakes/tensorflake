@@ -5,7 +5,7 @@ use tensorflake::{
     initializers::Initializer,
     losses::naive_mean_squared_error,
     nn::{
-        activations::{Relu, Sigmoid},
+        activations::{relu, sigmoid},
         *,
     },
     training::TrainConfig,
@@ -146,14 +146,14 @@ impl Model {
         let mut x = x;
         for conv in &self.encoder_convs {
             x = conv.call(x, train);
-            x = Relu.call(vec![x]).pop().unwrap();
+            x = relu(&x);
         }
         for conv in &self.decoder_convts {
             x = conv.call(x, train);
-            x = Relu.call(vec![x]).pop().unwrap();
+            x = relu(&x);
         }
         x = self.decoder_conv.call(x, train);
-        x = Sigmoid.call(vec![x]).pop().unwrap();
+        x = sigmoid(&x);
         x
     }
 

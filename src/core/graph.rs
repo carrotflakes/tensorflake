@@ -123,13 +123,13 @@ pub(crate) fn collect_function_calls(mut vars: Vec<Computed>) -> Vec<Arc<Functio
 
 #[test]
 fn test_collect_function_calls() {
-    use crate::{backprop, functions, scalar, Function};
+    use crate::{backprop, scalar};
     let x = backprop(scalar(1.0));
     let y = Computed::new(scalar(2.0));
     let z = Computed::new(scalar(3.0));
-    let f = functions::Add.call(vec![x.clone(), y.clone()]);
-    let g = functions::Add.call([f.clone(), vec![z.clone()]].concat());
-    let f = functions::Add.call([g.clone(), vec![x.clone()]].concat());
-    let function_call_vec = collect_function_calls(vec![f[0].clone()]);
+    let f = x.clone() + y.clone();
+    let g = f.clone() + z.clone();
+    let f = g.clone() + x.clone();
+    let function_call_vec = collect_function_calls(vec![f.clone()]);
     assert_eq!(function_call_vec.len(), 4);
 }

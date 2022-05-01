@@ -5,7 +5,7 @@ use ndarray_rand::rand_distr::Normal;
 use tensorflake::{
     initializers::Initializer,
     losses::softmax_cross_entropy,
-    nn::{activations::Relu, *},
+    nn::{activations::relu, *},
     training::TrainConfig,
     *,
 };
@@ -28,7 +28,7 @@ fn main() {
     let mlp = MLP::new(
         &[28 * 28, 128, 10],
         Some(Dropout::new(0.2, 42)),
-        |x| Relu.call(vec![x]).pop().unwrap(),
+        |x| relu(&x),
         init_kernel.scope("mlp_w"),
         init_bias.scope("mlp_b"),
     );
