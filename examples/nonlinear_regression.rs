@@ -24,7 +24,7 @@ fn main() {
     .named("y");
 
     let init =
-        InitializerWithOptimizer::new(Uniform::new(0., 0.01), optimizers::AdamOptimizer::new());
+        InitializerWithOptimizer::new(Uniform::new(0., 0.01), optimizers::Adam::new());
 
     let l1 = Linear::new(1, 10, init.scope("l1_w"), Some(init.scope("l1_b")));
     let l2 = Linear::new(10, 1, init.scope("l2_w"), Some(init.scope("l2_b")));

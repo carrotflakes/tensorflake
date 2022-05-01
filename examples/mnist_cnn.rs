@@ -58,7 +58,7 @@ impl Model {
     pub fn new() -> Self {
         let init = InitializerWithOptimizer::new(
             Normal::new(0.0, 0.1).unwrap(),
-            optimizers::AdamOptimizer::new(),
+            optimizers::Adam::new(),
         );
 
         Self {
@@ -122,7 +122,7 @@ impl BigModel {
     pub fn new() -> Self {
         let init = InitializerWithOptimizer::new(
             Normal::new(0.0, 0.1).unwrap(),
-            optimizers::AdamOptimizer::new(),
+            optimizers::Adam::new(),
         );
 
         Self {

@@ -91,7 +91,7 @@ pub struct Model {
 
 impl Model {
     pub fn new() -> Self {
-        let optimizer = optimizers::AdamOptimizer::new();
+        let optimizer = optimizers::Adam::new();
         let init_kernel = initializers::InitializerWithOptimizer::new(
             Normal::new(0.0, 0.1).unwrap(),
             optimizer.clone(),

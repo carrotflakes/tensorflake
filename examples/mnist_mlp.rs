@@ -14,7 +14,7 @@ fn main() {
     // unsafe {flush_denormals::flush_denormals()};
     let mnist = data::mnist::Mnist::load("./data/mnist");
 
-    let optimizer = optimizers::SGDOptimizer::new(0.01);
+    let optimizer = optimizers::SGD::new(0.01);
     // let optimizer = optimizers::WithRegularization::new(optimizer, regularizers::L1::new(0.001));
     let init_kernel = initializers::InitializerWithOptimizer::new(
         Normal::new(0.0, 0.1).unwrap(),

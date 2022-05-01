@@ -36,12 +36,12 @@ fn main() {
 
     // let optimizer = optimizers::SGDOptimizer::new();
     // let lr = 0.1;
-    let optimizer = Arc::new(Mutex::new(optimizers::AdamOptimizer::new()));
+    let optimizer = Arc::new(Mutex::new(optimizers::Adam::new()));
     // let optimizer = optimizers::WithRegularization::new(optimizer, regularizers::L2::new(0.001));
     let lr = 0.0001;
 
     let norm =
-        normalization::Normalization::new(vec![0, 1], 0.001, optimizers::AdamOptimizer::new());
+        normalization::Normalization::new(vec![0, 1], 0.001, optimizers::Adam::new());
 
     let init_kernel = initializers::InitializerWithSharedOptimizer::new(
         Normal::new(0., 0.1).unwrap(),

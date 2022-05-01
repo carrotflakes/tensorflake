@@ -80,7 +80,7 @@ impl Model {
     pub fn new(vocab_size: usize) -> Self {
         let init = InitializerWithOptimizer::new(
             Uniform::new(0., 0.01),
-            optimizers::SGDOptimizer::new(0.01),
+            optimizers::SGD::new(0.01),
         );
         let state_size = 200;
         Self {

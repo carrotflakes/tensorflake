@@ -19,7 +19,7 @@ fn main() {
 
     let init = InitializerWithSharedOptimizer::new(
         Uniform::new(0., 0.01),
-        Arc::new(Mutex::new(optimizers::AdamOptimizer::new())),
+        Arc::new(Mutex::new(optimizers::Adam::new())),
     );
 
     let model = Model::new(init.scope("coin"), init.scope("coin"));

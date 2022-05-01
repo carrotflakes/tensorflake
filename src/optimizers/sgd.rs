@@ -3,17 +3,17 @@ use std::ops::Mul;
 use crate::*;
 
 #[derive(Clone)]
-pub struct SGDOptimizer {
+pub struct SGD {
     pub learning_rate: f32,
 }
 
-impl SGDOptimizer {
+impl SGD {
     pub fn new(learning_rate: f32) -> Self {
-        SGDOptimizer { learning_rate }
+        SGD { learning_rate }
     }
 }
 
-impl Optimizer for SGDOptimizer {
+impl Optimizer for SGD {
     type State = ();
 
     fn new_state(&self, shape: &[usize]) -> Self::State {
@@ -30,5 +30,5 @@ impl Optimizer for SGDOptimizer {
 
 #[test]
 fn test() {
-    super::test_optimizer(SGDOptimizer::new(0.01));
+    super::test_optimizer(SGD::new(0.01));
 }

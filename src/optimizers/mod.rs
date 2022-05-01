@@ -5,11 +5,11 @@ mod momentum_sgd;
 mod sgd;
 mod with_regularization;
 
-pub use adam::AdamOptimizer;
-pub use adamw::AdamWOptimizer;
+pub use adam::Adam;
+pub use adamw::AdamW;
 pub use fixed::Fixed;
-pub use momentum_sgd::MomentumSGDOptimizer;
-pub use sgd::SGDOptimizer;
+pub use momentum_sgd::MomentumSGD;
+pub use sgd::SGD;
 pub use with_regularization::WithRegularization;
 
 #[cfg(test)]

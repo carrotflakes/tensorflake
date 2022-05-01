@@ -65,7 +65,7 @@ fn test() {
 
     let init = initializers::InitializerWithOptimizer::new(
         Uniform::new(-0.01, 0.01),
-        optimizers::AdamOptimizer::new(),
+        optimizers::Adam::new(),
     );
 
     let mlp = MLP::new(

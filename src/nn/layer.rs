@@ -77,7 +77,7 @@ impl<I: 'static, O: 'static> Layer for FnAsLayer<I, O> {
 fn test() {
     let init = initializers::InitializerWithOptimizer::new(
         ndarray_rand::rand_distr::Normal::new(0.0, 0.1).unwrap(),
-        optimizers::AdamOptimizer::new(),
+        optimizers::Adam::new(),
     );
     let l1 = nn::Linear::new(2, 3, init.clone(), Some(init.clone()));
     let l2 = nn::Linear::new(3, 2, init.clone(), Some(init.clone()));

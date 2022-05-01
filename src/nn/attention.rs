@@ -130,7 +130,7 @@ fn test() {
 
     let init = initializers::InitializerWithOptimizer::new(
         Uniform::new(-0.01, 0.01),
-        optimizers::AdamOptimizer::new(),
+        optimizers::Adam::new(),
     );
 
     let mha = MultiHeadAttention::new(
@@ -139,7 +139,7 @@ fn test() {
         1e-5,
         init.scope("mha"),
         init.scope("mha"),
-        optimizers::AdamOptimizer::new(),
+        optimizers::Adam::new(),
     );
 
     let x = Computed::new(

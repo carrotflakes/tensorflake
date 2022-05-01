@@ -3,7 +3,7 @@ use crate::*;
 const EPS: f32 = 1e-8;
 
 #[derive(Clone)]
-pub struct AdamWOptimizer {
+pub struct AdamW {
     pub learning_rate: f32,
     pub beta1: f32,
     pub beta2: f32,
@@ -15,9 +15,9 @@ pub struct State {
     vel: NDArray,
 }
 
-impl AdamWOptimizer {
+impl AdamW {
     pub fn new() -> Self {
-        AdamWOptimizer {
+        AdamW {
             learning_rate: 0.001,
             beta1: 0.9,
             beta2: 0.999,
@@ -26,7 +26,7 @@ impl AdamWOptimizer {
     }
 
     pub fn new_with_params(learning_rate: f32, beta1: f32, beta2: f32, weight_decay: f32) -> Self {
-        AdamWOptimizer {
+        AdamW {
             learning_rate,
             beta1,
             beta2,
@@ -35,7 +35,7 @@ impl AdamWOptimizer {
     }
 }
 
-impl Optimizer for AdamWOptimizer {
+impl Optimizer for AdamW {
     type State = State;
 
     fn new_state(&self, shape: &[usize]) -> Self::State {
@@ -64,5 +64,5 @@ impl Optimizer for AdamWOptimizer {
 
 #[test]
 fn test() {
-    super::test_optimizer(AdamWOptimizer::new_with_params(0.01, 0.9, 0.999, 0.00001));
+    super::test_optimizer(AdamW::new_with_params(0.01, 0.9, 0.999, 0.00001));
 }

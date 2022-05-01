@@ -3,7 +3,7 @@ use std::ops::Mul;
 use crate::*;
 
 #[derive(Clone)]
-pub struct MomentumSGDOptimizer {
+pub struct MomentumSGD {
     pub learning_rate: f32,
     pub momentum: f32,
 }
@@ -12,16 +12,16 @@ pub struct State {
     velocity: NDArray,
 }
 
-impl MomentumSGDOptimizer {
+impl MomentumSGD {
     pub fn new(learning_rate: f32, momentum: f32) -> Self {
-        MomentumSGDOptimizer {
+        MomentumSGD {
             learning_rate,
             momentum,
         }
     }
 }
 
-impl Optimizer for MomentumSGDOptimizer {
+impl Optimizer for MomentumSGD {
     type State = State;
 
     fn new_state(&self, shape: &[usize]) -> Self::State {
@@ -40,5 +40,5 @@ impl Optimizer for MomentumSGDOptimizer {
 
 #[test]
 fn test() {
-    super::test_optimizer(MomentumSGDOptimizer::new(0.01, 0.9));
+    super::test_optimizer(MomentumSGD::new(0.01, 0.9));
 }

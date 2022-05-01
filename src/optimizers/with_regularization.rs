@@ -30,7 +30,7 @@ impl<O: Optimizer, R: Regularizer> Optimizer for WithRegularization<O, R> {
 
 #[test]
 fn test() {
-    let optimizer = super::AdamOptimizer::new_with_params(0.01, 0.9, 0.999);
+    let optimizer = super::Adam::new_with_params(0.01, 0.9, 0.999);
     let optimizer = WithRegularization::new(optimizer, regularizers::L1::new(0.01));
     super::test_optimizer(optimizer);
 }

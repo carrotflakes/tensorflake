@@ -43,7 +43,7 @@ impl Layer for Normalization {
 #[test]
 fn test() {
     let x = Computed::new(ndarray::array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0].into_ndarray());
-    let bn = Normalization::new(vec![0], 0.001, optimizers::AdamOptimizer::new());
+    let bn = Normalization::new(vec![0], 0.001, optimizers::Adam::new());
     let y = bn.call(x, false);
     assert!((y.mean().unwrap() - 0.0).abs() < 1e-6);
     assert!((y.var(1.0) - 1.0).abs() < 0.01);
@@ -56,7 +56,7 @@ fn test() {
         .unwrap()
         .into_ndarray(),
     );
-    let bn = Normalization::new(vec![1, 2], 0.001, optimizers::AdamOptimizer::new());
+    let bn = Normalization::new(vec![1, 2], 0.001, optimizers::Adam::new());
     let y = bn.call(x.clone(), false);
     dbg!(&*y);
     assert_eq!(x.shape(), y.shape());

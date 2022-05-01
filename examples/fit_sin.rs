@@ -22,7 +22,7 @@ fn main() {
         .map(|x| (x * 2.0 * std::f32::consts::PI).sin() + rng.gen_range(-0.5..0.5))
         .collect::<Vec<_>>();
 
-    let optimizer = optimizers::SGDOptimizer::new(0.1);
+    let optimizer = optimizers::SGD::new(0.1);
     let init_kernel = initializers::InitializerWithOptimizer::new(
         Normal::new(0.0, 0.1).unwrap(),
         optimizer.clone(),
