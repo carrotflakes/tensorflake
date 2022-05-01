@@ -23,7 +23,7 @@ impl PuningLinear {
         b: &mut impl Initializer,
     ) -> Self {
         let w = w.initialize(&[input, output]);
-        let pruned_w = Arc::new(Mutex::new(Arc::new(prune(&w.get_tensor()))));
+        let pruned_w = Arc::new(Mutex::new(Arc::new(prune(&w.get()))));
         let w = Param::from_inner(ParamInnerShared {
             param: w,
             pruned_w: pruned_w.clone(),
@@ -40,12 +40,12 @@ impl PuningLinear {
         Self {
             output_size: self.output_size,
             w: Param::new(
-                (*self.w.get_tensor()).clone(),
+                (*self.w.get()).clone(),
                 self.w.get_function_name(),
                 Fixed,
             ),
             b: Param::new(
-                (*self.b.get_tensor()).clone(),
+                (*self.b.get()).clone(),
                 self.w.get_function_name(),
                 Fixed,
             ),
@@ -61,8 +61,8 @@ impl Layer for PuningLinear {
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output {
         pruning_linear_forward(
             &x,
-            &self.w.get_tensor(),
-            &self.b.get_tensor(),
+            &self.w.get(),
+            &self.b.get(),
             self.pruned_w.lock().unwrap().clone(),
         )
     }
@@ -115,8 +115,8 @@ struct ParamInnerShared {
 }
 
 impl ParamInnerT for ParamInnerShared {
-    fn tensor(&self) -> Computed {
-        self.param.get_tensor()
+    fn get(&self) -> Computed {
+        self.param.get()
     }
 
     fn set(&mut self, tensor: Computed) {
@@ -126,7 +126,7 @@ impl ParamInnerT for ParamInnerShared {
     fn update(&mut self, grad: &NDArray) {
         self.param.update(grad);
 
-        let pruned_w = prune(&self.tensor());
+        let pruned_w = prune(&self.get());
         *self.pruned_w.lock().unwrap() = Arc::new(pruned_w);
     }
 

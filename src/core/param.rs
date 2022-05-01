@@ -6,8 +6,8 @@ use std::{
 use super::{Backward, Computed, FunctionCall, NDArray, Optimizer};
 
 pub trait ParamInnerT: Sync + Send + 'static {
-    fn tensor(&self) -> Computed;
-    fn set(&mut self, tensor: Computed);
+    fn get(&self) -> Computed;
+    fn set(&mut self, data: Computed);
     fn update(&mut self, grad: &NDArray);
     fn name(&self) -> Cow<'static, str>;
 
@@ -17,24 +17,24 @@ pub trait ParamInnerT: Sync + Send + 'static {
 }
 
 struct ParamInner<T: Optimizer + Clone> {
-    tensor: Computed,
+    data: Computed,
     name: Cow<'static, str>,
     optimizer: T,
     state: T::State,
 }
 
 impl<T: Optimizer + Clone> ParamInnerT for ParamInner<T> {
-    fn tensor(&self) -> Computed {
-        self.tensor.clone()
+    fn get(&self) -> Computed {
+        self.data.clone()
     }
 
-    fn set(&mut self, tensor: Computed) {
-        self.tensor = tensor;
+    fn set(&mut self, data: Computed) {
+        self.data = data;
     }
 
     fn update(&mut self, grad: &NDArray) {
         self.optimizer
-            .update(&mut self.tensor, &mut self.state, grad);
+            .update(&mut self.data, &mut self.state, grad);
     }
 
     fn name(&self) -> Cow<'static, str> {
@@ -43,24 +43,24 @@ impl<T: Optimizer + Clone> ParamInnerT for ParamInner<T> {
 }
 
 struct ParamInnerShared<T: Optimizer + Clone> {
-    tensor: Computed,
+    data: Computed,
     name: Cow<'static, str>,
     optimizer: Arc<Mutex<T>>,
     state: T::State,
 }
 
 impl<T: Optimizer + Clone> ParamInnerT for ParamInnerShared<T> {
-    fn tensor(&self) -> Computed {
-        self.tensor.clone()
+    fn get(&self) -> Computed {
+        self.data.clone()
     }
 
-    fn set(&mut self, tensor: Computed) {
-        self.tensor = tensor;
+    fn set(&mut self, data: Computed) {
+        self.data = data;
     }
 
     fn update(&mut self, grad: &NDArray) {
         let mut optimizer = self.optimizer.lock().unwrap().clone();
-        optimizer.update(&mut self.tensor, &mut self.state, grad);
+        optimizer.update(&mut self.data, &mut self.state, grad);
     }
 
     fn name(&self) -> Cow<'static, str> {
@@ -69,17 +69,17 @@ impl<T: Optimizer + Clone> ParamInnerT for ParamInnerShared<T> {
 }
 
 struct ParamInnerFixed {
-    tensor: Computed,
+    data: Computed,
     name: Cow<'static, str>,
 }
 
 impl ParamInnerT for ParamInnerFixed {
-    fn tensor(&self) -> Computed {
-        self.tensor.clone()
+    fn get(&self) -> Computed {
+        self.data.clone()
     }
 
-    fn set(&mut self, tensor: Computed) {
-        self.tensor = tensor;
+    fn set(&mut self, data: Computed) {
+        self.data = data;
     }
 
     fn update(&mut self, grad: &NDArray) {
@@ -110,7 +110,7 @@ impl Param {
                 name,
                 state: optimizer.new_state(&ndarray.shape()),
                 optimizer,
-                tensor: ndarray.into(),
+                data: ndarray.into(),
             })),
         }
     }
@@ -126,7 +126,7 @@ impl Param {
                 name,
                 state,
                 optimizer,
-                tensor: ndarray.into(),
+                data: ndarray.into(),
             })),
         }
     }
@@ -134,7 +134,7 @@ impl Param {
     pub fn new_fixed(ndarray: NDArray, name: Cow<'static, str>) -> Param {
         Param {
             inner: Arc::new(Mutex::new(ParamInnerFixed {
-                tensor: ndarray.into(),
+                data: ndarray.into(),
                 name,
             })),
         }
@@ -146,9 +146,9 @@ impl Param {
         }
     }
 
-    pub fn get_tensor(&self) -> Computed {
+    pub fn get(&self) -> Computed {
         let inner = self.inner.lock().unwrap();
-        let v = inner.tensor().clone();
+        let v = inner.get().clone();
         if inner.create_graph() && !v.has_creator() {
             let creator = FunctionCall {
                 backward: Box::new(Param {

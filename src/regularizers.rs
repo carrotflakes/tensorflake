@@ -72,10 +72,10 @@ fn test() {
         optimizers::SGDOptimizer::new(1.0),
     );
     let l1 = L1::new(1.0);
-    let loss = l1.loss(&p.get_tensor());
+    let loss = l1.loss(&p.get());
     optimize(&loss);
     assert_eq!(
-        &*p.get_tensor(),
+        &*p.get(),
         &ndarray::array![0., 1., 2.].into_ndarray()
     );
 
@@ -85,10 +85,10 @@ fn test() {
         optimizers::SGDOptimizer::new(1.0),
     );
     let l2 = L2::new(0.25);
-    let loss = l2.loss(&p.get_tensor());
+    let loss = l2.loss(&p.get());
     optimize(&loss);
     assert_eq!(
-        &*p.get_tensor(),
+        &*p.get(),
         &ndarray::array![0.5, 1.0, 1.5].into_ndarray()
     );
 

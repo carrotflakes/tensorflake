@@ -60,20 +60,20 @@ impl Layer for Gru {
     fn call(&self, input: Self::Input, _train: bool) -> Self::Output {
         let (x, state) = input;
         let z = sigmoid(
-            &(x.matmul(&self.ws[0].get_tensor())
-                + state.matmul(&self.us[0].get_tensor())
-                + self.bs[0].get_tensor()),
+            &(x.matmul(&self.ws[0].get())
+                + state.matmul(&self.us[0].get())
+                + self.bs[0].get()),
         );
         let r = sigmoid(
-            &(x.matmul(&self.ws[1].get_tensor())
-                + state.matmul(&self.us[1].get_tensor())
-                + self.bs[1].get_tensor()),
+            &(x.matmul(&self.ws[1].get())
+                + state.matmul(&self.us[1].get())
+                + self.bs[1].get()),
         );
         let state = (Computed::new(NDArray::ones(z.shape())) - z.clone()) * state.clone()
             + z * tanh(
-                &(x.matmul(&self.ws[2].get_tensor())
-                    + (r * state).matmul(&self.us[2].get_tensor())
-                    + self.bs[2].get_tensor()),
+                &(x.matmul(&self.ws[2].get())
+                    + (r * state).matmul(&self.us[2].get())
+                    + self.bs[2].get()),
             );
         state
     }

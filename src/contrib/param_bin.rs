@@ -6,7 +6,7 @@ pub fn export_to_file(params: &[Param], path: &str) {
     let f = std::fs::File::create(path).unwrap();
     let mut writer = std::io::BufWriter::new(f);
     for param in params {
-        let tensor = param.get_tensor();
+        let tensor = param.get();
         writer
             .write_all(&(tensor.ndim() as u32).to_le_bytes())
             .unwrap();
@@ -43,7 +43,7 @@ pub fn import_from_file(params: &mut [Param], path: &str) {
 pub fn params_summary(params: &[Param]) {
     let mut total_size = 0;
     for (i, param) in params.iter().enumerate() {
-        let shape = param.get_tensor().shape().to_vec();
+        let shape = param.get().shape().to_vec();
         let size = shape.iter().product::<usize>();
         total_size += size;
         println!("{:>2}{:>8} {:?}", i, size, shape);
@@ -65,6 +65,6 @@ fn test() {
     let path = "/tmp/tensorflake_param_bin_test.bin";
     export_to_file(&params, path);
     import_from_file(&mut params, path);
-    assert_eq!(&*params[0].get_tensor(), &ndarrays[0]);
-    assert_eq!(&*params[1].get_tensor(), &ndarrays[1]);
+    assert_eq!(&*params[0].get(), &ndarrays[0]);
+    assert_eq!(&*params[1].get(), &ndarrays[1]);
 }

@@ -30,9 +30,9 @@ impl Layer for Normalization {
         let mean = map_axes_keep_dim(&*x, &self.axes, |x| x.mean_axis(Axis(1)).unwrap());
         let var = map_axes_keep_dim(&*x, &self.axes, |x| x.var_axis(Axis(1), 1.0));
         (x - Computed::new(mean.into_ndarray()))
-            * (self.gamma.get_tensor()
+            * (self.gamma.get()
                 / Computed::new((var + self.eps).map(|x| x.sqrt()).into_ndarray()))
-            + self.beta.get_tensor()
+            + self.beta.get()
     }
 
     fn all_params(&self) -> Vec<Param> {

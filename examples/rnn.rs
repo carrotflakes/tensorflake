@@ -108,7 +108,7 @@ impl Model {
     }
 
     pub fn call(&self, x: Vec<usize>, train: bool) -> Vec<Computed> {
-        let mut state = self.initial.get_tensor();
+        let mut state = self.initial.get();
         let mut outputs = vec![];
         for x in x {
             let enb = self

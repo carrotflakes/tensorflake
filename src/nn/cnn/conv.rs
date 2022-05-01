@@ -68,14 +68,14 @@ impl Layer for Conv2d {
             .pop()
             .unwrap();
         // col: [batch_size * oh * ow, in_ch * kh * kw]
-        let w = self.w.get_tensor();
+        let w = self.w.get();
         let oc = w.shape()[0];
         let kernel = w
             .reshape(vec![w.shape()[0], w.shape().iter().skip(1).product()])
             .t();
         // w: [in_ch * kh * kw, out_ch]
         let t = if let Some(b) = &self.b {
-            matmul_add(&col, &kernel, &b.get_tensor())
+            matmul_add(&col, &kernel, &b.get())
         } else {
             col.matmul(&kernel)
         };
@@ -213,7 +213,7 @@ impl Layer for Conv2dTranspose {
     where
         Self: Sized + 'static,
     {
-        let kernel = self.w.get_tensor(); // [out_ch, in_ch, kh, kw]
+        let kernel = self.w.get(); // [out_ch, in_ch, kh, kw]
 
         let [oh, ow] = if let Some(out_size) = &self.out_size {
             out_size.clone()
@@ -260,7 +260,7 @@ impl Layer for Conv2dTranspose {
             .unwrap();
 
         if let Some(b) = &self.b {
-            let b = b.get_tensor();
+            let b = b.get();
             let b = b.reshape(vec![1, b.len(), 1, 1]);
             y = y + b;
         }

@@ -22,14 +22,14 @@ impl Linear {
     pub fn build(&self) -> Self {
         Self {
             w: Param::new(
-                (*self.w.get_tensor()).clone(),
+                (*self.w.get()).clone(),
                 self.w.get_function_name(),
                 Fixed,
             ),
             b: self
                 .b
                 .as_ref()
-                .map(|b| Param::new((*b.get_tensor()).clone(), self.w.get_function_name(), Fixed)),
+                .map(|b| Param::new((*b.get()).clone(), self.w.get_function_name(), Fixed)),
         }
     }
 }
@@ -40,9 +40,9 @@ impl Layer for Linear {
 
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output {
         if let Some(b) = &self.b {
-            matmul_add(&x, &self.w.get_tensor(), &b.get_tensor())
+            matmul_add(&x, &self.w.get(), &b.get())
         } else {
-            x.matmul(&self.w.get_tensor())
+            x.matmul(&self.w.get())
         }
     }
 

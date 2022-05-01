@@ -19,7 +19,7 @@ impl Layer for Embedding {
     type Output = Computed;
 
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output {
-        let w = self.weights.get_tensor();
+        let w = self.weights.get();
         // Slices::new(x.iter().map(|i| s![*i, ..]).collect())
         //     .call(vec![w])
         select(0, x, &w)
