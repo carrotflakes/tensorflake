@@ -40,8 +40,7 @@ fn main() {
     // let optimizer = optimizers::WithRegularization::new(optimizer, regularizers::L2::new(0.001));
     let lr = 0.0001;
 
-    let norm =
-        normalization::Normalization::new(vec![0, 1], 0.001, optimizers::Adam::new());
+    let norm = normalization::Normalization::new(vec![0, 1], 0.001, optimizers::Adam::new());
 
     let init_kernel = initializers::InitializerWithSharedOptimizer::new(
         Normal::new(0., 0.1).unwrap(),
@@ -107,10 +106,7 @@ fn main() {
                 .collect::<Vec<_>>();
             let t = t.into_iter().flatten().collect();
             let y = model.encode(initial_state, &x).1;
-            let yy = Concat::new(0)
-                .call(y.iter().skip(eqp - 1).cloned().collect())
-                .pop()
-                .unwrap();
+            let yy = concat(&y.iter().skip(eqp - 1).cloned().collect::<Vec<_>>(), 0);
             let yy = output_fn(yy);
             let loss = softmax_cross_entropy(t, &yy);
             if ctx.train {

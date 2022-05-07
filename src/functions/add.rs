@@ -1,6 +1,6 @@
 use crate::*;
 
-use super::{sum_axes_to_desire, Sum};
+use super::sum_axes_to_desire;
 
 pub fn add(a: &Computed, b: &Computed) -> Computed {
     let y = Computed::new((&**a + &**b).into_ndarray());
@@ -52,39 +52,6 @@ pub fn multi_add(xs: &[Computed]) -> Computed {
     });
 
     y
-}
-
-pub struct Add;
-
-impl Function for Add {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert!(xs.len() >= 1);
-        let mut y = (*xs[0]).clone();
-        for x in xs.iter().skip(1) {
-            y = y + &**x;
-        }
-        vec![Computed::new(y)]
-    }
-
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
-        #![allow(unused_variables)]
-
-        xs.iter()
-            .map(|x| {
-                let mut gx = gys[0].clone();
-
-                // fit shape
-                if x.shape() != gx.shape() {
-                    gx = call!(
-                        Sum::new(sum_axes_to_desire(gx.shape(), x.shape()), false),
-                        gx
-                    );
-                }
-
-                gx
-            })
-            .collect()
-    }
 }
 
 #[test]

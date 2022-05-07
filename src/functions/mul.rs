@@ -1,6 +1,6 @@
-use crate::*;
+use crate::{functions::sum, *};
 
-use super::{sum_axes_to_desire, Sum};
+use super::sum_axes_to_desire;
 
 pub fn mul(a: &Computed, b: &Computed) -> Computed {
     let y = Computed::new((&**a * &**b).into_ndarray());
@@ -32,6 +32,8 @@ pub fn mul(a: &Computed, b: &Computed) -> Computed {
 
 pub fn multi_mul(xs: &[Computed]) -> Computed {
     assert!(xs.len() >= 1);
+
+    // NOTE: This assert is unnecessary?
     if broadcasted_shape(&xs).is_none() {
         panic!(
             "cannot broadcast on shapes: {:?}",
@@ -51,20 +53,17 @@ pub fn multi_mul(xs: &[Computed]) -> Computed {
         xs.iter()
             .enumerate()
             .map(|(i, x)| {
-                let mut g = Mul
-                    .call(
-                        (0..xs.len())
-                            .filter(|j| *j != i)
-                            .map(|j| xs[j].clone())
-                            .chain(gys.iter().cloned())
-                            .collect(),
-                    )
-                    .pop()
-                    .unwrap();
+                let mut g = multi_mul(
+                    &(0..xs.len())
+                        .filter(|j| *j != i)
+                        .map(|j| xs[j].clone())
+                        .chain(gys.iter().cloned())
+                        .collect::<Vec<_>>(),
+                );
 
                 // fit shape
                 if x.shape() != g.shape() {
-                    g = call!(Sum::new(sum_axes_to_desire(g.shape(), x.shape()), false), g);
+                    g = sum(&g, sum_axes_to_desire(g.shape(), x.shape()), false);
                     // TODO: https://github.com/oreilly-japan/deep-learning-from-scratch-3/blob/06419d7fb2e7ea19aa3719efc27795edbdc41a1f/dezero/utils.py#L125
                 }
 
@@ -74,56 +73,6 @@ pub fn multi_mul(xs: &[Computed]) -> Computed {
     });
 
     y
-}
-
-pub struct Mul;
-
-impl Function for Mul {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert!(xs.len() >= 1);
-        if broadcasted_shape(&xs).is_none() {
-            panic!(
-                "cannot broadcast on shapes: {:?}",
-                xs.iter()
-                    .map(|x| (**x).shape().to_vec())
-                    .collect::<Vec<_>>()
-            );
-        };
-
-        let mut y = (*xs[0]).to_owned();
-        for x in xs.iter().skip(1) {
-            y = y * &**x;
-        }
-        vec![y.into_ndarray().into()]
-    }
-
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
-        #![allow(unused_variables)]
-
-        xs.iter()
-            .enumerate()
-            .map(|(i, x)| {
-                let mut g = Mul
-                    .call(
-                        (0..xs.len())
-                            .filter(|j| *j != i)
-                            .map(|j| xs[j].clone())
-                            .chain(gys.iter().cloned())
-                            .collect(),
-                    )
-                    .pop()
-                    .unwrap();
-
-                // fit shape
-                if x.shape() != g.shape() {
-                    g = call!(Sum::new(sum_axes_to_desire(g.shape(), x.shape()), true), g);
-                    // TODO: https://github.com/oreilly-japan/deep-learning-from-scratch-3/blob/06419d7fb2e7ea19aa3719efc27795edbdc41a1f/dezero/utils.py#L125
-                }
-
-                g
-            })
-            .collect()
-    }
 }
 
 pub fn broadcasted_shape(xs: &[impl std::ops::Deref<Target = NDArray>]) -> Option<Vec<usize>> {

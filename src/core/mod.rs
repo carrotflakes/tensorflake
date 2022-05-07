@@ -6,7 +6,7 @@ mod optimize;
 mod optimizer;
 pub mod param;
 
-pub use backward::{chain, Backward, Function};
+pub use backward::{chain, Backward};
 pub use function_call::FunctionCall;
 pub use graph::gradients;
 pub use optimize::{optimize, GradientsAccumulator};

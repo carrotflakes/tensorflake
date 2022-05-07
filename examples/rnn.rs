@@ -28,7 +28,7 @@ fn main() {
     {
         let str = "1+2=3";
         let y = model.call(arith::encode(&str[..str.len() - 1]), true);
-        let y = Concat::new(0).call(y).pop().unwrap();
+        let y = concat(&y, 0);
         let loss = softmax_cross_entropy(arith::encode(&str[1..]), &y);
         graph(&[loss], "rnn");
     }
@@ -40,10 +40,7 @@ fn main() {
             let str = &data[i];
             let eqp = str.chars().position(|c| c == '=').unwrap();
             let y = model.call(arith::encode(&str[..str.len() - 1]), true);
-            let yy = Concat::new(0)
-                .call(y.iter().skip(eqp).cloned().collect())
-                .pop()
-                .unwrap();
+            let yy = concat(&y.iter().skip(eqp).cloned().collect::<Vec<_>>(), 0);
             let loss = softmax_cross_entropy(arith::encode(&str[eqp + 1..]), &yy);
             gradients.compute(&loss);
             if i % 10 == 0 {
@@ -51,7 +48,7 @@ fn main() {
             }
             if i % 5000 == 0 {
                 // println!("{:?}", &*y[1]);
-                let y = Concat::new(0).call(y).pop().unwrap();
+                let y = concat(&y, 0);
                 let v = argmax(&*y).into_raw_vec();
                 // println!("{:?}", v);
                 println!("{}", str);
@@ -78,10 +75,8 @@ pub struct Model {
 
 impl Model {
     pub fn new(vocab_size: usize) -> Self {
-        let init = InitializerWithOptimizer::new(
-            Uniform::new(0., 0.01),
-            optimizers::SGD::new(0.01),
-        );
+        let init =
+            InitializerWithOptimizer::new(Uniform::new(0., 0.01), optimizers::SGD::new(0.01));
         let state_size = 200;
         Self {
             vocab_size,

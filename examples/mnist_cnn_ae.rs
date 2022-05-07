@@ -62,7 +62,7 @@ fn main() {
         );
         let y = model.call(x.clone(), false);
         save_iamges(
-            &functions::Concat::new(0).call(vec![x, y])[0],
+            &functions::concat(&[x, y], 0),
             &format!("ae_image_{}.png", train.epoch),
         );
     }

@@ -1,4 +1,3 @@
-use super::{Mul, Neg};
 use crate::*;
 
 pub fn sin(x: &Computed) -> Computed {
@@ -33,39 +32,4 @@ pub fn cos(x: &Computed) -> Computed {
     );
 
     y
-}
-
-pub struct Sin;
-
-impl Function for Sin {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert!(xs.len() == 1);
-
-        vec![xs[0].map(|x| x.sin()).into_ndarray().into()]
-    }
-
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
-        #![allow(unused_variables)]
-
-        Mul.call(vec![gys[0].clone(), Cos.call(xs.clone()).pop().unwrap()])
-    }
-}
-
-pub struct Cos;
-
-impl Function for Cos {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert!(xs.len() == 1);
-
-        vec![xs[0].map(|x| x.cos()).into_ndarray().into()]
-    }
-
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
-        #![allow(unused_variables)]
-
-        Mul.call(vec![
-            gys[0].clone(),
-            Neg.call(Sin.call(xs.clone())).pop().unwrap(),
-        ])
-    }
 }

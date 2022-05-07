@@ -1,6 +1,7 @@
 use crate::*;
 
 pub fn mat_transpose(x: &Computed) -> Computed {
+    assert!(x.shape().len() >= 2);
     let y = Computed::new(forward(&**x));
 
     chain(
@@ -17,23 +18,6 @@ pub fn mat_transpose(x: &Computed) -> Computed {
     y
 }
 
-pub struct MatTranspose;
-
-impl Function for MatTranspose {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert!(xs.len() == 1);
-        assert!(xs[0].shape().len() >= 2);
-
-        vec![forward(&xs[0]).into()]
-    }
-
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
-        #![allow(unused_variables)]
-
-        MatTranspose.call(vec![gys[0].clone()])
-    }
-}
-
 pub fn forward(x: &NDArray) -> NDArray {
     let mut axes: Vec<_> = (0..x.shape().len()).collect();
     axes[x.shape().len() - 2..].reverse();
@@ -45,7 +29,7 @@ pub fn forward(x: &NDArray) -> NDArray {
 fn test() {
     {
         let x = backprop(ndarray::Array::zeros([1, 2, 3]).into_ndarray());
-        let y = call!(MatTranspose, x);
+        let y = mat_transpose(&x);
         assert_eq!(y.shape(), &[1, 3, 2]);
 
         let grads = gradients(&[y.clone()], &[x.clone()], false);

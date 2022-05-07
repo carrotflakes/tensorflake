@@ -17,33 +17,17 @@ pub fn t(x: &Computed) -> Computed {
     y
 }
 
-pub struct T;
-
-impl Function for T {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert!(xs.len() == 1);
-
-        vec![(&*xs[0]).t().into_ndarray().into()]
-    }
-
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
-        #![allow(unused_variables)]
-
-        T.call(vec![gys[0].clone()])
-    }
-}
-
 #[test]
 fn test() {
     {
         let x = Computed::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
-        let ys = T.call(vec![x.clone()]);
-        assert_eq!(&ys[0].shape(), &[3, 2]);
+        let y = t(&x);
+        assert_eq!(&y.shape(), &[3, 2]);
     }
 
     {
         let x = Computed::new(ndarray::array![[[1., 2., 3.], [4., 5., 6.]]].into_ndarray());
-        let ys = T.call(vec![x.clone()]);
-        assert_eq!(&ys[0].shape(), &[3, 2, 1]);
+        let y = t(&x);
+        assert_eq!(&y.shape(), &[3, 2, 1]);
     }
 }

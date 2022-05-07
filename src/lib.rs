@@ -24,10 +24,3 @@ pub use ndarray;
 pub use ndarray_rand;
 
 pub type DefaultRng = rand_isaac::Isaac64Rng;
-
-#[macro_export]
-macro_rules! call {
-    ($e:expr, $($es:expr),*) => {
-        $e.call(vec![$($es.to_owned()),*]).pop().unwrap()
-    };
-}

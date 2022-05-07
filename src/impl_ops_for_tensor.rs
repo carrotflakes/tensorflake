@@ -63,7 +63,7 @@ impl Computed {
     }
 
     pub fn matmul(&self, rhs: &Computed) -> Computed {
-        functions::matmul::matmul(self, rhs)
+        functions::matmul(self, rhs)
     }
 
     pub fn pow(&self, rhs: f32) -> Computed {

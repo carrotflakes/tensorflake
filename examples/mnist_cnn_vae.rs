@@ -46,9 +46,11 @@ fn main() {
             let cross_ent = sigmoid_cross_entropy_with_logits(&x, &ys[0]);
             let reconstruct_loss = cross_ent.sum(vec![0, 1, 2, 3], false)
                 * Computed::new(scalar(1.0 / batch.len() as f32));
-            let kl_loss =
-                -log_normal_pdf(&ys[1], &Computed::new(scalar(0.0)), &Computed::new(scalar(0.0)))
-                    + log_normal_pdf(&ys[1], &ys[2], &ys[3]);
+            let kl_loss = -log_normal_pdf(
+                &ys[1],
+                &Computed::new(scalar(0.0)),
+                &Computed::new(scalar(0.0)),
+            ) + log_normal_pdf(&ys[1], &ys[2], &ys[3]);
             let loss = reconstruct_loss + kl_loss;
             // graph(&[loss.clone()], "vae");
             // panic!();
@@ -71,7 +73,7 @@ fn main() {
         let ys = model.call(&x, false);
         let y = sigmoid(&ys[0]);
         save_iamges(
-            &functions::Concat::new(0).call(vec![x, y.clone()])[0],
+            &functions::concat(&[x, y], 0),
             &format!("vae_image_{}.png", train.epoch),
         );
     }

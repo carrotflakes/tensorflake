@@ -23,33 +23,6 @@ pub fn matmul(lhs: &Computed, rhs: &Computed) -> Computed {
     y
 }
 
-pub struct Matmul;
-
-impl Function for Matmul {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert!(xs.len() == 2);
-        vec![forward(&xs[0], &xs[1]).into()]
-    }
-
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
-        #![allow(unused_variables)]
-
-        let x = xs[0].clone();
-        let w = xs[1].clone();
-        let gx = Matmul.call(vec![
-            gys[0].clone(),
-            MatTranspose.call(vec![w.clone()])[0].clone(),
-        ])[0]
-            .clone();
-        let gw = Matmul.call(vec![
-            MatTranspose.call(vec![x.clone()])[0].clone(),
-            gys[0].clone(),
-        ])[0]
-            .clone();
-        vec![gx, gw]
-    }
-}
-
 pub fn forward(x0: &NDArray, x1: &NDArray) -> NDArray {
     // let x0 = if x0.ndim() == 1 {
     //     dbg!("a", x1.shape());
@@ -178,25 +151,25 @@ fn test() {
     {
         let a = backprop(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
         let b = backprop(ndarray::array![[1., 2.], [3., 4.], [5., 6.]].into_ndarray());
-        let ys = Matmul.call(vec![a.clone(), b.clone()]);
-        assert_eq!(&ys[0].shape(), &[2, 2]);
+        let y = matmul(&a, &b);
+        assert_eq!(&y.shape(), &[2, 2]);
 
-        let _grads = gradients(&ys, &[a.clone(), b.clone()], false);
+        let _grads = gradients(&[y], &[a.clone(), b.clone()], false);
 
-        let ys = Matmul.call(vec![b.clone(), a.clone()]);
-        assert_eq!(&ys[0].shape(), &[3, 3]);
+        let y = matmul(&b, &a);
+        assert_eq!(&y.shape(), &[3, 3]);
     }
 
     {
         let a = backprop(ndarray::array![[[1., 2., 3.], [4., 5., 6.]]].into_ndarray());
         let b = backprop(ndarray::array![[[1., 2.], [3., 4.], [5., 6.]]].into_ndarray());
-        let ys = Matmul.call(vec![a.clone(), b.clone()]);
-        assert_eq!(&ys[0].shape(), &[1, 2, 2]);
+        let y = matmul(&a, &b);
+        assert_eq!(&y.shape(), &[1, 2, 2]);
 
-        let _grads = gradients(&ys, &[a.clone(), b.clone()], false);
+        let _grads = gradients(&[y], &[a.clone(), b.clone()], false);
 
-        let ys = Matmul.call(vec![b.clone(), a.clone()]);
-        assert_eq!(&ys[0].shape(), &[1, 3, 3]);
+        let y = matmul(&b, &a);
+        assert_eq!(&y.shape(), &[1, 3, 3]);
     }
 
     {
@@ -208,12 +181,12 @@ fn test() {
             NDArray::from_shape_vec(&[2, 3, 5, 4][..], (0..120).map(|x| x as f32).collect())
                 .unwrap(),
         );
-        let ys = Matmul.call(vec![a.clone(), b.clone()]);
-        assert_eq!(&ys[0].shape(), &[2, 3, 4, 4]);
+        let y = matmul(&a, &b);
+        assert_eq!(&y.shape(), &[2, 3, 4, 4]);
 
-        let _grads = gradients(&ys, &[a.clone(), b.clone()], false);
+        let _grads = gradients(&[y], &[a.clone(), b.clone()], false);
 
-        let ys = Matmul.call(vec![b.clone(), a.clone()]);
-        assert_eq!(&ys[0].shape(), &[2, 3, 5, 5]);
+        let y = matmul(&b, &a);
+        assert_eq!(&y.shape(), &[2, 3, 5, 5]);
     }
 }

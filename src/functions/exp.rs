@@ -1,4 +1,3 @@
-use super::Mul;
 use crate::*;
 
 pub fn exp(x: &Computed) -> Computed {
@@ -16,19 +15,4 @@ pub fn exp(x: &Computed) -> Computed {
     );
 
     y
-}
-
-pub struct Exp;
-
-impl Function for Exp {
-    fn forward(&self, xs: &[Computed]) -> Vec<Computed> {
-        assert!(xs.len() == 1);
-        vec![(xs[0].map(|x| x.exp())).into_ndarray().into()]
-    }
-
-    fn backward(&self, xs: &Vec<Computed>, ys: &Vec<Computed>, gys: &Vec<Computed>) -> Vec<Computed> {
-        #![allow(unused_variables)]
-
-        Mul.call(vec![gys[0].clone(), Exp.call(xs.clone()).pop().unwrap()])
-    }
 }
