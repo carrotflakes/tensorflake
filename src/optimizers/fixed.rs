@@ -17,7 +17,7 @@ impl Optimizer for Fixed {
         ()
     }
 
-    fn update(&mut self, tensor: &mut Computed, state: &mut Self::State, grad: &NDArray) {
+    fn update(&mut self, data: &mut NDArray, state: &mut Self::State, grad: &NDArray) {
         #![allow(unused_variables)]
     }
 }

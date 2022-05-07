@@ -42,13 +42,11 @@ impl Optimizer for Adam {
         }
     }
 
-    fn update(&mut self, tensor: &mut Computed, state: &mut Self::State, grad: &NDArray) {
-        tensor.unchain();
+    fn update(&mut self, data: &mut NDArray, state: &mut Self::State, grad: &NDArray) {
         state.mom = (&state.mom * self.beta1 + grad * (1.0 - self.beta1)).into_ndarray();
         state.vel =
             (&state.vel * self.beta2 + grad.map(|x| x.powi(2)) * (1.0 - self.beta2)).into_ndarray();
-        *tensor = (&**tensor
-            + &state.mom / state.vel.map(|x| x.sqrt() + EPS) * -self.learning_rate)
+        *data = (&*data + &state.mom / state.vel.map(|x| x.sqrt() + EPS) * -self.learning_rate)
             .into_ndarray()
             .into();
     }

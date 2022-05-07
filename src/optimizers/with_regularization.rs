@@ -22,9 +22,9 @@ impl<O: Optimizer, R: Regularizer> Optimizer for WithRegularization<O, R> {
         self.optimizer.new_state(shape)
     }
 
-    fn update(&mut self, tensor: &mut Computed, state: &mut Self::State, grad: &NDArray) {
-        let grad = (grad + &*self.regularizer.grad(tensor)).into_ndarray();
-        self.optimizer.update(tensor, state, &grad);
+    fn update(&mut self, data: &mut NDArray, state: &mut Self::State, grad: &NDArray) {
+        let grad = (grad + &*self.regularizer.grad(&data.clone().into())).into_ndarray();
+        self.optimizer.update(data, state, &grad);
     }
 }
 

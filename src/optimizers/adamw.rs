@@ -45,20 +45,19 @@ impl Optimizer for AdamW {
         }
     }
 
-    fn update(&mut self, tensor: &mut Computed, state: &mut Self::State, grad: &NDArray) {
-        tensor.unchain();
-        let wd = &**tensor * self.weight_decay;
+    fn update(&mut self, data: &mut NDArray, state: &mut Self::State, grad: &NDArray) {
+        let wd = &*data * self.weight_decay;
         let grad = grad + &wd;
         state.mom = (&state.mom * self.beta1 + &grad * (1.0 - self.beta1)).into_ndarray();
         state.vel =
             (&state.vel * self.beta2 + grad.map(|x| x.powi(2)) * (1.0 - self.beta2)).into_ndarray();
         let mut a =
-            &**tensor + &state.mom / state.vel.map(|x| x.sqrt() + EPS) * -self.learning_rate + &wd;
+            &*data + &state.mom / state.vel.map(|x| x.sqrt() + EPS) * -self.learning_rate + &wd;
 
         // Treat denormals as zero
         a = a.map(|x| if x.abs() < self.weight_decay { 0.0 } else { *x });
 
-        *tensor = a.into_ndarray().into();
+        *data = a.into_ndarray().into();
     }
 }
 

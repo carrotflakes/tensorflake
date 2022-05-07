@@ -30,11 +30,10 @@ impl Optimizer for MomentumSGD {
         }
     }
 
-    fn update(&mut self, tensor: &mut Computed, state: &mut Self::State, grad: &NDArray) {
-        tensor.unchain();
+    fn update(&mut self, data: &mut NDArray, state: &mut Self::State, grad: &NDArray) {
         state.velocity *= self.momentum;
         state.velocity += &grad.mul(scalar(-self.learning_rate));
-        *tensor = &*tensor + &state.velocity.clone().into();
+        *data = (&*data + &state.velocity).into_ndarray();
     }
 }
 

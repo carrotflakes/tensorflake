@@ -4,7 +4,8 @@ pub trait Regularizer: Sync + Send + 'static {
     fn loss(&self, x: &Computed) -> Computed;
 
     fn grad(&self, x: &Computed) -> Computed {
-        let loss = self.loss(x);
+        let x = backprop((**x).clone());
+        let loss = self.loss(&x);
         gradients(&[loss], &[x.clone()], false).pop().unwrap()
     }
 }
@@ -74,10 +75,7 @@ fn test() {
     let l1 = L1::new(1.0);
     let loss = l1.loss(&p.get());
     optimize(&loss);
-    assert_eq!(
-        &*p.get(),
-        &ndarray::array![0., 1., 2.].into_ndarray()
-    );
+    assert_eq!(&*p.get(), &ndarray::array![0., 1., 2.].into_ndarray());
 
     let p = Param::new(
         ndarray::array![1., 2., 3.].into_ndarray(),
@@ -87,10 +85,7 @@ fn test() {
     let l2 = L2::new(0.25);
     let loss = l2.loss(&p.get());
     optimize(&loss);
-    assert_eq!(
-        &*p.get(),
-        &ndarray::array![0.5, 1.0, 1.5].into_ndarray()
-    );
+    assert_eq!(&*p.get(), &ndarray::array![0.5, 1.0, 1.5].into_ndarray());
 
     let x = backprop(ndarray::array![-1., 1., 2.].into_ndarray());
     for r in &[
