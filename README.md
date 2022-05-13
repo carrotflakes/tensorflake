@@ -3,19 +3,29 @@
 TensorFlake is my own machine learning framework.
 This aims to be able to train several networks on the CPU fast.
 
+## Features
+
+- Automatic differentiation
+- Foundational NDArray operations
+- Foundational functions for deep neural networks
+
 ## TODO
 
 - [ ] smallvec
 - [x] backward without create_graph
 - [x] Efficient Linear -> matmul_add
-- [ ] Save & load -> param_bin.rs
-  - [ ] Save the structure -> serde?
+- [ ] Save & load
+  - [x] param_bin.rs
+  - [ ] serde
+    - [ ] Restore optimizers
+    - [ ] Restore Fn (MLP::activation, etc...)
 - [x] Strong typing -> Functional API (tensorflake::function::chain)
   - [ ] Generic for dimension
 - [x] Multi thread
   - [x] High level API
   - [x] Synchronous update
   - [x] Asynchronous update
+  - [ ] Specify the number of thread
 - [x] Impl ops
 - [ ] Lazy execution for optimization on the graph
 - [x] Regularization

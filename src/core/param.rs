@@ -32,11 +32,21 @@ impl<T: Optimizer + Clone> OptimizerStateT for SharedOptimizerState<T> {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
 struct ParamInner {
     data: NDArray,
+    #[serde(skip)]
     computed: Option<Computed>,
     name: Cow<'static, str>,
+    #[serde(skip, default = "default_optimizer_state")]
     optimizer_state: Box<dyn OptimizerStateT>,
+}
+
+fn default_optimizer_state() -> Box<dyn OptimizerStateT> {
+    Box::new(OptimizerState {
+        optimizer: crate::optimizers::Fixed,
+        state: Default::default(),
+    })
 }
 
 impl ParamInner {
@@ -59,6 +69,7 @@ impl ParamInner {
     }
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Param {
     inner: Arc<Mutex<ParamInner>>,
 }

@@ -1,6 +1,7 @@
 use super::Layer;
 use crate::{functions::*, initializers::Initializer, optimizers::Fixed, *};
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Linear {
     pub w: Param,
     pub b: Option<Param>,
