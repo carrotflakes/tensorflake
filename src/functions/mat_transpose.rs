@@ -1,8 +1,8 @@
 use crate::*;
 
-pub fn mat_transpose(x: &Computed) -> Computed {
+pub fn mat_transpose(x: &ComputedNDA) -> ComputedNDA {
     assert!(x.shape().len() >= 2);
-    let y = Computed::new(forward(&**x));
+    let y = ComputedNDA::new(forward(&**x));
 
     chain(
         &[x.clone()],

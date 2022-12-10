@@ -3,15 +3,15 @@ use crate::{functions::*, ndarray_util::as_2d, *};
 use ndarray::s;
 
 pub struct SelectNet<
-    S: Layer<Input = Computed, Output = Computed>,
-    L: Layer<Input = Computed, Output = Computed>,
+    S: Layer<Input = ComputedNDA, Output = ComputedNDA>,
+    L: Layer<Input = ComputedNDA, Output = ComputedNDA>,
 > {
     pub output_size: usize,
     pub select_layer: S,
     pub layers: Vec<L>,
 }
 
-impl<S: Layer<Input = Computed, Output = Computed>, L: Layer<Input = Computed, Output = Computed>>
+impl<S: Layer<Input = ComputedNDA, Output = ComputedNDA>, L: Layer<Input = ComputedNDA, Output = ComputedNDA>>
     SelectNet<S, L>
 {
     pub fn new(
@@ -28,7 +28,7 @@ impl<S: Layer<Input = Computed, Output = Computed>, L: Layer<Input = Computed, O
         }
     }
 
-    pub fn _call(&self, x: Computed, train: bool) -> (Computed, Computed) {
+    pub fn _call(&self, x: ComputedNDA, train: bool) -> (ComputedNDA, ComputedNDA) {
         let select = self.select_layer.call(x.clone(), train);
         let x = as_2d(&x);
         let softmax = nn::activations::softmax(&select);
@@ -46,7 +46,7 @@ impl<S: Layer<Input = Computed, Output = Computed>, L: Layer<Input = Computed, O
             let mut lys = Vec::new();
             for (j, _) in &select {
                 let layer = &self.layers[*j];
-                let ly = layer.call(Computed::new(x.slice(s![i..=i, ..]).into_ndarray()), train);
+                let ly = layer.call(ComputedNDA::new(x.slice(s![i..=i, ..]).into_ndarray()), train);
                 lys.push(ly * softmax.slice(s![i, *j]));
             }
             let lys = multi_add(&lys);
@@ -68,17 +68,17 @@ impl<S: Layer<Input = Computed, Output = Computed>, L: Layer<Input = Computed, O
     }
 }
 
-impl<S: Layer<Input = Computed, Output = Computed>, L: Layer<Input = Computed, Output = Computed>> Layer
+impl<S: Layer<Input = ComputedNDA, Output = ComputedNDA>, L: Layer<Input = ComputedNDA, Output = ComputedNDA>> Layer
     for SelectNet<S, L>
 {
-    type Input = Computed;
-    type Output = Computed;
+    type Input = ComputedNDA;
+    type Output = ComputedNDA;
 
     fn call(&self, input: Self::Input, train: bool) -> Self::Output {
         self._call(input, train).0
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         self.select_layer
             .all_params()
             .into_iter()

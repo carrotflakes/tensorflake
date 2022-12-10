@@ -45,7 +45,7 @@ fn main() {
     }
     .build()
     .fit(|batch, ctx| {
-        let x = Computed::new(
+        let x = ComputedNDA::new(
             NDArray::from_shape_vec(
                 &[batch.len(), 28 * 28][..],
                 batch

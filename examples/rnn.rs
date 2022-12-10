@@ -67,7 +67,7 @@ fn main() {
 
 pub struct Model {
     pub vocab_size: usize,
-    pub initial: Param,
+    pub initial: ParamNDA,
     pub enb: Linear,
     pub linear: Linear,
     pub output: Linear,
@@ -102,7 +102,7 @@ impl Model {
         }
     }
 
-    pub fn call(&self, x: Vec<usize>, train: bool) -> Vec<Computed> {
+    pub fn call(&self, x: Vec<usize>, train: bool) -> Vec<ComputedNDA> {
         let mut state = self.initial.get();
         let mut outputs = vec![];
         for x in x {
@@ -117,7 +117,7 @@ impl Model {
         outputs
     }
 
-    pub fn all_params(&self) -> Vec<Param> {
+    pub fn all_params(&self) -> Vec<ParamNDA> {
         self.enb
             .all_params()
             .into_iter()
@@ -126,7 +126,7 @@ impl Model {
     }
 }
 
-fn graph(vars: &[Computed], name: impl ToString) {
+fn graph(vars: &[ComputedNDA], name: impl ToString) {
     let f = std::fs::File::create(name.to_string() + ".dot").unwrap();
     let mut w = std::io::BufWriter::new(f);
     tensorflake::export_dot::write_dot(&mut w, vars, &mut |v| {

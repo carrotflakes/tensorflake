@@ -8,9 +8,9 @@ use super::Cell;
 pub struct Gru {
     pub input_size: usize,
     pub state_size: usize,
-    pub ws: [Param; 3],
-    pub us: [Param; 3],
-    pub bs: [Param; 3],
+    pub ws: [ParamNDA; 3],
+    pub us: [ParamNDA; 3],
+    pub bs: [ParamNDA; 3],
 }
 
 impl Gru {
@@ -54,8 +54,8 @@ impl Gru {
 }
 
 impl Layer for Gru {
-    type Input = (Computed, Computed);
-    type Output = Computed;
+    type Input = (ComputedNDA, ComputedNDA);
+    type Output = ComputedNDA;
 
     fn call(&self, input: Self::Input, _train: bool) -> Self::Output {
         let (x, state) = input;
@@ -69,7 +69,7 @@ impl Layer for Gru {
                 + state.matmul(&self.us[1].get())
                 + self.bs[1].get()),
         );
-        let state = (Computed::new(NDArray::ones(z.shape())) - z.clone()) * state.clone()
+        let state = (ComputedNDA::new(NDArray::ones(z.shape())) - z.clone()) * state.clone()
             + z * tanh(
                 &(x.matmul(&self.ws[2].get())
                     + (r * state).matmul(&self.us[2].get())
@@ -78,7 +78,7 @@ impl Layer for Gru {
         state
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         self.ws
             .iter()
             .chain(self.us.iter())
@@ -89,17 +89,17 @@ impl Layer for Gru {
 }
 
 impl Cell for Gru {
-    type State = Computed;
+    type State = ComputedNDA;
 
     fn initial_state(&self, batch_size: usize) -> Self::State {
-        Computed::new(NDArray::zeros(&[batch_size, self.state_size][..]))
+        ComputedNDA::new(NDArray::zeros(&[batch_size, self.state_size][..]))
     }
 
     fn get_input_size(&self) -> usize {
         self.input_size
     }
 
-    fn step(&self, x: Computed, state: Self::State) -> (Self::State, Computed) {
+    fn step(&self, x: ComputedNDA, state: Self::State) -> (Self::State, ComputedNDA) {
         let state = self.call((x, state), false);
         (state.clone(), state)
     }

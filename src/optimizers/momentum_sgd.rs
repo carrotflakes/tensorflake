@@ -21,7 +21,7 @@ impl MomentumSGD {
     }
 }
 
-impl Optimizer for MomentumSGD {
+impl Optimizer<NDArray> for MomentumSGD {
     type State = State;
 
     fn new_state(&self, shape: &[usize]) -> Self::State {

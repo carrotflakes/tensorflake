@@ -1,8 +1,8 @@
 use crate::*;
 
-pub fn reshape(x: &Computed, shape: impl Into<Vec<usize>>) -> Computed {
+pub fn reshape(x: &ComputedNDA, shape: impl Into<Vec<usize>>) -> ComputedNDA {
     let shape = shape.into();
-    let y = Computed::new((**x).reshape(shape.as_slice()));
+    let y = ComputedNDA::new((**x).reshape(shape.as_slice()));
 
     chain(
         &[x.clone()],

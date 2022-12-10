@@ -3,10 +3,10 @@ use ndarray::{Axis, IxDyn, SliceInfo, SliceInfoElem};
 use crate::functions::*;
 use crate::*;
 
-pub fn concat(xs: &[Computed], axis: usize) -> Computed {
+pub fn concat(xs: &[ComputedNDA], axis: usize) -> ComputedNDA {
     let y =
         ndarray::concatenate(Axis(axis), &xs.iter().map(|x| x.view()).collect::<Vec<_>>()).unwrap();
-    let y = Computed::new(y.into_ndarray());
+    let y = ComputedNDA::new(y.into_ndarray());
 
     chain(xs, &[y.clone()], false, "concat", move |xs, _ys, gys| {
         let gy = &gys[0];

@@ -1,11 +1,11 @@
 use crate::*;
 
-pub trait Layer: Sync + Send + 'static {
+pub trait Layer: 'static {
     type Input;
     type Output;
 
     fn call(&self, input: Self::Input, train: bool) -> Self::Output;
-    fn all_params(&self) -> Vec<Param>;
+    fn all_params(&self) -> Vec<ParamNDA>;
 
     fn name(&self) -> &'static str {
         let name = std::any::type_name::<Self>();
@@ -49,7 +49,7 @@ impl<T: Layer, U: Layer<Input = T::Output>> Layer for Then<T, U> {
         self.second.call(self.first.call(x, train), train)
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         self.first
             .all_params()
             .into_iter()
@@ -68,7 +68,7 @@ impl<I: 'static, O: 'static> Layer for FnAsLayer<I, O> {
         (self.0)(&x)
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         vec![]
     }
 }
@@ -81,7 +81,7 @@ fn test() {
     );
     let l1 = nn::Linear::new(2, 3, init.clone(), Some(init.clone()));
     let l2 = nn::Linear::new(3, 2, init.clone(), Some(init.clone()));
-    let fnn: &dyn Layer<Input = Computed, Output = Computed> =
+    let fnn: &dyn Layer<Input = ComputedNDA, Output = ComputedNDA> =
         &l1.then_fn(&nn::activations::relu).then(l2);
     let y = fnn.call(backprop(NDArray::ones(&[1, 2][..])), false);
     assert_eq!(y.shape(), &[1, 2]);

@@ -1,7 +1,7 @@
 use crate::{functions::sum_axes_to_desire, *};
 
-pub fn sub(lhs: &Computed, rhs: &Computed) -> Computed {
-    let y = Computed::new((&**lhs - &**rhs).into_ndarray());
+pub fn sub(lhs: &ComputedNDA, rhs: &ComputedNDA) -> ComputedNDA {
+    let y = ComputedNDA::new((&**lhs - &**rhs).into_ndarray());
 
     chain(
         &[lhs.clone(), rhs.clone()],

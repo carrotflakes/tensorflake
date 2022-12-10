@@ -6,13 +6,13 @@ use crate::ndarray_util::onehot;
 use crate::nn::activations::{relu, softmax};
 use crate::*;
 
-pub fn naive_mean_squared_error(x0: Computed, x1: Computed) -> Computed {
+pub fn naive_mean_squared_error(x0: ComputedNDA, x1: ComputedNDA) -> ComputedNDA {
     let x = (x0 - x1).pow(2.0);
     x.sum(Vec::from_iter(0..x.ndim()), false)
-        / Computed::new(scalar(x.shape().iter().product::<usize>() as f32))
+        / ComputedNDA::new(scalar(x.shape().iter().product::<usize>() as f32))
 }
 
-pub fn softmax_cross_entropy(t: Vec<usize>, x: &Computed) -> Computed {
+pub fn softmax_cross_entropy(t: Vec<usize>, x: &ComputedNDA) -> ComputedNDA {
     let n = x.shape().iter().take(x.ndim() - 1).product();
     let log_z = log_sum_exp(&*x);
     let log_p = x.to_shape((n, x.shape()[x.ndim() - 1])).unwrap();
@@ -20,7 +20,7 @@ pub fn softmax_cross_entropy(t: Vec<usize>, x: &Computed) -> Computed {
     for i in 0..n {
         y -= log_p[[i, t[i]]] - log_z[i];
     }
-    let y = Computed::new(scalar(y / n as f32));
+    let y = ComputedNDA::new(scalar(y / n as f32));
 
     chain(
         &[x.clone()],
@@ -30,9 +30,9 @@ pub fn softmax_cross_entropy(t: Vec<usize>, x: &Computed) -> Computed {
         move |xs, _ys, gys| {
             let n: usize = xs[0].shape().iter().take(xs[0].ndim() - 1).product();
             let class_num = xs[0].shape()[xs[0].ndim() - 1];
-            let gy = &gys[0] * &Computed::new(scalar(1.0 / n as f32));
+            let gy = &gys[0] * &ComputedNDA::new(scalar(1.0 / n as f32));
             let y = softmax(&xs[0]);
-            let t_onehot = Computed::new(
+            let t_onehot = ComputedNDA::new(
                 onehot(&Array1::from(t.clone()), class_num)
                     .into_shape(y.shape())
                     .unwrap(),
@@ -56,10 +56,10 @@ fn test_softmax_cross_entropy() {
 }
 
 pub fn softmax_cross_entropy_with_logits(
-    labels: &Computed,
-    logits: &Computed,
+    labels: &ComputedNDA,
+    logits: &ComputedNDA,
     axis: usize,
-) -> Computed {
+) -> ComputedNDA {
     let x = softmax(logits);
     let y = -(labels * &x.log()).sum([axis], false);
 
@@ -75,7 +75,7 @@ pub fn softmax_cross_entropy_with_logits(
             shape[axis] = 1;
             let n: usize = shape.iter().product();
 
-            let gy = gy.reshape(shape) / Computed::new(scalar(n as f32));
+            let gy = gy.reshape(shape) / ComputedNDA::new(scalar(n as f32));
             let g_logits = &(&x - labels) * &gy;
             let g_labels = -(&x.log() * &gy);
             vec![g_labels, g_logits]
@@ -96,8 +96,8 @@ fn test_softmax_cross_entropy_with_logits() {
     dbg!(&*grads[0]);
 }
 
-pub fn sigmoid_cross_entropy_with_logits(labels: &Computed, logits: &Computed) -> Computed {
-    relu(logits) - logits * labels + (Computed::new(scalar(1.0)) + (-logits.abs()).exp()).log()
+pub fn sigmoid_cross_entropy_with_logits(labels: &ComputedNDA, logits: &ComputedNDA) -> ComputedNDA {
+    relu(logits) - logits * labels + (ComputedNDA::new(scalar(1.0)) + (-logits.abs()).exp()).log()
 }
 
 // max(x) + log(sum(exp(x - max(x))))

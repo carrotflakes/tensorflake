@@ -3,14 +3,14 @@ use std::sync::{Arc, Mutex};
 use super::FunctionCall;
 
 #[derive(Clone)]
-pub(crate) struct ComputedAttrs {
+pub(crate) struct ComputedAttrs<T> {
     pub name: String,
-    pub creator: Option<Arc<FunctionCall>>,
+    pub creator: Option<Arc<FunctionCall<T>>>,
 }
 
 pub(crate) struct ComputedInner<T> {
     pub data: T,
-    pub attrs: Mutex<ComputedAttrs>,
+    pub attrs: Mutex<ComputedAttrs<T>>,
 }
 
 pub struct Computed<T> {

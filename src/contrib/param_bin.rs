@@ -2,7 +2,7 @@ use std::io::{Read, Write};
 
 use crate::*;
 
-pub fn export_to_file(params: &[Param], path: &str) {
+pub fn export_to_file(params: &[ParamNDA], path: &str) {
     let f = std::fs::File::create(path).unwrap();
     let mut writer = std::io::BufWriter::new(f);
     for param in params {
@@ -19,7 +19,7 @@ pub fn export_to_file(params: &[Param], path: &str) {
     }
 }
 
-pub fn import_from_file(params: &mut [Param], path: &str) {
+pub fn import_from_file(params: &mut [ParamNDA], path: &str) {
     let f = std::fs::File::open(path).unwrap();
     let mut reader = std::io::BufReader::new(f);
     let mut buf = [0u8; 4];
@@ -40,7 +40,7 @@ pub fn import_from_file(params: &mut [Param], path: &str) {
     }
 }
 
-pub fn params_summary(params: &[Param]) {
+pub fn params_summary(params: &[ParamNDA]) {
     let mut total_size = 0;
     for (i, param) in params.iter().enumerate() {
         let shape = param.get().shape().to_vec();
@@ -59,8 +59,8 @@ fn test() {
         NDArray::from_shape_vec(vec![3, 4], (0..12).map(|x| x as f32).collect()).unwrap(),
     ];
     let mut params = vec![
-        Param::new(ndarrays[0].clone(), "param_0".into(), Fixed),
-        Param::new(ndarrays[1].clone(), "param_1".into(), Fixed),
+        ParamNDA::new(ndarrays[0].clone(), "param_0".into(), Fixed),
+        ParamNDA::new(ndarrays[1].clone(), "param_1".into(), Fixed),
     ];
     let path = "/tmp/tensorflake_param_bin_test.bin";
     export_to_file(&params, path);

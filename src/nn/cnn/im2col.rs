@@ -28,11 +28,11 @@ impl Im2col {
 }
 
 impl Layer for Im2col {
-    type Input = Computed;
-    type Output = Computed;
+    type Input = ComputedNDA;
+    type Output = ComputedNDA;
 
     fn call(&self, input: Self::Input, _train: bool) -> Self::Output {
-        let y = Computed::new(im2col(
+        let y = ComputedNDA::new(im2col(
             &*input,
             self.kernel_size,
             self.stride,
@@ -59,7 +59,7 @@ impl Layer for Im2col {
         y
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         Vec::new()
     }
 }
@@ -91,11 +91,11 @@ impl Col2im {
 }
 
 impl Layer for Col2im {
-    type Input = Computed;
-    type Output = Computed;
+    type Input = ComputedNDA;
+    type Output = ComputedNDA;
 
     fn call(&self, input: Self::Input, _train: bool) -> Self::Output {
-        let y = Computed::new(col2im(
+        let y = ComputedNDA::new(col2im(
             &*input,
             self.input_shape,
             self.kernel_size,
@@ -117,7 +117,7 @@ impl Layer for Col2im {
         y
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         Vec::new()
     }
 }

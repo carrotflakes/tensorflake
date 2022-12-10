@@ -2,7 +2,7 @@ use ndarray::s;
 
 use crate::*;
 
-pub fn argmax_accuracy(t: &[usize], y: &Computed) -> Accuracy {
+pub fn argmax_accuracy(t: &[usize], y: &ComputedNDA) -> Accuracy {
     let y = y
         .view()
         .into_shape([

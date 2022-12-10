@@ -8,9 +8,9 @@ use super::Cell;
 pub struct Lstm {
     pub input_size: usize,
     pub state_size: usize,
-    pub ws: [Param; 4],
-    pub us: [Param; 4],
-    pub bs: [Param; 4],
+    pub ws: [ParamNDA; 4],
+    pub us: [ParamNDA; 4],
+    pub bs: [ParamNDA; 4],
 }
 
 impl Lstm {
@@ -45,8 +45,8 @@ impl Lstm {
 }
 
 impl Layer for Lstm {
-    type Input = (Computed, [Computed; 2]);
-    type Output = ([Computed; 2], Computed);
+    type Input = (ComputedNDA, [ComputedNDA; 2]);
+    type Output = ([ComputedNDA; 2], ComputedNDA);
 
     fn call(&self, input: Self::Input, _train: bool) -> Self::Output {
         let (x, state) = input;
@@ -76,7 +76,7 @@ impl Layer for Lstm {
         ([c, h.clone()], h)
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         self.ws
             .iter()
             .chain(self.us.iter())
@@ -87,12 +87,12 @@ impl Layer for Lstm {
 }
 
 impl Cell for Lstm {
-    type State = [Computed; 2];
+    type State = [ComputedNDA; 2];
 
     fn initial_state(&self, batch_size: usize) -> Self::State {
         [
-            Computed::new(NDArray::zeros(&[batch_size, self.state_size][..])),
-            Computed::new(NDArray::zeros(&[batch_size, self.state_size][..])),
+            ComputedNDA::new(NDArray::zeros(&[batch_size, self.state_size][..])),
+            ComputedNDA::new(NDArray::zeros(&[batch_size, self.state_size][..])),
         ]
     }
 
@@ -100,7 +100,7 @@ impl Cell for Lstm {
         self.input_size
     }
 
-    fn step(&self, x: Computed, state: Self::State) -> (Self::State, Computed) {
+    fn step(&self, x: ComputedNDA, state: Self::State) -> (Self::State, ComputedNDA) {
         self.call((x, state), false)
     }
 }

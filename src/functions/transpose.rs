@@ -1,10 +1,10 @@
 use crate::*;
 
-pub fn transpose(x: &Computed, axes: impl Into<Vec<usize>>) -> Computed {
+pub fn transpose(x: &ComputedNDA, axes: impl Into<Vec<usize>>) -> ComputedNDA {
     let axes = axes.into();
     assert!((0..axes.len()).all(|i| axes.contains(&i)));
 
-    let y = Computed::new(x.view().permuted_axes(&*axes).into_ndarray());
+    let y = ComputedNDA::new(x.view().permuted_axes(&*axes).into_ndarray());
 
     chain(
         &[x.clone()],

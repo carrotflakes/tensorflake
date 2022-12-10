@@ -1,14 +1,14 @@
-use std::{borrow::Cow, sync::Arc};
+use std::{borrow::Cow, marker::PhantomData, sync::Arc};
 
 use super::{Computed, FunctionCall};
 
-pub trait Backward: Sync + Send + 'static {
+pub trait Backward<T>: Sync + Send + 'static {
     fn backward(
         &self,
-        xs: &Vec<Computed>,
-        ys: &Vec<Computed>,
-        gys: &Vec<Computed>,
-    ) -> Vec<Computed>;
+        xs: &Vec<Computed<T>>,
+        ys: &Vec<Computed<T>>,
+        gys: &Vec<Computed<T>>,
+    ) -> Vec<Computed<T>>;
 
     fn get_function_name(&self) -> Cow<'static, str> {
         let name = std::any::type_name::<Self>();
@@ -28,22 +28,31 @@ pub trait Backward: Sync + Send + 'static {
 }
 
 struct FnBackward<
-    F: Fn(&Vec<Computed>, &Vec<Computed>, &Vec<Computed>) -> Vec<Computed> + Sync + Send + 'static,
+    T: Sync + Send + 'static,
+    F: Fn(&Vec<Computed<T>>, &Vec<Computed<T>>, &Vec<Computed<T>>) -> Vec<Computed<T>>
+        + Sync
+        + Send
+        + 'static,
 > {
     f: F,
     name: &'static str,
+    _t: PhantomData<T>,
 }
 
 impl<
-        F: Fn(&Vec<Computed>, &Vec<Computed>, &Vec<Computed>) -> Vec<Computed> + Sync + Send + 'static,
-    > Backward for FnBackward<F>
+        T: Sync + Send + 'static,
+        F: Fn(&Vec<Computed<T>>, &Vec<Computed<T>>, &Vec<Computed<T>>) -> Vec<Computed<T>>
+            + Sync
+            + Send
+            + 'static,
+    > Backward<T> for FnBackward<T, F>
 {
     fn backward(
         &self,
-        xs: &Vec<Computed>,
-        ys: &Vec<Computed>,
-        gys: &Vec<Computed>,
-    ) -> Vec<Computed> {
+        xs: &Vec<Computed<T>>,
+        ys: &Vec<Computed<T>>,
+        gys: &Vec<Computed<T>>,
+    ) -> Vec<Computed<T>> {
         (self.f)(xs, ys, gys)
     }
 
@@ -52,18 +61,22 @@ impl<
     }
 }
 
-pub fn chain(
-    xs: &[Computed],
-    ys: &[Computed],
+pub fn chain<T: Sync + Send + 'static>(
+    xs: &[Computed<T>],
+    ys: &[Computed<T>],
     force_create_graph: bool,
     name: &'static str,
-    backward: impl Fn(&Vec<Computed>, &Vec<Computed>, &Vec<Computed>) -> Vec<Computed>
+    backward: impl Fn(&Vec<Computed<T>>, &Vec<Computed<T>>, &Vec<Computed<T>>) -> Vec<Computed<T>>
         + Sync
         + Send
         + 'static,
 ) {
     if force_create_graph || xs.iter().any(|x| x.has_creator()) {
-        let backward = Box::new(FnBackward { f: backward, name });
+        let backward = Box::new(FnBackward {
+            f: backward,
+            name,
+            _t: Default::default(),
+        });
         let fc = FunctionCall::new(backward, xs.to_vec(), &ys);
         let fc = Arc::new(fc);
         for y in ys {

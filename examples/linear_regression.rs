@@ -8,8 +8,8 @@ fn main() {
 
     // make dataset
     let x =
-        Computed::new(Array::random_using((n, 1, 1), Uniform::new(0., 1.), &mut rng).into_ndarray());
-    let y = (&x * &Computed::new(scalar(2.0))) + Computed::new(Array::zeros((n, 1, 1)).into_ndarray());
+        ComputedNDA::new(Array::random_using((n, 1, 1), Uniform::new(0., 1.), &mut rng).into_ndarray());
+    let y = (&x * &ComputedNDA::new(scalar(2.0))) + ComputedNDA::new(Array::zeros((n, 1, 1)).into_ndarray());
 
     // dbg!(&*x);
     // dbg!(&*y);
@@ -17,7 +17,7 @@ fn main() {
     let mut w = backprop(ndarray::array![[[0.0]]].into_ndarray()).named("w");
     let mut b = backprop(ndarray::array![0.0].into_ndarray()).named("b");
 
-    let predict = |w: Computed, b: Computed, x: Computed| matmul_add(&x, &w.broadcast(vec![n, 1, 1]), &b);
+    let predict = |w: ComputedNDA, b: ComputedNDA, x: ComputedNDA| matmul_add(&x, &w.broadcast(vec![n, 1, 1]), &b);
 
     for i in 0..100 {
         let y_ = predict(w.clone(), b.clone(), x.clone());
@@ -38,7 +38,7 @@ fn main() {
     }
 }
 
-fn graph(vars: &[Computed]) {
+fn graph(vars: &[ComputedNDA]) {
     let f = std::fs::File::create("graph.dot").unwrap();
     let mut w = std::io::BufWriter::new(f);
     tensorflake::export_dot::write_dot(&mut w, vars, &mut |v| {

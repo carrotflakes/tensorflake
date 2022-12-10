@@ -2,11 +2,11 @@ use super::im2col::{get_conv_outsize, Im2col};
 use crate::{functions::*, *};
 
 pub fn naive_max_pooling(
-    x: &Computed,
+    x: &ComputedNDA,
     kernel_size: [usize; 2],
     stride: [usize; 2],
     pad: [usize; 2],
-) -> Computed {
+) -> ComputedNDA {
     let x_shape = x.shape();
     let [kh, kw] = kernel_size;
     let oh = get_conv_outsize(x_shape[2], kernel_size[0], stride[0], pad[0]);
@@ -36,11 +36,11 @@ fn test_naive_max_pooling() {
 }
 
 pub fn naive_sum_pooling(
-    x: &Computed,
+    x: &ComputedNDA,
     kernel_size: [usize; 2],
     stride: [usize; 2],
     pad: [usize; 2],
-) -> Computed {
+) -> ComputedNDA {
     let x_shape = x.shape();
     let [kh, kw] = kernel_size;
     let oh = get_conv_outsize(x_shape[2], kernel_size[0], stride[0], pad[0]);

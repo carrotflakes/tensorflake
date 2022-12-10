@@ -90,8 +90,8 @@ impl Model {
         }
     }
 
-    pub fn call(&self, x: NDArray, train: bool) -> Computed {
-        let y = self.conv1.call(Computed::new(x), train);
+    pub fn call(&self, x: NDArray, train: bool) -> ComputedNDA {
+        let y = self.conv1.call(ComputedNDA::new(x), train);
         // let y = naive_max_pooling(&y, [2, 2], [2, 2], [0, 0]);
         let y = relu(&y);
         let y = self.conv2.call(y, train);
@@ -101,7 +101,7 @@ impl Model {
         y
     }
 
-    pub fn all_params(&self) -> Vec<Param> {
+    pub fn all_params(&self) -> Vec<ParamNDA> {
         self.conv1
             .all_params()
             .into_iter()
@@ -160,8 +160,8 @@ impl BigModel {
         }
     }
 
-    pub fn call(&self, x: NDArray, train: bool) -> Computed {
-        let x = Computed::new(x);
+    pub fn call(&self, x: NDArray, train: bool) -> ComputedNDA {
+        let x = ComputedNDA::new(x);
         let y = self.conv1.call(x, train);
         let y = relu(&y);
         let y = self.conv2.call(y, train);
@@ -175,7 +175,7 @@ impl BigModel {
         y
     }
 
-    pub fn all_params(&self) -> Vec<Param> {
+    pub fn all_params(&self) -> Vec<ParamNDA> {
         self.conv1
             .all_params()
             .into_iter()

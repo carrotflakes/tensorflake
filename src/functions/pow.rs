@@ -1,7 +1,7 @@
 use crate::*;
 
-pub fn pow(x: &Computed, a: f32) -> Computed {
-    let y = Computed::new((**x).map(|x| x.powf(a)).into_ndarray());
+pub fn pow(x: &ComputedNDA, a: f32) -> ComputedNDA {
+    let y = ComputedNDA::new((**x).map(|x| x.powf(a)).into_ndarray());
 
     chain(
         &[x.clone()],
@@ -9,7 +9,7 @@ pub fn pow(x: &Computed, a: f32) -> Computed {
         false,
         "pow",
         move |xs, _ys, gys| {
-            let gx = &gys[0] * &xs[0].pow(a - 1.0) * Computed::new(scalar(a));
+            let gx = &gys[0] * &xs[0].pow(a - 1.0) * ComputedNDA::new(scalar(a));
             vec![gx]
         },
     );

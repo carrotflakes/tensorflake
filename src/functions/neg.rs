@@ -1,7 +1,7 @@
 use crate::*;
 
-pub fn neg(x: &Computed) -> Computed {
-    let y = Computed::new((-&**x).into_ndarray());
+pub fn neg(x: &ComputedNDA) -> ComputedNDA {
+    let y = ComputedNDA::new((-&**x).into_ndarray());
 
     chain(
         &[x.clone()],

@@ -1,9 +1,9 @@
 use crate::*;
 
 pub trait Regularizer: Sync + Send + 'static {
-    fn loss(&self, x: &Computed) -> Computed;
+    fn loss(&self, x: &ComputedNDA) -> ComputedNDA;
 
-    fn grad(&self, x: &Computed) -> Computed {
+    fn grad(&self, x: &ComputedNDA) -> ComputedNDA {
         let x = backprop((**x).clone());
         let loss = self.loss(&x);
         gradients(&[loss], &[x.clone()], false).pop().unwrap()
@@ -22,7 +22,7 @@ impl L1 {
 }
 
 impl Regularizer for L1 {
-    fn loss(&self, input: &Computed) -> Computed {
+    fn loss(&self, input: &ComputedNDA) -> ComputedNDA {
         input.abs().sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l1).into()
     }
 }
@@ -39,7 +39,7 @@ impl L2 {
 }
 
 impl Regularizer for L2 {
-    fn loss(&self, input: &Computed) -> Computed {
+    fn loss(&self, input: &ComputedNDA) -> ComputedNDA {
         input.pow(2.0).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l2).into()
     }
 }
@@ -57,7 +57,7 @@ impl L1L2 {
 }
 
 impl Regularizer for L1L2 {
-    fn loss(&self, input: &Computed) -> Computed {
+    fn loss(&self, input: &ComputedNDA) -> ComputedNDA {
         input.abs().sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l1).into()
             + input.pow(2.0).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l2).into()
     }
@@ -67,7 +67,7 @@ impl Regularizer for L1L2 {
 fn test() {
     use crate::*;
 
-    let p = Param::new(
+    let p = ParamNDA::new(
         ndarray::array![1., 2., 3.].into_ndarray(),
         "param".into(),
         optimizers::SGD::new(1.0),
@@ -77,7 +77,7 @@ fn test() {
     optimize(&loss);
     assert_eq!(&*p.get(), &ndarray::array![0., 1., 2.].into_ndarray());
 
-    let p = Param::new(
+    let p = ParamNDA::new(
         ndarray::array![1., 2., 3.].into_ndarray(),
         "param".into(),
         optimizers::SGD::new(1.0),

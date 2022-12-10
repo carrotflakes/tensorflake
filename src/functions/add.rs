@@ -2,8 +2,8 @@ use crate::*;
 
 use super::sum_axes_to_desire;
 
-pub fn add(a: &Computed, b: &Computed) -> Computed {
-    let y = Computed::new((&**a + &**b).into_ndarray());
+pub fn add(a: &ComputedNDA, b: &ComputedNDA) -> ComputedNDA {
+    let y = ComputedNDA::new((&**a + &**b).into_ndarray());
 
     chain(
         &[a.clone(), b.clone()],
@@ -29,12 +29,12 @@ pub fn add(a: &Computed, b: &Computed) -> Computed {
     y
 }
 
-pub fn multi_add(xs: &[Computed]) -> Computed {
+pub fn multi_add(xs: &[ComputedNDA]) -> ComputedNDA {
     let mut y = (*xs[0]).clone();
     for x in xs.iter().skip(1) {
         y = y + &**x;
     }
-    let y = Computed::new(y);
+    let y = ComputedNDA::new(y);
 
     chain(xs, &[y.clone()], false, "multi_add", |xs, _ys, gys| {
         xs.iter()

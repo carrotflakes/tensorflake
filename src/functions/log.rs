@@ -1,7 +1,7 @@
 use crate::*;
 
-pub fn log(x: &Computed) -> Computed {
-    let y = Computed::new(x.map(|x| x.ln()).into_ndarray());
+pub fn log(x: &ComputedNDA) -> ComputedNDA {
+    let y = ComputedNDA::new(x.map(|x| x.ln()).into_ndarray());
 
     chain(
         &[x.clone()],

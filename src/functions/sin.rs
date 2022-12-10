@@ -1,7 +1,7 @@
 use crate::*;
 
-pub fn sin(x: &Computed) -> Computed {
-    let y = Computed::new((**x).map(|x| x.sin()).into_ndarray());
+pub fn sin(x: &ComputedNDA) -> ComputedNDA {
+    let y = ComputedNDA::new((**x).map(|x| x.sin()).into_ndarray());
 
     chain(
         &[x.clone()],
@@ -17,8 +17,8 @@ pub fn sin(x: &Computed) -> Computed {
     y
 }
 
-pub fn cos(x: &Computed) -> Computed {
-    let y = Computed::new((**x).map(|x| x.cos()).into_ndarray());
+pub fn cos(x: &ComputedNDA) -> ComputedNDA {
+    let y = ComputedNDA::new((**x).map(|x| x.cos()).into_ndarray());
 
     chain(
         &[x.clone()],

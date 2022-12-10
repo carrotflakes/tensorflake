@@ -62,7 +62,7 @@ fn main() {
         Some(init_bias.scope("out_proj_b")),
     );
     // let output_fn = |x: Tensor| linear.call(x, true);
-    let output_fn = |x: Computed| linear.call(norm.call(x, true), true);
+    let output_fn = |x: ComputedNDA| linear.call(norm.call(x, true), true);
 
     let start = std::time::Instant::now();
 
@@ -118,7 +118,7 @@ fn main() {
 
         let y = model.decode(
             model.initial_state(1),
-            Computed::new(NDArray::random_using(
+            ComputedNDA::new(NDArray::random_using(
                 &[1, embedding_size][..],
                 Uniform::new(0.0, 1.0),
                 &mut rand_isaac::Isaac64Rng::seed_from_u64(42),
@@ -140,7 +140,7 @@ fn main() {
 }
 
 #[allow(dead_code)]
-fn graph(vars: &[Computed], name: impl ToString) {
+fn graph(vars: &[ComputedNDA], name: impl ToString) {
     let f = std::fs::File::create(name.to_string() + ".dot").unwrap();
     let mut w = std::io::BufWriter::new(f);
     tensorflake::export_dot::write_dot(&mut w, vars, &mut |v| {

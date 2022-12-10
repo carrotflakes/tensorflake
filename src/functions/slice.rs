@@ -5,11 +5,11 @@ use ndarray::{IxDyn, SliceArg};
 use crate::*;
 
 pub fn slice<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static>(
-    x: &Computed,
+    x: &ComputedNDA,
     slice_arg: I,
-) -> Computed {
+) -> ComputedNDA {
     let y = (&**x).slice(slice_arg.clone());
-    let y = Computed::new(y.into_ndarray());
+    let y = ComputedNDA::new(y.into_ndarray());
 
     chain(
         &[x.clone()],
@@ -21,7 +21,7 @@ pub fn slice<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static>(
             let mut gx = NDArray::zeros(x.shape()); // TODO: Too large tensor!
             gx.slice_mut(slice_arg.clone())
                 .assign(&(*gys[0]).reshape(ys[0].shape()));
-            vec![Computed::new(gx)]
+            vec![ComputedNDA::new(gx)]
         },
     );
 
@@ -30,9 +30,9 @@ pub fn slice<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static>(
 }
 
 pub fn slices<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static>(
-    x: &Computed,
+    x: &ComputedNDA,
     slice_args: Vec<I>,
-) -> Vec<Computed> {
+) -> Vec<ComputedNDA> {
     let xa = &**x;
     let ys: Vec<_> = slice_args
         .iter()
@@ -46,7 +46,7 @@ pub fn slices<I: SliceArg<IxDyn> + Clone + Sync + Send + 'static>(
             gx.slice_mut(slice_args[i].clone())
                 .add_assign(&(*gys[i]).reshape(ys[i].shape()));
         }
-        vec![Computed::new(gx)]
+        vec![ComputedNDA::new(gx)]
     });
 
     ys

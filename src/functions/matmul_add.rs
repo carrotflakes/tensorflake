@@ -1,10 +1,10 @@
 use crate::functions::*;
 use crate::*;
 
-pub fn matmul_add(x0: &Computed, x1: &Computed, x2: &Computed) -> Computed {
+pub fn matmul_add(x0: &ComputedNDA, x1: &ComputedNDA, x2: &ComputedNDA) -> ComputedNDA {
     let y = matmul::forward(&x0, &x1);
     let y = y + &**x2;
-    let y = Computed::new(y);
+    let y = ComputedNDA::new(y);
 
     chain(
         &[x0.clone(), x1.clone(), x2.clone()],

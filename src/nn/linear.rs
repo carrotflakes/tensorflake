@@ -3,8 +3,8 @@ use crate::{functions::*, initializers::Initializer, optimizers::Fixed, *};
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct Linear {
-    pub w: Param,
-    pub b: Option<Param>,
+    pub w: ParamNDA,
+    pub b: Option<ParamNDA>,
 }
 
 impl Linear {
@@ -22,7 +22,7 @@ impl Linear {
 
     pub fn build(&self) -> Self {
         Self {
-            w: Param::new(
+            w: ParamNDA::new(
                 (*self.w.get()).clone(),
                 self.w.get_function_name(),
                 Fixed,
@@ -30,14 +30,14 @@ impl Linear {
             b: self
                 .b
                 .as_ref()
-                .map(|b| Param::new((*b.get()).clone(), self.w.get_function_name(), Fixed)),
+                .map(|b| ParamNDA::new((*b.get()).clone(), self.w.get_function_name(), Fixed)),
         }
     }
 }
 
 impl Layer for Linear {
-    type Input = Computed;
-    type Output = Computed;
+    type Input = ComputedNDA;
+    type Output = ComputedNDA;
 
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output {
         if let Some(b) = &self.b {
@@ -47,7 +47,7 @@ impl Layer for Linear {
         }
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         [self.w.clone()].into_iter().chain(self.b.clone()).collect()
     }
 }

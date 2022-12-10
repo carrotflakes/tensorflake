@@ -2,7 +2,7 @@ use ndarray::Axis;
 
 use crate::*;
 
-pub fn sum(x: &Computed, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Computed {
+pub fn sum(x: &ComputedNDA, axes: impl Into<Vec<usize>>, keep_dim: bool) -> ComputedNDA {
     let axes = axes.into();
     let mut y = (**x).to_owned();
     for axis in axes.iter().rev() {
@@ -11,7 +11,7 @@ pub fn sum(x: &Computed, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Compute
             y.insert_axis_inplace(Axis(*axis));
         }
     }
-    let y = Computed::new(y.into_ndarray());
+    let y = ComputedNDA::new(y.into_ndarray());
 
     chain(
         &[x.clone()],
@@ -50,14 +50,14 @@ fn test_sum_axes_to_desire() {
 #[test]
 fn test() {
     {
-        let x = Computed::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
+        let x = ComputedNDA::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
         let y = sum(&x, vec![0], false);
         assert_eq!(y.shape(), &[3]);
         assert_eq!(&*y, &ndarray::array![5., 7., 9.].into_ndarray());
     }
 
     {
-        let x = Computed::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
+        let x = ComputedNDA::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
         let y = sum(&x, vec![1], false);
         assert_eq!(y.shape(), &[2]);
         assert_eq!(&*y, &ndarray::array![6., 15.].into_ndarray());

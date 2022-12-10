@@ -1,15 +1,15 @@
 use std::sync::{Arc, Weak};
 
-use super::{computed::ComputedInner, Backward, Computed, NDArray};
+use super::{computed::ComputedInner, Backward, Computed};
 
-pub struct FunctionCall {
-    pub(crate) backward: Box<dyn Backward>,
-    pub(crate) xs: Vec<Computed>,
-    pub(crate) ys: Vec<Weak<ComputedInner<NDArray>>>,
+pub struct FunctionCall<T> {
+    pub(crate) backward: Box<dyn Backward<T>>,
+    pub(crate) xs: Vec<Computed<T>>,
+    pub(crate) ys: Vec<Weak<ComputedInner<T>>>,
 }
 
-impl FunctionCall {
-    pub fn new(backward: Box<dyn Backward>, xs: Vec<Computed>, ys: &[Computed]) -> Self {
+impl<T> FunctionCall<T> {
+    pub fn new(backward: Box<dyn Backward<T>>, xs: Vec<Computed<T>>, ys: &[Computed<T>]) -> Self {
         Self {
             backward,
             xs,
@@ -17,7 +17,7 @@ impl FunctionCall {
         }
     }
 
-    pub fn get_ys(&self) -> Vec<Computed> {
+    pub fn get_ys(&self) -> Vec<Computed<T>> {
         self.ys
             .iter()
             .map(|y| Computed {

@@ -15,8 +15,8 @@ impl UpSampling2d {
 }
 
 impl Layer for UpSampling2d {
-    type Input = Computed;
-    type Output = Computed;
+    type Input = ComputedNDA;
+    type Output = ComputedNDA;
 
     fn call(&self, input: Self::Input, _train: bool) -> Self::Output {
         let s = input.shape();
@@ -29,7 +29,7 @@ impl Layer for UpSampling2d {
             }
         }
 
-        let y = Computed::new(y.into_ndarray());
+        let y = ComputedNDA::new(y.into_ndarray());
 
         let size = self.size;
 
@@ -44,7 +44,7 @@ impl Layer for UpSampling2d {
         y
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         Vec::new()
     }
 }

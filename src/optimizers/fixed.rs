@@ -9,7 +9,7 @@ impl Fixed {
     }
 }
 
-impl Optimizer for Fixed {
+impl<T: Send + Sync + 'static> Optimizer<T> for Fixed {
     type State = ();
 
     fn new_state(&self, shape: &[usize]) -> Self::State {
@@ -17,7 +17,7 @@ impl Optimizer for Fixed {
         ()
     }
 
-    fn update(&mut self, data: &mut NDArray, state: &mut Self::State, grad: &NDArray) {
+    fn update(&mut self, data: &mut T, state: &mut Self::State, grad: &T) {
         #![allow(unused_variables)]
     }
 }

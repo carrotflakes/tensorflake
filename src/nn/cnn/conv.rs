@@ -13,8 +13,8 @@ pub struct Conv2d {
     pub kernel_size: [usize; 2],
     pub stride: [usize; 2],
     pub padding: [usize; 2],
-    pub w: Param,         // [out_ch, in_ch, kh, kw]
-    pub b: Option<Param>, // [out_ch]
+    pub w: ParamNDA,         // [out_ch, in_ch, kh, kw]
+    pub b: Option<ParamNDA>, // [out_ch]
 }
 
 impl Conv2d {
@@ -43,8 +43,8 @@ impl Conv2d {
 }
 
 impl Layer for Conv2d {
-    type Input = Computed;
-    type Output = Computed;
+    type Input = ComputedNDA;
+    type Output = ComputedNDA;
 
     fn call(&self, x: Self::Input, train: bool) -> Self::Output
     where
@@ -126,7 +126,7 @@ impl Layer for Conv2d {
         // )
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         [self.w.clone()].into_iter().chain(self.b.clone()).collect()
     }
 }
@@ -149,8 +149,8 @@ fn test_conv2d() {
         kernel_size: [3, 3],
         stride: [1, 1],
         padding: [1, 1],
-        w: Param::new(w.clone(), "w".into(), optimizers::Fixed),
-        b: Some(Param::new(b.clone(), "w".into(), optimizers::Fixed)),
+        w: ParamNDA::new(w.clone(), "w".into(), optimizers::Fixed),
+        b: Some(ParamNDA::new(b.clone(), "w".into(), optimizers::Fixed)),
     };
     let y = conv.call(x.clone(), false);
     assert_eq!(y.shape(), &[1, 5, 3, 4]);
@@ -160,7 +160,7 @@ fn test_conv2d() {
     let grads = gradients(&[y.clone()], &[x.clone()], true);
     // dbg!(&*grads[0]);
 
-    let y2 = conv2d([1, 1], [1, 1], &Computed::new(w), Some(&Computed::new(b)), &x);
+    let y2 = conv2d([1, 1], [1, 1], &ComputedNDA::new(w), Some(&ComputedNDA::new(b)), &x);
     assert_eq!(&*y, &*y2);
 
     let grads2 = gradients(&[y2.clone()], &[x.clone()], true);
@@ -172,8 +172,8 @@ pub struct Conv2dTranspose {
     pub stride: [usize; 2],
     pub padding: [usize; 2],
     pub out_size: Option<[usize; 2]>,
-    pub w: Param,         // [out_ch, in_ch, kh, kw]
-    pub b: Option<Param>, // [out_ch]
+    pub w: ParamNDA,         // [out_ch, in_ch, kh, kw]
+    pub b: Option<ParamNDA>, // [out_ch]
 }
 
 impl Conv2dTranspose {
@@ -204,8 +204,8 @@ impl Conv2dTranspose {
 }
 
 impl Layer for Conv2dTranspose {
-    type Input = Computed;
-    type Output = Computed;
+    type Input = ComputedNDA;
+    type Output = ComputedNDA;
 
     fn call(&self, x: Self::Input, train: bool) -> Self::Output
     where
@@ -284,7 +284,7 @@ impl Layer for Conv2dTranspose {
         // }
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         [self.w.clone()].into_iter().chain(self.b.clone()).collect()
     }
 }
@@ -294,10 +294,10 @@ impl Layer for Conv2dTranspose {
 pub fn conv2d(
     stride: [usize; 2],
     padding: [usize; 2],
-    kernel: &Computed,
-    bias: Option<&Computed>,
-    x: &Computed,
-) -> Computed {
+    kernel: &ComputedNDA,
+    bias: Option<&ComputedNDA>,
+    x: &ComputedNDA,
+) -> ComputedNDA {
     let kh = kernel.shape()[2];
     let kw = kernel.shape()[3];
 
@@ -315,7 +315,7 @@ pub fn conv2d(
     }
     y = y.permuted_axes(&[0, 3, 1, 2][..]);
 
-    let y = Computed::new(y.into_ndarray());
+    let y = ComputedNDA::new(y.into_ndarray());
 
     let mut xs = vec![x.clone(), kernel.clone()];
     xs.extend(bias.cloned());
@@ -349,10 +349,10 @@ pub fn conv2d_transpose(
     stride: [usize; 2],
     padding: [usize; 2],
     out_size: [usize; 2],
-    kernel: &Computed, // [out_ch, in_ch, kh, kw]
-    bias: Option<&Computed>,
-    x: &Computed, // [batch, out_ch, oh, ow]
-) -> Computed {
+    kernel: &ComputedNDA, // [out_ch, in_ch, kh, kw]
+    bias: Option<&ComputedNDA>,
+    x: &ComputedNDA, // [batch, out_ch, oh, ow]
+) -> ComputedNDA {
     let kh = kernel.shape()[2];
     let kw = kernel.shape()[3];
 
@@ -376,7 +376,7 @@ pub fn conv2d_transpose(
         y += &(**bias).reshape([1, bias.len(), 1, 1]);
     }
 
-    let y = Computed::new(y);
+    let y = ComputedNDA::new(y);
 
     let mut xs = vec![x.clone(), kernel.clone()];
     xs.extend(bias.cloned());
@@ -409,9 +409,9 @@ pub fn conv2d_grad_w(
     stride: [usize; 2],
     padding: [usize; 2],
     kernel_size: [usize; 2],
-    x: &Computed,
-    gy: &Computed,
-) -> Computed {
+    x: &ComputedNDA,
+    gy: &ComputedNDA,
+) -> ComputedNDA {
     let col = im2col(x, kernel_size, stride, padding, false);
 
     let gw = ndarray_util::tensordot(
@@ -420,7 +420,7 @@ pub fn conv2d_grad_w(
         &[Axis(0), Axis(2), Axis(3)],
         &[Axis(0), Axis(4), Axis(5)],
     );
-    let gw = Computed::new(gw.into_ndarray());
+    let gw = ComputedNDA::new(gw.into_ndarray());
 
     chain(
         &[x.clone(), gy.clone()],

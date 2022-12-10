@@ -35,7 +35,7 @@ impl AdamW {
     }
 }
 
-impl Optimizer for AdamW {
+impl Optimizer<NDArray> for AdamW {
     type State = State;
 
     fn new_state(&self, shape: &[usize]) -> Self::State {

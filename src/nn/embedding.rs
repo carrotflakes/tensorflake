@@ -2,7 +2,7 @@ use crate::{functions::select, initializers::Initializer, *};
 
 pub struct Embedding {
     pub embedding_size: usize,
-    pub weights: Param,
+    pub weights: ParamNDA,
 }
 
 impl Embedding {
@@ -16,7 +16,7 @@ impl Embedding {
 
 impl Layer for Embedding {
     type Input = Vec<usize>;
-    type Output = Computed;
+    type Output = ComputedNDA;
 
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output {
         let w = self.weights.get();
@@ -25,7 +25,7 @@ impl Layer for Embedding {
         select(0, x, &w)
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         vec![self.weights.clone()]
     }
 }

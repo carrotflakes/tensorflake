@@ -4,14 +4,14 @@ use crate::{initializers::Initializer, *};
 pub struct MLP {
     pub linears: Vec<Linear>,
     pub dropout: Option<Dropout>,
-    pub activation: Box<dyn Fn(Computed) -> Computed + Sync + Send>,
+    pub activation: Box<dyn Fn(ComputedNDA) -> ComputedNDA + Sync + Send>,
 }
 
 impl MLP {
     pub fn new(
         sizes: &[usize],
         dropout: Option<Dropout>,
-        activation: impl Fn(Computed) -> Computed + Sync + Send + 'static,
+        activation: impl Fn(ComputedNDA) -> ComputedNDA + Sync + Send + 'static,
         w: impl Initializer,
         b: impl Initializer,
     ) -> Self {
@@ -35,8 +35,8 @@ impl MLP {
 }
 
 impl Layer for MLP {
-    type Input = Computed;
-    type Output = Computed;
+    type Input = ComputedNDA;
+    type Output = ComputedNDA;
 
     fn call(&self, x: Self::Input, train: bool) -> Self::Output {
         let mut y = x.clone();
@@ -50,7 +50,7 @@ impl Layer for MLP {
         self.linears.last().unwrap().call(y, train)
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         self.linears
             .iter()
             .flat_map(|linear| linear.all_params())
@@ -76,7 +76,7 @@ fn test() {
         init.scope("mlp"),
     );
 
-    let x = Computed::new(array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_ndarray());
+    let x = ComputedNDA::new(array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_ndarray());
 
     let y = mlp.call(x, true);
     // dbg!(&*y);

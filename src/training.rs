@@ -230,7 +230,7 @@ pub struct TrainContext {
     pub train: bool,
     pub metrics: Metrics,
     pub time: std::time::Instant,
-    gradients_accumulator: GradientsAccumulator,
+    gradients_accumulator: GradientsAccumulator<NDArray>,
 }
 
 impl TrainContext {
@@ -245,13 +245,13 @@ impl TrainContext {
         }
     }
 
-    pub fn finish_batch(&mut self, loss: &Computed, n: usize) {
+    pub fn finish_batch(&mut self, loss: &ComputedNDA, n: usize) {
         self.optimize(loss);
         self.count(n);
         self.add_metric(metrics::Loss::new(loss[[]], n));
     }
 
-    pub fn optimize(&mut self, loss: &Computed) {
+    pub fn optimize(&mut self, loss: &ComputedNDA) {
         if self.train {
             self.gradients_accumulator.compute(loss);
         }
@@ -337,7 +337,7 @@ fn test() {
     .build()
     .fit(|batch, ctx| {
         std::thread::sleep(std::time::Duration::from_millis(10));
-        let loss = Computed::new(scalar(0.0));
+        let loss = ComputedNDA::new(scalar(0.0));
         ctx.finish_batch(&loss, batch.len());
         ctx.add_metric(metrics::Loss::new(loss[[]], batch.len()));
     })

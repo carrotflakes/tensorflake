@@ -1,17 +1,29 @@
 use std::{collections::HashMap, sync::Arc};
 
-use super::{backprop, Computed, FunctionCall, NDArray};
+use super::{backprop, Computed, FunctionCall};
 
-pub fn gradients(ys: &[Computed], xs: &[Computed], create_graph: bool) -> Vec<Computed> {
+pub trait One {
+    fn clone_filled_ones(&self) -> Self;
+    fn shape(&self) -> &[usize];
+}
+
+pub fn gradients<T: One + Send + Sync + 'static>(
+    ys: &[Computed<T>],
+    xs: &[Computed<T>],
+    create_graph: bool,
+) -> Vec<Computed<T>>
+where
+    for<'a> &'a Computed<T>: std::ops::Add<&'a Computed<T>, Output = Computed<T>>,
+{
     let mut grads = HashMap::new();
 
     for y in ys.iter() {
         grads.insert(
             Arc::as_ptr(&y.inner),
             if create_graph {
-                backprop(NDArray::ones(y.shape()))
+                backprop(y.clone_filled_ones())
             } else {
-                Computed::new(NDArray::ones(y.shape()))
+                Computed::new(y.clone_filled_ones())
             },
         );
     }
@@ -69,14 +81,16 @@ pub fn gradients(ys: &[Computed], xs: &[Computed], create_graph: bool) -> Vec<Co
         .collect()
 }
 
-pub fn collect_variables(vars: Vec<Computed>) -> Vec<Computed> {
+pub fn collect_variables<T>(vars: Vec<Computed<T>>) -> Vec<Computed<T>> {
     let fcs = collect_function_calls(vars);
     let mut vars: Vec<_> = fcs.iter().flat_map(|fc| fc.xs.iter()).cloned().collect();
     vars.dedup();
     vars
 }
 
-pub(crate) fn sort_for_backward(mut fcs: Vec<Arc<FunctionCall>>) -> Vec<Arc<FunctionCall>> {
+pub(crate) fn sort_for_backward<T>(
+    mut fcs: Vec<Arc<FunctionCall<T>>>,
+) -> Vec<Arc<FunctionCall<T>>> {
     let mut sorted = Vec::with_capacity(fcs.len());
     let ys = fcs.iter().flat_map(|fc| fc.get_ys()).collect::<Vec<_>>();
     let mut visited: Vec<_> = fcs
@@ -100,7 +114,7 @@ pub(crate) fn sort_for_backward(mut fcs: Vec<Arc<FunctionCall>>) -> Vec<Arc<Func
     sorted
 }
 
-pub(crate) fn collect_function_calls(mut vars: Vec<Computed>) -> Vec<Arc<FunctionCall>> {
+pub(crate) fn collect_function_calls<T>(mut vars: Vec<Computed<T>>) -> Vec<Arc<FunctionCall<T>>> {
     let mut function_call_vec = Vec::new();
     let mut closed_function_calls = Vec::new();
     while let Some(var) = vars.pop() {

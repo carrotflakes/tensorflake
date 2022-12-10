@@ -1,8 +1,8 @@
 use crate::*;
 
-pub fn broadcast(x: &Computed, shape: impl Into<Vec<usize>>) -> Computed {
+pub fn broadcast(x: &ComputedNDA, shape: impl Into<Vec<usize>>) -> ComputedNDA {
     let shape = shape.into();
-    let y = Computed::new(
+    let y = ComputedNDA::new(
         (**x)
             .broadcast(shape.as_slice())
             .unwrap_or_else(|| panic!("illegal broadcast: {:?} to {:?}", x.shape(), shape))

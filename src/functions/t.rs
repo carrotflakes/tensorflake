@@ -1,7 +1,7 @@
 use crate::*;
 
-pub fn t(x: &Computed) -> Computed {
-    let y = Computed::new((**x).t().into_ndarray());
+pub fn t(x: &ComputedNDA) -> ComputedNDA {
+    let y = ComputedNDA::new((**x).t().into_ndarray());
 
     chain(
         &[x.clone()],
@@ -20,13 +20,13 @@ pub fn t(x: &Computed) -> Computed {
 #[test]
 fn test() {
     {
-        let x = Computed::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
+        let x = ComputedNDA::new(ndarray::array![[1., 2., 3.], [4., 5., 6.]].into_ndarray());
         let y = t(&x);
         assert_eq!(&y.shape(), &[3, 2]);
     }
 
     {
-        let x = Computed::new(ndarray::array![[[1., 2., 3.], [4., 5., 6.]]].into_ndarray());
+        let x = ComputedNDA::new(ndarray::array![[[1., 2., 3.], [4., 5., 6.]]].into_ndarray());
         let y = t(&x);
         assert_eq!(&y.shape(), &[3, 2, 1]);
     }

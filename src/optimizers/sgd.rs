@@ -13,7 +13,7 @@ impl SGD {
     }
 }
 
-impl Optimizer for SGD {
+impl Optimizer<NDArray> for SGD {
     type State = ();
 
     fn new_state(&self, shape: &[usize]) -> Self::State {

@@ -2,8 +2,8 @@ use crate::{functions::sum, *};
 
 use super::sum_axes_to_desire;
 
-pub fn mul(a: &Computed, b: &Computed) -> Computed {
-    let y = Computed::new((&**a * &**b).into_ndarray());
+pub fn mul(a: &ComputedNDA, b: &ComputedNDA) -> ComputedNDA {
+    let y = ComputedNDA::new((&**a * &**b).into_ndarray());
 
     chain(
         &[a.clone(), b.clone()],
@@ -30,7 +30,7 @@ pub fn mul(a: &Computed, b: &Computed) -> Computed {
     y
 }
 
-pub fn multi_mul(xs: &[Computed]) -> Computed {
+pub fn multi_mul(xs: &[ComputedNDA]) -> ComputedNDA {
     assert!(xs.len() >= 1);
 
     // NOTE: This assert is unnecessary?
@@ -47,7 +47,7 @@ pub fn multi_mul(xs: &[Computed]) -> Computed {
     for x in xs.iter().skip(1) {
         y = y * &**x;
     }
-    let y = Computed::new(y.into_ndarray());
+    let y = ComputedNDA::new(y.into_ndarray());
 
     chain(xs, &[y.clone()], false, "multi_mul", |xs, _ys, gys| {
         xs.iter()

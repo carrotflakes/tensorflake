@@ -1,7 +1,7 @@
 use crate::{functions::sum_axes_to_desire, *};
 
-pub fn div(a: &Computed, b: &Computed) -> Computed {
-    let y = Computed::new((&**a / &**b).into_ndarray());
+pub fn div(a: &ComputedNDA, b: &ComputedNDA) -> ComputedNDA {
+    let y = ComputedNDA::new((&**a / &**b).into_ndarray());
 
     chain(
         &[a.clone(), b.clone()],

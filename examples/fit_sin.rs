@@ -46,14 +46,14 @@ fn main() {
     }
     .build()
     .fit(|batch, ctx| {
-        let x = Computed::new(
+        let x = ComputedNDA::new(
             NDArray::from_shape_vec(
                 &[batch.len(), 1][..],
                 batch.iter().map(|x| x.0).collect::<Vec<_>>(),
             )
             .unwrap(),
         );
-        let t = Computed::new(
+        let t = ComputedNDA::new(
             NDArray::from_shape_vec(
                 &[batch.len(), 1][..],
                 batch.iter().map(|x| x.1).collect::<Vec<_>>(),
@@ -69,7 +69,7 @@ fn main() {
     });
 
     for i in 0..20 {
-        let x = Computed::new(array![[i as f32 / 20.0]].into_ndarray());
+        let x = ComputedNDA::new(array![[i as f32 / 20.0]].into_ndarray());
         let h = l1.call(x.clone(), false);
         let h = sigmoid(&h);
         let y = l2.call(h, false);

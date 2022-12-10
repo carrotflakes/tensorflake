@@ -6,43 +6,43 @@ use crate::{ndarray_util::map_axes_keep_dim, *};
 
 pub struct Normalization {
     pub axes: Vec<usize>,
-    pub gamma: Param,
-    pub beta: Param,
+    pub gamma: ParamNDA,
+    pub beta: ParamNDA,
     pub eps: f32, // 0.001
 }
 
 impl Normalization {
-    pub fn new(axes: Vec<usize>, eps: f32, optimizer: impl Optimizer + Clone) -> Self {
+    pub fn new(axes: Vec<usize>, eps: f32, optimizer: impl Optimizer<NDArray> + Clone) -> Self {
         Self {
             axes,
-            gamma: Param::new(scalar(1.0), "normalization".into(), optimizer.clone()),
-            beta: Param::new(scalar(0.0), "normalization".into(), optimizer.clone()),
+            gamma: ParamNDA::new(scalar(1.0), "normalization".into(), optimizer.clone()),
+            beta: ParamNDA::new(scalar(0.0), "normalization".into(), optimizer.clone()),
             eps,
         }
     }
 }
 
 impl Layer for Normalization {
-    type Input = Computed;
-    type Output = Computed;
+    type Input = ComputedNDA;
+    type Output = ComputedNDA;
 
     fn call(&self, x: Self::Input, _train: bool) -> Self::Output {
         let mean = map_axes_keep_dim(&*x, &self.axes, |x| x.mean_axis(Axis(1)).unwrap());
         let var = map_axes_keep_dim(&*x, &self.axes, |x| x.var_axis(Axis(1), 1.0));
-        (x - Computed::new(mean.into_ndarray()))
+        (x - ComputedNDA::new(mean.into_ndarray()))
             * (self.gamma.get()
-                / Computed::new((var + self.eps).map(|x| x.sqrt()).into_ndarray()))
+                / ComputedNDA::new((var + self.eps).map(|x| x.sqrt()).into_ndarray()))
             + self.beta.get()
     }
 
-    fn all_params(&self) -> Vec<Param> {
+    fn all_params(&self) -> Vec<ParamNDA> {
         vec![self.gamma.clone(), self.beta.clone()]
     }
 }
 
 #[test]
 fn test() {
-    let x = Computed::new(ndarray::array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0].into_ndarray());
+    let x = ComputedNDA::new(ndarray::array![1.0, 2.0, 3.0, 4.0, 5.0, 6.0].into_ndarray());
     let bn = Normalization::new(vec![0], 0.001, optimizers::Adam::new());
     let y = bn.call(x, false);
     assert!((y.mean().unwrap() - 0.0).abs() < 1e-6);

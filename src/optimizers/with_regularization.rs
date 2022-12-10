@@ -1,12 +1,12 @@
 use crate::{regularizers::Regularizer, *};
 
 #[derive(Clone)]
-pub struct WithRegularization<O: Optimizer, R: Regularizer> {
+pub struct WithRegularization<O: Optimizer<NDArray>, R: Regularizer> {
     pub optimizer: O,
     pub regularizer: R,
 }
 
-impl<O: Optimizer, R: Regularizer> WithRegularization<O, R> {
+impl<O: Optimizer<NDArray>, R: Regularizer> WithRegularization<O, R> {
     pub fn new(optimizer: O, regularizer: R) -> Self {
         Self {
             optimizer,
@@ -15,7 +15,7 @@ impl<O: Optimizer, R: Regularizer> WithRegularization<O, R> {
     }
 }
 
-impl<O: Optimizer, R: Regularizer> Optimizer for WithRegularization<O, R> {
+impl<O: Optimizer<NDArray>, R: Regularizer> Optimizer<NDArray> for WithRegularization<O, R> {
     type State = O::State;
 
     fn new_state(&self, shape: &[usize]) -> Self::State {

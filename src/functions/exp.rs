@@ -1,7 +1,7 @@
 use crate::*;
 
-pub fn exp(x: &Computed) -> Computed {
-    let y = Computed::new((**x).map(|x| x.exp()).into_ndarray());
+pub fn exp(x: &ComputedNDA) -> ComputedNDA {
+    let y = ComputedNDA::new((**x).map(|x| x.exp()).into_ndarray());
 
     chain(
         &[x.clone()],

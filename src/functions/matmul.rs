@@ -3,8 +3,8 @@ use ndarray::{Axis, Ix2};
 use crate::functions::*;
 use crate::*;
 
-pub fn matmul(lhs: &Computed, rhs: &Computed) -> Computed {
-    let y = Computed::new(forward(&lhs, &rhs));
+pub fn matmul(lhs: &ComputedNDA, rhs: &ComputedNDA) -> ComputedNDA {
+    let y = ComputedNDA::new(forward(&lhs, &rhs));
 
     chain(
         &[lhs.clone(), rhs.clone()],

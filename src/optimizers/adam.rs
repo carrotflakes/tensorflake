@@ -32,7 +32,7 @@ impl Adam {
     }
 }
 
-impl Optimizer for Adam {
+impl Optimizer<NDArray> for Adam {
     type State = State;
 
     fn new_state(&self, shape: &[usize]) -> Self::State {

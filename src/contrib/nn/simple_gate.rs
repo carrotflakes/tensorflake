@@ -5,11 +5,11 @@ use ndarray::{azip, Array, Axis};
 
 use crate::*;
 
-pub fn simple_gate(x: &Computed, axis: usize) -> Computed {
+pub fn simple_gate(x: &ComputedNDA, axis: usize) -> ComputedNDA {
     let (a, b) = x.view().split_at(Axis(axis), x.shape()[axis] / 2);
     let mut y = NDArray::zeros(a.shape());
     azip!((a in &a, b in &b, c in &mut y) *c = a * b);
-    let y = Computed::new(y);
+    let y = ComputedNDA::new(y);
 
     chain(
         &[x.clone()],
