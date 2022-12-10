@@ -24,8 +24,8 @@ impl Conv2d {
         kernel_size: [usize; 2],
         stride: [usize; 2],
         padding: [usize; 2],
-        w: impl Initializer,
-        b: Option<impl Initializer>,
+        w: impl Initializer<NDArray>,
+        b: Option<impl Initializer<NDArray>>,
     ) -> Self {
         Self {
             kernel_size,
@@ -63,8 +63,8 @@ impl Layer for Conv2d {
             self.stride[1],
             self.padding[1],
         );
-        let col = Im2col::new(self.kernel_size, self.stride, self.padding, true)
-            .call(x.clone(), train);
+        let col =
+            Im2col::new(self.kernel_size, self.stride, self.padding, true).call(x.clone(), train);
         // col: [batch_size * oh * ow, in_ch * kh * kw]
         let w = self.w.get();
         let oc = w.shape()[0];
@@ -160,7 +160,13 @@ fn test_conv2d() {
     let grads = gradients(&[y.clone()], &[x.clone()], true);
     // dbg!(&*grads[0]);
 
-    let y2 = conv2d([1, 1], [1, 1], &ComputedNDA::new(w), Some(&ComputedNDA::new(b)), &x);
+    let y2 = conv2d(
+        [1, 1],
+        [1, 1],
+        &ComputedNDA::new(w),
+        Some(&ComputedNDA::new(b)),
+        &x,
+    );
     assert_eq!(&*y, &*y2);
 
     let grads2 = gradients(&[y2.clone()], &[x.clone()], true);
@@ -184,8 +190,8 @@ impl Conv2dTranspose {
         stride: [usize; 2],
         padding: [usize; 2],
         out_size: Option<[usize; 2]>,
-        w: impl Initializer,
-        b: Option<impl Initializer>,
+        w: impl Initializer<NDArray>,
+        b: Option<impl Initializer<NDArray>>,
     ) -> Self {
         Self {
             kernel_size,

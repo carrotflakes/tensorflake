@@ -17,7 +17,7 @@ impl Gru {
     pub fn new(
         input_size: usize,
         state_size: usize,
-        kernel: impl initializers::Initializer,
+        kernel: impl initializers::Initializer<NDArray>,
     ) -> Self {
         Self {
             input_size,

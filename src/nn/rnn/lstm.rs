@@ -17,7 +17,7 @@ impl Lstm {
     pub fn new(
         input_size: usize,
         state_size: usize,
-        kernel: &mut impl initializers::Initializer,
+        kernel: &mut impl initializers::Initializer<NDArray>,
     ) -> Self {
         Self {
             input_size,

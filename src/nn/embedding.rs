@@ -6,7 +6,7 @@ pub struct Embedding {
 }
 
 impl Embedding {
-    pub fn new(embedding_size: usize, len: usize, init:  impl Initializer) -> Self {
+    pub fn new(embedding_size: usize, len: usize, init:  impl Initializer<NDArray>) -> Self {
         Self {
             embedding_size,
             weights: init.initialize(&[len, embedding_size]),

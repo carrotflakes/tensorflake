@@ -6,10 +6,10 @@ use ndarray_rand::{
     RandomExt,
 };
 
-use crate::{DefaultRng, NDArray, Optimizer, ParamNDA};
+use crate::{DefaultRng, NDArray, Optimizer, Param, ParamNDA};
 
-pub trait Initializer {
-    fn initialize(&self, shape: &[usize]) -> ParamNDA;
+pub trait Initializer<T: Default + Send + Sync> {
+    fn initialize(&self, shape: &[usize]) -> Param<T>;
     fn scope(&self, name: impl ToString) -> Self;
 }
 
@@ -31,7 +31,7 @@ impl<D: Distribution<f32> + Clone, O: Optimizer<NDArray> + Clone> InitializerWit
     }
 }
 
-impl<D: Distribution<f32> + Clone, O: Optimizer<NDArray> + Clone> Initializer
+impl<D: Distribution<f32> + Clone, O: Optimizer<NDArray> + Clone> Initializer<NDArray>
     for InitializerWithOptimizer<D, O>
 {
     fn initialize(&self, shape: &[usize]) -> ParamNDA {
@@ -85,7 +85,7 @@ impl<D: Distribution<f32> + Clone, O: Optimizer<NDArray> + Clone>
     }
 }
 
-impl<D: Distribution<f32> + Clone, O: Optimizer<NDArray> + Clone> Initializer
+impl<D: Distribution<f32> + Clone, O: Optimizer<NDArray> + Clone> Initializer<NDArray>
     for InitializerWithSharedOptimizer<D, O>
 {
     fn initialize(&self, shape: &[usize]) -> ParamNDA {

@@ -20,8 +20,8 @@ impl MultiHeadAttention {
         embed_dim: usize,
         num_heads: usize,
         layer_norm_eps: f32,
-        w: impl Initializer,
-        b: impl Initializer,
+        w: impl Initializer<NDArray>,
+        b: impl Initializer<NDArray>,
         opt: impl Optimizer<NDArray> + Clone,
     ) -> Self {
         MultiHeadAttention {

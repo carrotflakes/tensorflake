@@ -12,8 +12,8 @@ impl MLP {
         sizes: &[usize],
         dropout: Option<Dropout>,
         activation: impl Fn(ComputedNDA) -> ComputedNDA + Sync + Send + 'static,
-        w: impl Initializer,
-        b: impl Initializer,
+        w: impl Initializer<NDArray>,
+        b: impl Initializer<NDArray>,
     ) -> Self {
         Self {
             linears: sizes

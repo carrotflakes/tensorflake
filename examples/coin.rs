@@ -93,7 +93,7 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(w: impl Initializer, b: impl Initializer) -> Self {
+    pub fn new(w: impl Initializer<NDArray>, b: impl Initializer<NDArray>) -> Self {
         Self {
             mlp: MLP::new(
                 &[2, 28, 28, 28, 28, 28, 28, 28, 28, 28, 3],
@@ -122,7 +122,11 @@ impl Layer for Model {
     }
 }
 
-fn gen_image(size: [u32; 2], layer: &impl Layer<Input = ComputedNDA, Output = ComputedNDA>, path: &str) {
+fn gen_image(
+    size: [u32; 2],
+    layer: &impl Layer<Input = ComputedNDA, Output = ComputedNDA>,
+    path: &str,
+) {
     let mut img = image::ImageBuffer::new(size[1], size[0]);
     let ps = (0..size[0])
         .flat_map(|y| (0..size[1]).map(move |x| (y, x)))
