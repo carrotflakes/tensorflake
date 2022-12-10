@@ -24,3 +24,22 @@ pub use ndarray;
 pub use ndarray_rand;
 
 pub type DefaultRng = rand_isaac::Isaac64Rng;
+
+pub type ComputedNDA = Computed<NDArray>;
+pub type ParamNDA = param::Param<NDArray>;
+
+impl Into<ComputedNDA> for NDArray {
+    fn into(self) -> ComputedNDA {
+        ComputedNDA::new(self)
+    }
+}
+
+impl graph::One for NDArray {
+    fn clone_filled_ones(&self) -> Self {
+        NDArray::ones(self.shape())
+    }
+
+    fn shape(&self) -> &[usize] {
+        NDArray::shape(self)
+    }
+}

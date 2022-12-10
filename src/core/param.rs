@@ -131,9 +131,9 @@ impl<T: Clone + Default + Send + Sync + 'static + One> Param<T> {
         inner.computed.clone().unwrap()
     }
 
-    pub fn set(&mut self, ndarray: T) {
+    pub fn set(&mut self, data: T) {
         let mut inner = self.inner.lock().unwrap();
-        inner.data = ndarray;
+        inner.data = data;
     }
 
     pub fn update(&self, grad: &T) {
