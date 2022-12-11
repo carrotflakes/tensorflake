@@ -60,7 +60,7 @@ fn main() {
             );
             total_loss = 0.0;
         }
-        if (count+1) % 10000 == 0 {
+        if (count + 1) % 10000 == 0 {
             output_image(&*linear.w.get(), count / 10000);
             test(&linear, &mnist);
         }
@@ -80,7 +80,7 @@ fn forward(linear: &Linear, label: usize, image: &[u8]) -> Computed<NDArray> {
     .unwrap();
     let y = linear.call(x.into(), true);
     let y = relu(&y);
-    let goodness = sigmoid(&(y.pow(2.0).sum(vec![0, 1], false) - scalar(10.0).into()));
+    let goodness = sigmoid(&(y.pow(2.0).sum(vec![0, 1], false) - scalar(5.0).into()));
     goodness
 }
 
@@ -111,9 +111,18 @@ fn test(linear: &Linear, mnist: &data::mnist::Mnist) {
 fn output_image(w: &NDArray, i: usize) {
     use std::io::Write;
     let mut f = std::fs::File::create(format!("ffa_{}.pnm", i)).unwrap();
-    let num = 10;
-    writeln!(&mut f, "P2\n{} {}\n15", 28, 28 * num).unwrap();
+    let num = 32;
+    writeln!(&mut f, "P2\n{} {}\n15", 28, (1 + 28) * num).unwrap();
     for i in 0..num {
+        // print label
+        let sliced = w.slice(ndarray::s![..10, i]);
+        let min = sliced.iter().fold(0.0 / 0.0, |m, v| v.min(m));
+        let max = sliced.iter().fold(0.0 / 0.0, |m, v| v.max(m));
+        for x in sliced.iter().chain(vec![min; 28 - 10].iter()) {
+            write!(&mut f, "{} ", ((x - min) / (max - min) * 16.0) as usize).unwrap();
+        }
+
+        // print image
         let sliced = w.slice(ndarray::s![10.., i]);
         let min = sliced.iter().fold(0.0 / 0.0, |m, v| v.min(m));
         let max = sliced.iter().fold(0.0 / 0.0, |m, v| v.max(m));
