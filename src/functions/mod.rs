@@ -1,6 +1,7 @@
 mod broadcast;
 mod concat;
 pub mod element_wise;
+mod fft;
 pub mod mat_transpose;
 mod matmul;
 mod matmul_add;
@@ -14,6 +15,7 @@ mod transpose;
 pub use broadcast::*;
 pub use concat::*;
 pub use element_wise::*;
+pub use fft::Fft;
 pub use mat_transpose::mat_transpose;
 pub use matmul::{backward as matmul_backward, matmul};
 pub use matmul_add::matmul_add;
