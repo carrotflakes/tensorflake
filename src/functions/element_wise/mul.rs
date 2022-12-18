@@ -1,6 +1,6 @@
 use crate::{functions::sum, *};
 
-use super::sum_axes_to_desire;
+use super::super::sum_axes_to_desire;
 
 pub fn mul(a: &ComputedNDA, b: &ComputedNDA) -> ComputedNDA {
     let y = ComputedNDA::new((&**a * &**b).into_ndarray());
