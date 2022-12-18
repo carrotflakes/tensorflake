@@ -8,8 +8,8 @@ pub fn exp(x: &ComputedNDA) -> ComputedNDA {
         &[y.clone()],
         false,
         "exp",
-        move |xs, _ys, gys| {
-            let gx = &gys[0] * &xs[0].exp();
+        move |_xs, ys, gys| {
+            let gx = &gys[0] * &ys[0];
             vec![gx]
         },
     );
