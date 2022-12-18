@@ -1,12 +1,23 @@
+use ndarray::{ArrayBase, OwnedArcRepr};
+use ndarray_rand::rand_distr::num_traits;
+
 use crate::*;
 
-pub fn broadcast(x: &ComputedNDA, shape: impl Into<Vec<usize>>) -> ComputedNDA {
+type NDArray<T> = ArrayBase<OwnedArcRepr<T>, ndarray::IxDyn>;
+
+pub fn broadcast<
+    T: Clone + std::ops::Add<Output = T> + num_traits::Zero + Send + Sync + 'static,
+>(
+    x: &Computed<NDArray<T>>,
+    shape: impl Into<Vec<usize>>,
+) -> Computed<NDArray<T>> {
     let shape = shape.into();
-    let y = ComputedNDA::new(
+    let y = Computed::new(
         (**x)
             .broadcast(shape.as_slice())
             .unwrap_or_else(|| panic!("illegal broadcast: {:?} to {:?}", x.shape(), shape))
-            .into_ndarray(),
+            .into_dyn()
+            .to_shared(),
     );
 
     chain(
@@ -27,7 +38,7 @@ pub fn broadcast(x: &ComputedNDA, shape: impl Into<Vec<usize>>) -> ComputedNDA {
                 axes.push(axis);
             }
 
-            let gx = gys[0].sum(axes, false);
+            let gx = super::sum(&gys[0], axes, false);
 
             vec![gx]
         },

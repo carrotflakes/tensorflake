@@ -1,8 +1,16 @@
 use ndarray::Axis;
+use ndarray::{ArrayBase, OwnedArcRepr};
+use ndarray_rand::rand_distr::num_traits;
 
 use crate::*;
 
-pub fn sum(x: &ComputedNDA, axes: impl Into<Vec<usize>>, keep_dim: bool) -> ComputedNDA {
+type NDArray<T> = ArrayBase<OwnedArcRepr<T>, ndarray::IxDyn>;
+
+pub fn sum<T: Clone + std::ops::Add<Output = T> + num_traits::Zero + Send + Sync + 'static>(
+    x: &Computed<NDArray<T>>,
+    axes: impl Into<Vec<usize>>,
+    keep_dim: bool,
+) -> Computed<NDArray<T>> {
     let axes = axes.into();
     let mut y = (**x).to_owned();
     for axis in axes.iter().rev() {
@@ -11,7 +19,7 @@ pub fn sum(x: &ComputedNDA, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Comp
             y.insert_axis_inplace(Axis(*axis));
         }
     }
-    let y = ComputedNDA::new(y.into_ndarray());
+    let y = Computed::new(y.into_shared().into_dyn());
 
     chain(
         &[x.clone()],
@@ -19,7 +27,7 @@ pub fn sum(x: &ComputedNDA, axes: impl Into<Vec<usize>>, keep_dim: bool) -> Comp
         false,
         "sum",
         move |xs, _ys, gys| {
-            let gx = gys[0].broadcast(xs[0].shape());
+            let gx = super::broadcast(&gys[0], xs[0].shape());
 
             vec![gx]
         },
