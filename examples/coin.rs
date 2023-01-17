@@ -11,7 +11,7 @@ use tensorflake::{
     losses::*,
     nn::*,
     training::{TrainConfig, UpdateStrategy},
-    *,
+    *, contrib::zero_initializer::ZerOInitializer,
 };
 
 fn main() {
@@ -20,12 +20,16 @@ fn main() {
         .decode()
         .unwrap();
 
-    let init = InitializerWithSharedOptimizer::new(
+    let init_kernel = InitializerWithSharedOptimizer::new(
+        ZerOInitializer,
+        Arc::new(Mutex::new(optimizers::Adam::new())),
+    );
+    let init_bias = InitializerWithSharedOptimizer::new(
         RandomInitializer::new(Uniform::new(0., 0.01)),
         Arc::new(Mutex::new(optimizers::Adam::new())),
     );
 
-    let model = Model::new(init.scope("coin"), init.scope("coin"));
+    let model = Model::new(init_kernel.scope("coin"), init_bias.scope("coin"));
     // param_bin::import_from_file(&mut model.all_params(), "coin_50.bin");
     // gen_image([img.height(), img.width()], &model, "coin_final.png");
     // return;

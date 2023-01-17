@@ -57,6 +57,10 @@ pub fn onehot<D: Dimension>(t: &Array<usize, D>, size: usize) -> NDArray {
     .into_ndarray()
 }
 
+pub fn eye(shape: [usize; 2]) -> NDArray {
+    ndarray::Array2::from_shape_fn(shape, |(i, j)| if i == j { 1.0 } else { 0.0 }).into_ndarray()
+}
+
 pub fn argmax<D: Dimension + RemoveAxis>(
     t: &ArrayBase<OwnedArcRepr<f32>, D>,
 ) -> Array<usize, D::Smaller> {
