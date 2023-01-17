@@ -17,7 +17,7 @@ impl Gru {
     pub fn new(
         input_size: usize,
         state_size: usize,
-        kernel: impl initializers::Initializer<NDArray>,
+        kernel: impl initializers::Initializer<ParamNDA> + initializers::Scope,
     ) -> Self {
         Self {
             input_size,
@@ -60,14 +60,10 @@ impl Layer for Gru {
     fn call(&self, input: Self::Input, _train: bool) -> Self::Output {
         let (x, state) = input;
         let z = sigmoid(
-            &(x.matmul(&self.ws[0].get())
-                + state.matmul(&self.us[0].get())
-                + self.bs[0].get()),
+            &(x.matmul(&self.ws[0].get()) + state.matmul(&self.us[0].get()) + self.bs[0].get()),
         );
         let r = sigmoid(
-            &(x.matmul(&self.ws[1].get())
-                + state.matmul(&self.us[1].get())
-                + self.bs[1].get()),
+            &(x.matmul(&self.ws[1].get()) + state.matmul(&self.us[1].get()) + self.bs[1].get()),
         );
         let state = (ComputedNDA::new(NDArray::ones(z.shape())) - z.clone()) * state.clone()
             + z * tanh(

@@ -2,7 +2,9 @@ mod data;
 
 use ndarray_rand::{rand_distr::Normal, RandomExt};
 use tensorflake::{
-    initializers::Initializer,
+    initializers::{
+        random_initializer::RandomInitializer, with_optimizer::InitializerWithOptimizer, Scope,
+    },
     losses::sigmoid_cross_entropy_with_logits,
     nn::{
         activations::{relu, sigmoid},
@@ -94,12 +96,12 @@ pub struct Model {
 impl Model {
     pub fn new() -> Self {
         let optimizer = optimizers::Adam::new();
-        let init_kernel = initializers::InitializerWithOptimizer::new(
-            Normal::new(0.0, 0.1).unwrap(),
+        let init_kernel = InitializerWithOptimizer::new(
+            RandomInitializer::new(Normal::new(0.0, 0.1).unwrap()),
             optimizer.clone(),
         );
-        let init_bias = initializers::InitializerWithOptimizer::new(
-            Normal::new(0.0, 0.0).unwrap(),
+        let init_bias = InitializerWithOptimizer::new(
+            RandomInitializer::new(Normal::new(0.0, 0.0).unwrap()),
             optimizer.clone(),
         );
         let latent_dim = 2;

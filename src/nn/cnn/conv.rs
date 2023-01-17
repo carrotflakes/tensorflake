@@ -2,7 +2,7 @@ use ndarray::Axis;
 
 use crate::{
     functions::*,
-    initializers::Initializer,
+    initializers::{Initializer, Scope},
     nn::im2col::{get_conv_outsize, Im2col},
     *,
 };
@@ -24,8 +24,8 @@ impl Conv2d {
         kernel_size: [usize; 2],
         stride: [usize; 2],
         padding: [usize; 2],
-        w: impl Initializer<NDArray>,
-        b: Option<impl Initializer<NDArray>>,
+        w: impl Initializer<ParamNDA> + Scope,
+        b: Option<impl Initializer<ParamNDA> + Scope>,
     ) -> Self {
         Self {
             kernel_size,
@@ -190,8 +190,8 @@ impl Conv2dTranspose {
         stride: [usize; 2],
         padding: [usize; 2],
         out_size: Option<[usize; 2]>,
-        w: impl Initializer<NDArray>,
-        b: Option<impl Initializer<NDArray>>,
+        w: impl Initializer<ParamNDA> + Scope,
+        b: Option<impl Initializer<ParamNDA> + Scope>,
     ) -> Self {
         Self {
             kernel_size,

@@ -7,7 +7,10 @@ use ndarray_rand::{
 };
 use tensorflake::{
     functions::*,
-    initializers::{Initializer, InitializerWithOptimizer},
+    initializers::{
+        random_initializer::RandomInitializer, with_optimizer::InitializerWithOptimizer,
+        Initializer, Scope,
+    },
     losses::softmax_cross_entropy,
     ndarray_util::{argmax, onehot},
     nn::*,
@@ -75,8 +78,10 @@ pub struct Model {
 
 impl Model {
     pub fn new(vocab_size: usize) -> Self {
-        let init =
-            InitializerWithOptimizer::new(Uniform::new(0., 0.01), optimizers::SGD::new(0.01));
+        let init = InitializerWithOptimizer::new(
+            RandomInitializer::new(Uniform::new(0., 0.01)),
+            optimizers::SGD::new(0.01),
+        );
         let state_size = 200;
         Self {
             vocab_size,

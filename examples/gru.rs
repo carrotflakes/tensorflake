@@ -9,7 +9,10 @@ use ndarray_rand::{
 };
 use tensorflake::{
     functions::*,
-    initializers::Initializer,
+    initializers::{
+        random_initializer::RandomInitializer,
+        with_shared_optimizer::InitializerWithSharedOptimizer, Scope,
+    },
     losses::softmax_cross_entropy,
     ndarray_util::argmax,
     nn::{
@@ -42,12 +45,12 @@ fn main() {
 
     let norm = normalization::Normalization::new(vec![0, 1], 0.001, optimizers::Adam::new());
 
-    let init_kernel = initializers::InitializerWithSharedOptimizer::new(
-        Normal::new(0., 0.1).unwrap(),
+    let init_kernel = InitializerWithSharedOptimizer::new(
+        RandomInitializer::new(Normal::new(0., 0.1).unwrap()),
         optimizer.clone(),
     );
-    let init_bias = initializers::InitializerWithSharedOptimizer::new(
-        Normal::new(0., 0.0).unwrap(),
+    let init_bias = InitializerWithSharedOptimizer::new(
+        RandomInitializer::new(Normal::new(0., 0.0).unwrap()),
         optimizer.clone(),
     );
 

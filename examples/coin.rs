@@ -4,7 +4,10 @@ use std::sync::{Arc, Mutex};
 use image::GenericImageView;
 use ndarray_rand::rand_distr::Uniform;
 use tensorflake::{
-    initializers::{Initializer, InitializerWithSharedOptimizer},
+    initializers::{
+        random_initializer::RandomInitializer,
+        with_shared_optimizer::InitializerWithSharedOptimizer, Initializer, Scope,
+    },
     losses::*,
     nn::*,
     training::{TrainConfig, UpdateStrategy},
@@ -18,7 +21,7 @@ fn main() {
         .unwrap();
 
     let init = InitializerWithSharedOptimizer::new(
-        Uniform::new(0., 0.01),
+        RandomInitializer::new(Uniform::new(0., 0.01)),
         Arc::new(Mutex::new(optimizers::Adam::new())),
     );
 
@@ -93,7 +96,10 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn new(w: impl Initializer<NDArray>, b: impl Initializer<NDArray>) -> Self {
+    pub fn new(
+        w: impl Initializer<ParamNDA> + Scope,
+        b: impl Initializer<ParamNDA> + Scope,
+    ) -> Self {
         Self {
             mlp: MLP::new(
                 &[2, 28, 28, 28, 28, 28, 28, 28, 28, 28, 3],

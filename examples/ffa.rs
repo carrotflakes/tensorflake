@@ -8,7 +8,9 @@ mod flush_denormals;
 
 use ndarray_rand::rand_distr::Normal;
 use tensorflake::{
-    initializers::Initializer,
+    initializers::{
+        random_initializer::RandomInitializer, with_optimizer::InitializerWithOptimizer, Scope,
+    },
     ndarray_util::onehot,
     nn::{
         activations::{relu, sigmoid},
@@ -23,12 +25,12 @@ fn main() {
 
     let optimizer = optimizers::Adam::new();
     // let optimizer = optimizers::WithRegularization::new(optimizer, regularizers::L1::new(0.001));
-    let init_kernel = initializers::InitializerWithOptimizer::new(
-        Normal::new(0.0, 0.01).unwrap(),
+    let init_kernel = InitializerWithOptimizer::new(
+        RandomInitializer::new(Normal::new(0.0, 0.01).unwrap()),
         optimizer.clone(),
     );
-    let init_bias = initializers::InitializerWithOptimizer::new(
-        Normal::new(0.01, 0.0).unwrap(),
+    let init_bias = InitializerWithOptimizer::new(
+        RandomInitializer::new(Normal::new(0.01, 0.0).unwrap()),
         optimizer.clone(),
     );
 

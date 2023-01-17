@@ -11,8 +11,10 @@ pub struct SelectNet<
     pub layers: Vec<L>,
 }
 
-impl<S: Layer<Input = ComputedNDA, Output = ComputedNDA>, L: Layer<Input = ComputedNDA, Output = ComputedNDA>>
-    SelectNet<S, L>
+impl<
+        S: Layer<Input = ComputedNDA, Output = ComputedNDA>,
+        L: Layer<Input = ComputedNDA, Output = ComputedNDA>,
+    > SelectNet<S, L>
 {
     pub fn new(
         input: usize,
@@ -46,7 +48,10 @@ impl<S: Layer<Input = ComputedNDA, Output = ComputedNDA>, L: Layer<Input = Compu
             let mut lys = Vec::new();
             for (j, _) in &select {
                 let layer = &self.layers[*j];
-                let ly = layer.call(ComputedNDA::new(x.slice(s![i..=i, ..]).into_ndarray()), train);
+                let ly = layer.call(
+                    ComputedNDA::new(x.slice(s![i..=i, ..]).into_ndarray()),
+                    train,
+                );
                 lys.push(ly * softmax.slice(s![i, *j]));
             }
             let lys = multi_add(&lys);
@@ -68,8 +73,10 @@ impl<S: Layer<Input = ComputedNDA, Output = ComputedNDA>, L: Layer<Input = Compu
     }
 }
 
-impl<S: Layer<Input = ComputedNDA, Output = ComputedNDA>, L: Layer<Input = ComputedNDA, Output = ComputedNDA>> Layer
-    for SelectNet<S, L>
+impl<
+        S: Layer<Input = ComputedNDA, Output = ComputedNDA>,
+        L: Layer<Input = ComputedNDA, Output = ComputedNDA>,
+    > Layer for SelectNet<S, L>
 {
     type Input = ComputedNDA;
     type Output = ComputedNDA;
@@ -89,13 +96,13 @@ impl<S: Layer<Input = ComputedNDA, Output = ComputedNDA>, L: Layer<Input = Compu
 
 #[test]
 fn test() {
-    use initializers::Initializer;
+    use initializers::Scope;
     use ndarray::prelude::*;
     use ndarray_rand::rand_distr::Uniform;
     use nn::Linear;
 
-    let init = initializers::InitializerWithOptimizer::new(
-        Uniform::new(-0.01, 0.01),
+    let init = initializers::with_optimizer::InitializerWithOptimizer::new(
+        initializers::random_initializer::RandomInitializer::new(Uniform::new(-0.01, 0.01)),
         optimizers::Adam::new(),
     );
 

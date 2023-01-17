@@ -1,5 +1,8 @@
 use super::*;
-use crate::{initializers::Initializer, *};
+use crate::{
+    initializers::{Initializer, Scope},
+    *,
+};
 
 pub struct MLP {
     pub linears: Vec<Linear>,
@@ -12,8 +15,8 @@ impl MLP {
         sizes: &[usize],
         dropout: Option<Dropout>,
         activation: impl Fn(ComputedNDA) -> ComputedNDA + Sync + Send + 'static,
-        w: impl Initializer<NDArray>,
-        b: impl Initializer<NDArray>,
+        w: impl Initializer<ParamNDA> + Scope,
+        b: impl Initializer<ParamNDA> + Scope,
     ) -> Self {
         Self {
             linears: sizes
@@ -63,8 +66,8 @@ fn test() {
     use ndarray::prelude::*;
     use ndarray_rand::rand_distr::Uniform;
 
-    let init = initializers::InitializerWithOptimizer::new(
-        Uniform::new(-0.01, 0.01),
+    let init = initializers::with_optimizer::InitializerWithOptimizer::new(
+        initializers::random_initializer::RandomInitializer::new(Uniform::new(-0.01, 0.01)),
         optimizers::Adam::new(),
     );
 

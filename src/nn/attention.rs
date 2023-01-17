@@ -1,4 +1,7 @@
-use crate::{initializers::Initializer, *};
+use crate::{
+    initializers::{Initializer, Scope},
+    *,
+};
 
 use super::{activations::softmax, normalization::Normalization, Linear};
 
@@ -20,8 +23,8 @@ impl MultiHeadAttention {
         embed_dim: usize,
         num_heads: usize,
         layer_norm_eps: f32,
-        w: impl Initializer<NDArray>,
-        b: impl Initializer<NDArray>,
+        w: impl Initializer<ParamNDA> + Scope,
+        b: impl Initializer<ParamNDA> + Scope,
         opt: impl Optimizer<NDArray> + Clone,
     ) -> Self {
         MultiHeadAttention {
@@ -125,8 +128,8 @@ impl MultiHeadAttention {
 fn test() {
     use ndarray_rand::rand_distr::Uniform;
 
-    let init = initializers::InitializerWithOptimizer::new(
-        Uniform::new(-0.01, 0.01),
+    let init = initializers::with_optimizer::InitializerWithOptimizer::new(
+        initializers::random_initializer::RandomInitializer::new(Uniform::new(-0.01, 0.01)),
         optimizers::Adam::new(),
     );
 

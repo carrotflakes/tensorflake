@@ -11,8 +11,8 @@ impl Linear {
     pub fn new(
         input: usize,
         output: usize,
-        w: impl Initializer<NDArray>,
-        b: Option<impl Initializer<NDArray>>,
+        w: impl Initializer<ParamNDA>,
+        b: Option<impl Initializer<ParamNDA>>,
     ) -> Self {
         Self {
             w: w.initialize(&[input, output]),

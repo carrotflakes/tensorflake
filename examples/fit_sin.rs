@@ -4,7 +4,9 @@ use ndarray_rand::{
     rand_distr::Normal,
 };
 use tensorflake::{
-    initializers::Initializer,
+    initializers::{
+        random_initializer::RandomInitializer, with_optimizer::InitializerWithOptimizer, Scope,
+    },
     losses::naive_mean_squared_error,
     nn::{activations::sigmoid, *},
     training::TrainConfig,
@@ -23,17 +25,27 @@ fn main() {
         .collect::<Vec<_>>();
 
     let optimizer = optimizers::SGD::new(0.1);
-    let init_kernel = initializers::InitializerWithOptimizer::new(
-        Normal::new(0.0, 0.1).unwrap(),
+    let init_kernel = InitializerWithOptimizer::new(
+        RandomInitializer::new(Normal::new(0.0, 0.1).unwrap()),
         optimizer.clone(),
     );
-    let init_bias = initializers::InitializerWithOptimizer::new(
-        Normal::new(0.0, 0.0).unwrap(),
+    let init_bias = InitializerWithOptimizer::new(
+        RandomInitializer::new(Normal::new(0.0, 0.0).unwrap()),
         optimizer.clone(),
     );
 
-    let l1 = Linear::new(1, 10, init_kernel.scope("l1_w"), Some(init_bias.scope("l1_b")));
-    let l2 = Linear::new(10, 1, init_kernel.scope("l2_w"), Some(init_bias.scope("l2_b")));
+    let l1 = Linear::new(
+        1,
+        10,
+        init_kernel.scope("l1_w"),
+        Some(init_bias.scope("l1_b")),
+    );
+    let l2 = Linear::new(
+        10,
+        1,
+        init_kernel.scope("l2_w"),
+        Some(init_bias.scope("l2_b")),
+    );
 
     let start = std::time::Instant::now();
 

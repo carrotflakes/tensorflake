@@ -2,7 +2,9 @@ mod data;
 
 use ndarray_rand::rand_distr::Normal;
 use tensorflake::{
-    initializers::{Initializer, InitializerWithOptimizer},
+    initializers::{
+        random_initializer::RandomInitializer, with_optimizer::InitializerWithOptimizer, Scope,
+    },
     losses::softmax_cross_entropy,
     nn::{activations::relu, naive_max_pooling, Conv2d, Dropout, Layer, Linear},
     training::{TrainConfig, UpdateStrategy},
@@ -57,7 +59,7 @@ pub struct Model {
 impl Model {
     pub fn new() -> Self {
         let init = InitializerWithOptimizer::new(
-            Normal::new(0.0, 0.1).unwrap(),
+            RandomInitializer::new(Normal::new(0.0, 0.1).unwrap()),
             optimizers::Adam::new(),
         );
 
@@ -121,7 +123,7 @@ pub struct BigModel {
 impl BigModel {
     pub fn new() -> Self {
         let init = InitializerWithOptimizer::new(
-            Normal::new(0.0, 0.1).unwrap(),
+            RandomInitializer::new(Normal::new(0.0, 0.1).unwrap()),
             optimizers::Adam::new(),
         );
 

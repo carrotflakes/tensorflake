@@ -1,12 +1,17 @@
 use ndarray_rand::rand_distr::Uniform;
 use tensorflake::{
-    initializers::{Initializer, InitializerWithOptimizer},
+    initializers::{
+        random_initializer::RandomInitializer, with_optimizer::InitializerWithOptimizer, Scope,
+    },
     nn::Linear,
     optimizers,
 };
 
 fn main() {
-    let init = InitializerWithOptimizer::new(Uniform::new(0., 0.01), optimizers::SGD::new(0.01));
+    let init = InitializerWithOptimizer::new(
+        RandomInitializer::new(Uniform::new(0., 0.01)),
+        optimizers::SGD::new(0.01),
+    );
 
     let linear = Linear::new(10, 10, init.scope("w"), Some(init.scope("b")));
 

@@ -3,7 +3,9 @@ mod flush_denormals;
 
 use ndarray_rand::rand_distr::Normal;
 use tensorflake::{
-    initializers::Initializer,
+    initializers::{
+        random_initializer::RandomInitializer, with_optimizer::InitializerWithOptimizer, Scope,
+    },
     losses::softmax_cross_entropy,
     nn::{activations::relu, *},
     training::TrainConfig,
@@ -16,12 +18,12 @@ fn main() {
 
     let optimizer = optimizers::SGD::new(0.01);
     // let optimizer = optimizers::WithRegularization::new(optimizer, regularizers::L1::new(0.001));
-    let init_kernel = initializers::InitializerWithOptimizer::new(
-        Normal::new(0.0, 0.1).unwrap(),
+    let init_kernel = InitializerWithOptimizer::new(
+        RandomInitializer::new(Normal::new(0.0, 0.1).unwrap()),
         optimizer.clone(),
     );
-    let init_bias = initializers::InitializerWithOptimizer::new(
-        Normal::new(0.0, 0.0).unwrap(),
+    let init_bias = InitializerWithOptimizer::new(
+        RandomInitializer::new(Normal::new(0.0, 0.0).unwrap()),
         optimizer.clone(),
     );
 
