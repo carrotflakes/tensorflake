@@ -5,12 +5,14 @@ mod fft;
 pub mod mat_transpose;
 mod matmul;
 mod matmul_add;
+mod max;
 mod reshape;
 mod select;
 mod slice;
 mod sum;
 mod t;
 mod transpose;
+pub use max::*;
 
 pub use broadcast::*;
 pub use concat::*;
