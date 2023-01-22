@@ -25,6 +25,20 @@ impl Dropout {
             rng: Mutex::new(DefaultRng::seed_from_u64(seed)),
         }
     }
+
+    pub fn factor(&self, shape: &[usize]) -> ComputedNDA {
+        let rate = (self.rate_fn)();
+
+        ComputedNDA::new(
+            Array::random_using(
+                shape,
+                Uniform::new(0.0, 1.0),
+                &mut *self.rng.lock().unwrap(),
+            )
+            .map(|x| if *x > rate { 1.0 / (1.0 - rate) } else { 0.0 })
+            .into_ndarray(),
+        )
+    }
 }
 
 impl Layer for Dropout {
@@ -35,17 +49,7 @@ impl Layer for Dropout {
         if !train {
             return x;
         }
-        let rate = (self.rate_fn)();
-        let fuctor = ComputedNDA::new(
-            Array::random_using(
-                x.shape(),
-                Uniform::new(0.0, 1.0),
-                &mut *self.rng.lock().unwrap(),
-            )
-            .map(|x| if *x > rate { 1.0 / (1.0 - rate) } else { 0.0 })
-            .into_ndarray(),
-        );
-        x * fuctor
+        self.factor(x.shape()) * x
     }
 
     fn all_params(&self) -> Vec<ParamNDA> {
