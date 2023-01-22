@@ -82,7 +82,7 @@ fn forward(linear: &Linear, label: usize, image: &[u8]) -> Computed<NDArray> {
     .unwrap();
     let y = linear.call(x.into(), true);
     let y = relu(&y);
-    let goodness = sigmoid(&(y.pow(2.0).sum(vec![0, 1], false) - scalar(5.0).into()));
+    let goodness = sigmoid(&(y.pow_const(2.0).sum(vec![0, 1], false) - scalar(5.0).into()));
     goodness
 }
 

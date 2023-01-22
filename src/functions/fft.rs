@@ -110,14 +110,14 @@ fn test() {
     fn f(x: ComputedNDA) {
         let y = Fft::new().fft(&x);
         let y = y
-            .pow(2.0)
+            .pow_const(2.0)
             .sum((0..x.shape().len()).collect::<Vec<_>>(), false);
         let before_y = y[[]];
         let gs = gradients(&[y], &[x.clone()], false);
         let x = &x - &(&gs[0] * &backprop(scalar(0.01)));
         let y = Fft::new().fft(&x);
         let y = y
-            .pow(2.0)
+            .pow_const(2.0)
             .sum((0..x.shape().len()).collect::<Vec<_>>(), false);
         let after_y = y[[]];
         assert!(after_y < before_y);

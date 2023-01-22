@@ -19,7 +19,7 @@ fn test_sphere() {
     let a = backprop(scalar(1.0));
     let b = backprop(scalar(1.0));
 
-    let y = a.pow(2.0) + b.pow(2.0);
+    let y = a.pow_const(2.0) + b.pow_const(2.0);
     assert_eq!(*y, scalar(2.0));
 
     let grads = gradients(&[y], &vec![a.clone(), b.clone()], false);
@@ -32,7 +32,7 @@ fn test_matyas() {
     let a = backprop(scalar(1.0));
     let b = backprop(scalar(1.0));
 
-    let y = ComputedNDA::new(scalar(0.26)) * (a.pow(2.0) + b.pow(2.0))
+    let y = ComputedNDA::new(scalar(0.26)) * (a.pow_const(2.0) + b.pow_const(2.0))
         - ComputedNDA::new(scalar(0.48)) * a.clone() * b.clone();
 
     let grads = gradients(&[y], &vec![a.clone(), b.clone()], false);
@@ -41,8 +41,8 @@ fn test_matyas() {
 }
 
 fn rosenbrock(a: ComputedNDA, b: ComputedNDA) -> ComputedNDA {
-    ComputedNDA::new(scalar(100.0)) * (b - a.pow(2.0)).pow(2.0)
-        + (a.clone() - ComputedNDA::new(scalar(1.0))).pow(2.0)
+    ComputedNDA::new(scalar(100.0)) * (b - a.pow_const(2.0)).pow_const(2.0)
+        + (a.clone() - ComputedNDA::new(scalar(1.0))).pow_const(2.0)
 }
 
 #[test]
@@ -80,7 +80,7 @@ fn test_rosenbrock_sgd() {
 fn test_second_order_differentia() {
     let x = backprop(scalar(2.0));
 
-    let y = x.pow(4.0) - ComputedNDA::new(scalar(2.0)) * x.pow(2.0);
+    let y = x.pow_const(4.0) - ComputedNDA::new(scalar(2.0)) * x.pow_const(2.0);
     assert_eq!(*y, scalar(8.0));
 
     let grads = gradients(&vec![y.clone()], &vec![x.clone()], true);

@@ -235,7 +235,7 @@ impl Model {
 fn log_normal_pdf(sample: &ComputedNDA, mean: &ComputedNDA, log_var: &ComputedNDA) -> ComputedNDA {
     let log2pi = (2.0 * std::f32::consts::PI).ln();
     (ComputedNDA::new(scalar(-0.5))
-        * ((sample - mean).pow(2.0) * (-log_var).exp()
+        * ((sample - mean).pow_const(2.0) * (-log_var).exp()
             + log_var.clone()
             + ComputedNDA::new(scalar(log2pi))))
     .sum(Vec::from_iter(0..sample.ndim()), false)

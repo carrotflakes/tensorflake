@@ -21,7 +21,7 @@ fn test_optimizer(optimizer: impl crate::Optimizer<crate::NDArray> + Clone) {
     let loss_fn = || {
         let x = px.get();
         let y = x.clone() + x;
-        (y - ComputedNDA::new(scalar(6.0))).pow(2.0)
+        (y - ComputedNDA::new(scalar(6.0))).pow_const(2.0)
     };
 
     let first_loss = loss_fn()[[]];

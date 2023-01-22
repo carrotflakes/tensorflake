@@ -11,7 +11,7 @@ pub fn div(a: &ComputedNDA, b: &ComputedNDA) -> ComputedNDA {
         |xs, _ys, gys| {
             let mut gx0 = &gys[0] / &xs[0];
 
-            let mut gx1 = &gys[0] * &(-&xs[0] / xs[1].pow(2.0));
+            let mut gx1 = &gys[0] * &(-&xs[0] / xs[1].pow_const(2.0));
 
             // fit shape
             if xs[0].shape() != gx0.shape() {

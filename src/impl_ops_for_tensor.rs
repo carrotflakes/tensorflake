@@ -66,8 +66,12 @@ impl ComputedNDA {
         functions::matmul(self, rhs)
     }
 
-    pub fn pow(&self, rhs: f32) -> ComputedNDA {
+    pub fn pow(&self, rhs: &ComputedNDA) -> ComputedNDA {
         functions::pow(self, rhs)
+    }
+
+    pub fn pow_const(&self, rhs: f32) -> ComputedNDA {
+        functions::pow_const(self, rhs)
     }
 
     pub fn reshape(&self, shape: impl Into<Vec<usize>>) -> ComputedNDA {

@@ -40,7 +40,10 @@ impl L2 {
 
 impl Regularizer for L2 {
     fn loss(&self, input: &ComputedNDA) -> ComputedNDA {
-        input.pow(2.0).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l2).into()
+        input
+            .pow_const(2.0)
+            .sum(Vec::from_iter(0..input.ndim()), false)
+            * scalar(self.l2).into()
     }
 }
 
@@ -59,7 +62,10 @@ impl L1L2 {
 impl Regularizer for L1L2 {
     fn loss(&self, input: &ComputedNDA) -> ComputedNDA {
         input.abs().sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l1).into()
-            + input.pow(2.0).sum(Vec::from_iter(0..input.ndim()), false) * scalar(self.l2).into()
+            + input
+                .pow_const(2.0)
+                .sum(Vec::from_iter(0..input.ndim()), false)
+                * scalar(self.l2).into()
     }
 }
 

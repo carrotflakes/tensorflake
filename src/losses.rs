@@ -7,7 +7,7 @@ use crate::nn::activations::{relu, softmax};
 use crate::*;
 
 pub fn naive_mean_squared_error(x0: ComputedNDA, x1: ComputedNDA) -> ComputedNDA {
-    let x = (x0 - x1).pow(2.0);
+    let x = (x0 - x1).pow_const(2.0);
     x.sum(Vec::from_iter(0..x.ndim()), false)
         / ComputedNDA::new(scalar(x.shape().iter().product::<usize>() as f32))
 }
@@ -96,7 +96,10 @@ fn test_softmax_cross_entropy_with_logits() {
     dbg!(&*grads[0]);
 }
 
-pub fn sigmoid_cross_entropy_with_logits(labels: &ComputedNDA, logits: &ComputedNDA) -> ComputedNDA {
+pub fn sigmoid_cross_entropy_with_logits(
+    labels: &ComputedNDA,
+    logits: &ComputedNDA,
+) -> ComputedNDA {
     relu(logits) - logits * labels + (ComputedNDA::new(scalar(1.0)) + (-logits.abs()).exp()).log()
 }
 
