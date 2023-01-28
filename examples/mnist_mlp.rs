@@ -32,7 +32,7 @@ fn main() {
         Some(Dropout::new(0.2, 42)),
         |x| relu(&x),
         init_kernel.scope("mlp_w"),
-        init_bias.scope("mlp_b"),
+        Some(init_bias.scope("mlp_b")),
     );
 
     let start = std::time::Instant::now();

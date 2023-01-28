@@ -111,7 +111,7 @@ impl Model {
                 None,
                 |x| x.sin(),
                 w.scope("mlp_w"),
-                b.scope("mlp_b"),
+                Some(b.scope("mlp_b")),
             ),
             activation: Box::new(|x| activations::sigmoid(&x)),
         }

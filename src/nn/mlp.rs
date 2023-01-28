@@ -16,7 +16,7 @@ impl MLP {
         dropout: Option<Dropout>,
         activation: impl Fn(ComputedNDA) -> ComputedNDA + Sync + Send + 'static,
         w: impl Initializer<ParamNDA> + Scope,
-        b: impl Initializer<ParamNDA> + Scope,
+        b: Option<impl Initializer<ParamNDA> + Scope>,
     ) -> Self {
         Self {
             linears: sizes
@@ -27,7 +27,7 @@ impl MLP {
                         x[0],
                         x[1],
                         w.scope(format!("linear_{}", i)),
-                        Some(b.scope(format!("linear_{}", i))),
+                        b.as_ref().map(|x| x.scope(format!("linear_{}", i))),
                     )
                 })
                 .collect(),
@@ -76,7 +76,7 @@ fn test() {
         None,
         |x| activations::sigmoid(&x),
         init.scope("mlp"),
-        init.scope("mlp"),
+        Some(init.scope("mlp")),
     );
 
     let x = ComputedNDA::new(array![[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]].into_ndarray());
