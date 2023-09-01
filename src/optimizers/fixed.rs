@@ -13,7 +13,7 @@ impl<T: Send + Sync + 'static> Optimizer<T> for Fixed {
     type State = ();
 
     fn new_state(&self, shape: &[usize]) -> Self::State {
-        drop(shape);
+        let _ = shape;
         ()
     }
 

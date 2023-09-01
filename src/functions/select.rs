@@ -13,7 +13,7 @@ pub fn select(axis: usize, indices: Vec<usize>, x: &ComputedNDA) -> ComputedNDA 
         false,
         "select",
         move |xs, ys, gys| {
-            drop(ys);
+            let _ = ys;
             let mut gx = NDArray::zeros(xs[0].shape());
             for i in 0..indices.len() {
                 gx.index_axis_mut(Axis(axis), indices[i])

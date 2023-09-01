@@ -17,12 +17,12 @@ impl Optimizer<NDArray> for SGD {
     type State = ();
 
     fn new_state(&self, shape: &[usize]) -> Self::State {
-        drop(shape);
+        let _ = shape;
         ()
     }
 
     fn update(&mut self, data: &mut NDArray, state: &mut Self::State, grad: &NDArray) {
-        drop(state);
+        let _ = state;
         *data = &*data + grad.mul(scalar(-self.learning_rate));
     }
 }
