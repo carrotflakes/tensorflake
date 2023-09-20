@@ -12,6 +12,12 @@ pub fn naive_mean_squared_error(x0: ComputedNDA, x1: ComputedNDA) -> ComputedNDA
         / ComputedNDA::new(scalar(x.shape().iter().product::<usize>() as f32))
 }
 
+pub fn naive_mean_absolute_error(x0: ComputedNDA, x1: ComputedNDA) -> ComputedNDA {
+    let x = (x0 - x1).abs();
+    x.sum(Vec::from_iter(0..x.ndim()), false)
+        / ComputedNDA::new(scalar(x.shape().iter().product::<usize>() as f32))
+}
+
 pub fn softmax_cross_entropy(t: Vec<usize>, x: &ComputedNDA) -> ComputedNDA {
     let n = x.shape().iter().take(x.ndim() - 1).product();
     let log_z = log_sum_exp(&*x);
