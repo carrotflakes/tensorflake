@@ -1,3 +1,5 @@
+use ndarray::Zip;
+
 use crate::*;
 
 pub fn relu(x: &ComputedNDA) -> ComputedNDA {
@@ -9,13 +11,14 @@ pub fn relu(x: &ComputedNDA) -> ComputedNDA {
         false,
         "relu",
         move |xs, _ys, gys| {
-            let gx = &gys[0]
-                * &ComputedNDA::new(
-                    xs[0]
-                        .map(|x| if *x > 0.0 { 1.0 } else { 0.0 })
-                        .into_ndarray(),
-                );
-            vec![gx]
+            let mut gx = (*gys[0]).to_owned();
+
+            Zip::from(&mut gx).and(&xs[0].view()).for_each(|y, x| {
+                if *x < 0.0 {
+                    *y = 0.0
+                }
+            });
+            vec![ComputedNDA::new(gx.into_ndarray())]
         },
     );
 
