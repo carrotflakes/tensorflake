@@ -37,13 +37,16 @@ fn main() {
     println!("data size: {}", data.len());
     println!("vocab size: {}", vocab_size);
 
+    let embedding_size = 64;
+    let state_size = 128;
+
     // let optimizer = optimizers::SGDOptimizer::new();
     // let lr = 0.1;
     let optimizer = Arc::new(Mutex::new(optimizers::Adam::new()));
     // let optimizer = optimizers::WithRegularization::new(optimizer, regularizers::L2::new(0.001));
     let lr = 0.0001;
 
-    let norm = normalization::Normalization::new(vec![0, 1], 0.001, optimizers::Adam::new());
+    let norm = normalization::Normalization::new(vec![1], vec![state_size], 0.001, optimizers::Adam::new());
 
     let init_kernel = InitializerWithSharedOptimizer::new(
         RandomInitializer::new(Normal::new(0., 0.1).unwrap()),
@@ -54,8 +57,6 @@ fn main() {
         optimizer.clone(),
     );
 
-    let embedding_size = 64;
-    let state_size = 128;
     let embedding = Embedding::new(embedding_size, vocab_size, init_kernel.scope("embedding"));
     let model = Gru::new(embedding_size, state_size, init_kernel.scope("gru"));
     let linear = Linear::new(

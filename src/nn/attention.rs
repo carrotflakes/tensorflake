@@ -131,7 +131,7 @@ impl MHAAddNorm {
         Self {
             attention: MultiHeadAttention::new(dim, num_heads, w.scope("mha"), b.scope("mha")),
             dense: Linear::new(dim, dim, w.scope("dense"), Some(b.scope("dense"))),
-            norm: Normalization::new(vec![1], layer_norm_eps, opt),
+            norm: Normalization::new(vec![1], vec![dim], layer_norm_eps, opt),
         }
     }
 
